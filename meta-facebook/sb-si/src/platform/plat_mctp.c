@@ -53,8 +53,22 @@ static mctp_port smbus_port[] = {
 	{ .conf.smbus_conf.addr = I2C_ADDR_BIC, .conf.smbus_conf.bus = I2C_BUS_BMC },
 };
 
+static mctp_port i3c_port[] = {
+    { 
+        .conf.i3c_conf.addr = 0x20,
+        .conf.i3c_conf.bus = 5,
+    },
+    { 
+        .conf.i3c_conf.addr = 0x21,
+        .conf.i3c_conf.bus = 4,
+    }
+};
+
 mctp_route_entry mctp_route_tbl[] = {
 	{ MCTP_EID_BMC, I2C_BUS_BMC, I2C_ADDR_BMC },
+	{ MCTP_EID_BMC, 5, 0x20 },
+	{ MCTP_EID_BMC, 4, 0x21 },
+    { 0x21, 4, 0x21 },
 };
 
 uint8_t MCTP_SUPPORTED_MESSAGES_TYPES[] = {
@@ -105,59 +119,63 @@ static uint8_t mctp_msg_recv(void *mctp_p, uint8_t *buf, uint32_t len, mctp_ext_
 		return MCTP_ERROR;
 
 	/* first byte is message type and ic */
-	uint8_t msg_type = (buf[0] & MCTP_MSG_TYPE_MASK) >> MCTP_MSG_TYPE_SHIFT;
-	uint8_t ic = (buf[0] & MCTP_IC_MASK) >> MCTP_IC_SHIFT;
-	(void)ic;
+	// uint8_t msg_type = (buf[0] & MCTP_MSG_TYPE_MASK) >> MCTP_MSG_TYPE_SHIFT;
+	// uint8_t ic = (buf[0] & MCTP_IC_MASK) >> MCTP_IC_SHIFT;
+	// (void)ic;
 
-	switch (msg_type) {
-	case MCTP_MSG_TYPE_CTRL:
-		mctp_ctrl_cmd_handler(mctp_p, buf, len, ext_params);
-		break;
+	for(int i=0;i<4; i++ ){
+		printk("here %u\n",buf[i]);	
+	}	
 
-	case MCTP_MSG_TYPE_PLDM:
-		mctp_pldm_cmd_handler(mctp_p, buf, len, ext_params);
-		break;
+	// switch (msg_type) {
+	// case MCTP_MSG_TYPE_CTRL:
+	// 	mctp_ctrl_cmd_handler(mctp_p, buf, len, ext_params);
+	// 	break;
 
-	default:
-		LOG_WRN("Cannot find message receive function!!");
-		return MCTP_ERROR;
-	}
+	// case MCTP_MSG_TYPE_PLDM:
+	// 	mctp_pldm_cmd_handler(mctp_p, buf, len, ext_params);
+	// 	break;
+
+	// default:
+	// 	LOG_WRN("Cannot find message receive function!!");
+	// 	return MCTP_ERROR;
+	// }
 
 	return MCTP_SUCCESS;
 }
 
-static uint8_t get_mctp_route_info(uint8_t dest_endpoint, void **mctp_inst,
-				   mctp_ext_params *ext_params)
-{
-	if (!mctp_inst || !ext_params)
-		return MCTP_ERROR;
+// static uint8_t get_mctp_route_info(uint8_t dest_endpoint, void **mctp_inst,
+// 				   mctp_ext_params *ext_params)
+// {
+// 	if (!mctp_inst || !ext_params)
+// 		return MCTP_ERROR;
 
-	uint8_t rc = MCTP_ERROR;
-	uint32_t i;
+// 	uint8_t rc = MCTP_ERROR;
+// 	uint32_t i;
 
-	for (i = 0; i < ARRAY_SIZE(mctp_route_tbl); i++) {
-		mctp_route_entry *p = mctp_route_tbl + i;
-		if (p->endpoint == dest_endpoint) {
-			*mctp_inst = find_mctp_by_smbus(p->bus);
-			ext_params->type = MCTP_MEDIUM_TYPE_SMBUS;
-			ext_params->smbus_ext_params.addr = p->addr;
-			rc = MCTP_SUCCESS;
-			break;
-		}
-	}
+// 	for (i = 0; i < ARRAY_SIZE(mctp_route_tbl); i++) {
+// 		mctp_route_entry *p = mctp_route_tbl + i;
+// 		if (p->endpoint == dest_endpoint) {
+// 			*mctp_inst = find_mctp_by_smbus(p->bus);
+// 			ext_params->type = MCTP_MEDIUM_TYPE_SMBUS;
+// 			ext_params->smbus_ext_params.addr = p->addr;
+// 			rc = MCTP_SUCCESS;
+// 			break;
+// 		}
+// 	}
 
-	return rc;
-}
+// 	return rc;
+// }
 
 void plat_mctp_init(void)
 {
 	LOG_INF("plat_mctp_init");
 
 	/* init the mctp/pldm instance */
-	for (uint8_t i = 0; i < ARRAY_SIZE(smbus_port); i++) {
-		mctp_port *p = smbus_port + i;
-		LOG_DBG("smbus port %d", i);
-		LOG_DBG("bus = %x, addr = %x", p->conf.smbus_conf.bus, p->conf.smbus_conf.addr);
+	for (uint8_t i = 0; i < ARRAY_SIZE(i3c_port); i++) {
+		mctp_port *p = i3c_port + i;
+		LOG_DBG("i3c port %d", i);
+		LOG_DBG("bus = %x, addr = %x", p->conf.i3c_conf.bus, p->conf.i3c_conf.addr);
 
 		p->mctp_inst = mctp_init();
 		if (!p->mctp_inst) {
@@ -166,12 +184,22 @@ void plat_mctp_init(void)
 		}
 
 		LOG_DBG("mctp_inst = %p", p->mctp_inst);
-		uint8_t rc =
-			mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_SMBUS, p->conf);
-		LOG_DBG("mctp_set_medium_configure %s",
-			(rc == MCTP_SUCCESS) ? "success" : "failed");
 
-		mctp_reg_endpoint_resolve_func(p->mctp_inst, get_mctp_route_info);
+		uint8_t rc;
+		if (p->conf.i3c_conf.bus == 5) {
+			// Master (i3c5)
+			rc = mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_CONTROLLER_I3C, p->conf);
+			LOG_DBG("MCTP medium type for master: %s", (rc == MCTP_SUCCESS) ? "success" : "failed");
+		} else if (p->conf.i3c_conf.bus == 4) {
+			// Slave (i3c4)
+			rc = mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_TARGET_I3C, p->conf);
+			LOG_DBG("MCTP medium type for slave: %s", (rc == MCTP_SUCCESS) ? "success" : "failed");
+		} else {
+			LOG_ERR("Unknown bus number!");
+			continue;
+		}
+
+		// mctp_reg_endpoint_resolve_func(p->mctp_inst, get_mctp_route_info);
 
 		mctp_reg_msg_rx_func(p->mctp_inst, mctp_msg_recv);
 
