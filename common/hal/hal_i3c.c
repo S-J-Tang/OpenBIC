@@ -66,8 +66,9 @@ static struct i3c_dev_desc *find_matching_desc(const struct device *dev, uint8_t
 int i3c_smq_read(I3C_MSG *msg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(msg, -EINVAL);
-
+	printk("smq read start, bus: %u", msg->bus);
 	if (!dev_i3c[msg->bus]) {
+		printk("device not bind, bus: %u", msg->bus);
 		return -ENODEV;
 	}
 

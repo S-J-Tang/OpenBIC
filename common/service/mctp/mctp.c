@@ -221,6 +221,7 @@ static void mctp_rx_task(void *arg, void *dummy0, void *dummy1)
 	LOG_INF("mctp_rx_task start %p", mctp_inst);
 
 	while (1) {
+		printk("mctp looping\n");
 		k_msleep(MCTP_POLL_TIME_MS);
 		uint8_t read_buf[256] = { 0 };
 		mctp_ext_params ext_params;
