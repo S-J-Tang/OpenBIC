@@ -177,7 +177,7 @@
 		msg-size = <256>;
 		num-of-msgs = <4>;
 		mandatory-data-byte = <0xAE>;
-		label = "I3C_4_SMQ";
+		label = "I3C_SMQ_4";
 		status = "okay";
 	};
 };

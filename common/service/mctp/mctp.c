@@ -234,7 +234,7 @@ static void mctp_rx_task(void *arg, void *dummy0, void *dummy1)
 		uint16_t read_len =
 			mctp_inst->read_data(mctp_inst, read_buf, sizeof(read_buf), &ext_params);
 
-		LOG_INF("Received %d bytes of MCTP data", read_len);
+		// LOG_INF("Received %d bytes of MCTP data", read_len);
 
 		if (!read_len)
 			continue;
