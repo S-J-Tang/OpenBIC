@@ -188,8 +188,8 @@ void plat_mctp_init(void)
 		uint8_t rc;
 		if (p->conf.i3c_conf.bus == 5) {
 			// Master (i3c5)
-			rc = mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_CONTROLLER_I3C, p->conf);
-			LOG_DBG("MCTP medium type for master: %s", (rc == MCTP_SUCCESS) ? "success" : "failed");
+			// rc = mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_CONTROLLER_I3C, p->conf);
+			// LOG_DBG("MCTP medium type for master: %s", (rc == MCTP_SUCCESS) ? "success" : "failed");
 		} else if (p->conf.i3c_conf.bus == 4) {
 			// Slave (i3c4)
 			rc = mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_TARGET_I3C, p->conf);

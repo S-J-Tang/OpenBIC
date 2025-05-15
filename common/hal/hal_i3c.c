@@ -66,9 +66,9 @@ static struct i3c_dev_desc *find_matching_desc(const struct device *dev, uint8_t
 int i3c_smq_read(I3C_MSG *msg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(msg, -EINVAL);
-	printk("smq read start, bus: %u", msg->bus);
+	// LOG_INF("smq read start, bus: %u", msg->bus);
 	if (!dev_i3c[msg->bus]) {
-		printk("device not bind, bus: %u", msg->bus);
+		LOG_INF("device not bind, bus: %u", msg->bus);
 		return -ENODEV;
 	}
 
@@ -77,9 +77,15 @@ int i3c_smq_read(I3C_MSG *msg)
 		LOG_ERR("Failed to lock the mutex(%d), %s", ret, __func__);
 		return -1;
 	}
-
+	// LOG_INF("dev_i3c_smq[%d] = %p", msg->bus, dev_i3c_smq[msg->bus]);
+	if (!dev_i3c_smq[msg->bus]) {
+		// LOG_ERR("smq device NULL, cannot read");
+		return -ENODEV;
+	}
+	// LOG_INF("Calling i3c_slave_mqueue_read...");
 	msg->rx_len =
 		i3c_slave_mqueue_read(dev_i3c_smq[msg->bus], &msg->data[0], I3C_MAX_DATA_SIZE);
+	// LOG_INF("i3c_slave_mqueue_read returned %d", msg->rx_len);
 	if (msg->rx_len == 0) {
 		k_mutex_unlock(&mutex_dev[msg->bus]);
 		return -ENODATA;

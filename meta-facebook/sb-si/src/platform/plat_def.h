@@ -36,6 +36,8 @@
 #define ENABLE_RAA228249
 #define ENABLE_EMC1413
 
+#define ENABLE_MCTP_I3C
+
 #define DISABLE_AST_ADC
 #define DISABLE_NVME
 #define DISABLE_MP5990

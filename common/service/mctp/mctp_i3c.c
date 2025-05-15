@@ -15,7 +15,7 @@
  */
 
 #include "plat_def.h"
-#ifdef ENABLE_MCTP_I3C
+// #ifdef ENABLE_MCTP_I3C
 #include "mctp.h"
 
 #include <stdlib.h>
@@ -267,4 +267,4 @@ uint8_t mctp_i3c_deinit(mctp *mctp_instance)
 	return MCTP_SUCCESS;
 }
 
-#endif // ENABLE_MCTP_I3C
+// #endif // ENABLE_MCTP_I3C

@@ -105,9 +105,11 @@ static uint8_t mctp_medium_init(mctp *mctp_inst, mctp_medium_conf medium_conf)
 		break;
 #ifdef ENABLE_MCTP_I3C
 	case MCTP_MEDIUM_TYPE_TARGET_I3C:
+		LOG_INF("MCTP_MEDIUM_TYPE_TARGET_I3C");
 		ret = mctp_i3c_target_init(mctp_inst, medium_conf);
 		break;
 	case MCTP_MEDIUM_TYPE_CONTROLLER_I3C:
+		LOG_INF("MCTP_MEDIUM_TYPE_CONTROLLER_I3C\n");
 		ret = mctp_i3c_controller_init(mctp_inst, medium_conf);
 		break;
 #endif
@@ -214,6 +216,7 @@ static void mctp_rx_task(void *arg, void *dummy0, void *dummy1)
 
 	mctp *mctp_inst = (mctp *)arg;
 	if (!mctp_inst->read_data) {
+		LOG_WRN("mctp_rx_task without medium read function! %u",((mctp_inst->medium_conf).i3c_conf).bus);
 		LOG_WRN("mctp_rx_task without medium read function!");
 		return;
 	}
@@ -221,7 +224,7 @@ static void mctp_rx_task(void *arg, void *dummy0, void *dummy1)
 	LOG_INF("mctp_rx_task start %p", mctp_inst);
 
 	while (1) {
-		printk("mctp looping\n");
+		// LOG_INF("mctp looping");
 		k_msleep(MCTP_POLL_TIME_MS);
 		uint8_t read_buf[256] = { 0 };
 		mctp_ext_params ext_params;
@@ -230,6 +233,8 @@ static void mctp_rx_task(void *arg, void *dummy0, void *dummy1)
 
 		uint16_t read_len =
 			mctp_inst->read_data(mctp_inst, read_buf, sizeof(read_buf), &ext_params);
+
+		LOG_INF("Received %d bytes of MCTP data", read_len);
 
 		if (!read_len)
 			continue;
