@@ -126,3 +126,33 @@
 &spi_fiu0 {
     status = "disabled";
 };
+
+&i3c4 {
+	status = "okay";
+	slave;
+	secondary;
+	assigned-address = <0x21>;
+	part-id = <0x1234>;
+	vendor-def-id = <0x567>;
+	bcr = <0x66>;
+	dcr = <0xCC>;
+	busno = <0x4>;
+	pinctrl-0 = <&pinctrl_i3c4_default>;
+	i2c-scl-hz = <100000>;
+	i3c-scl-hz = <200000>;
+	/* ibi-append-pec; */
+	/* priv-xfer-pec; */
+
+	/* #address-cells = <0x01> */
+	/* #size-cells = <0x00> */
+
+	i3c4_smq:i3c-slave-mqueue@21 {
+		compatible = "i3c-slave-mqueue";
+		reg = <0x21>;
+		msg-size = <256>;
+		num-of-msgs = <4>;
+		mandatory-data-byte = <0xAE>;
+		label = "I3C_SMQ_4";
+		status = "okay";
+	};
+};
