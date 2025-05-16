@@ -55,10 +55,6 @@ static mctp_port smbus_port[] = {
 
 static mctp_port i3c_port[] = {
     { 
-        .conf.i3c_conf.addr = 0x20,
-        .conf.i3c_conf.bus = 5,
-    },
-    { 
         .conf.i3c_conf.addr = 0x21,
         .conf.i3c_conf.bus = 4,
     }
@@ -66,9 +62,6 @@ static mctp_port i3c_port[] = {
 
 mctp_route_entry mctp_route_tbl[] = {
 	{ MCTP_EID_BMC, I2C_BUS_BMC, I2C_ADDR_BMC },
-	{ MCTP_EID_BMC, 5, 0x20 },
-	{ MCTP_EID_BMC, 4, 0x21 },
-    { 0x21, 4, 0x21 },
 };
 
 uint8_t MCTP_SUPPORTED_MESSAGES_TYPES[] = {
@@ -123,9 +116,47 @@ static uint8_t mctp_msg_recv(void *mctp_p, uint8_t *buf, uint32_t len, mctp_ext_
 	// uint8_t ic = (buf[0] & MCTP_IC_MASK) >> MCTP_IC_SHIFT;
 	// (void)ic;
 
-	for(int i=0;i<4; i++ ){
+	for(int i=0;i<len; i++ ){
 		printk("here %u\n",buf[i]);	
 	}	
+
+	k_msleep(10000);
+	mctp *mctp_inst = (mctp *)mctp_p;
+
+	mctp_tx_msg mctp_msg = { 0 };
+	mctp_msg.is_bridge_packet = 0;
+	mctp_msg.len = len;
+	mctp_msg.buf = (uint8_t *)malloc(len);
+	if (!mctp_msg.buf)
+		goto error;
+	memcpy(mctp_msg.buf, buf, len);
+
+	mctp_msg.ext_params = ext_params;
+	printk("to: %u\nmsg tag: %u\nep: %u\n", ext_params.tag_owner, ext_params.msg_tag, ext_params.ep);
+
+	/* create msg queue for catching the return code from mctp_tx_task */
+	uint8_t evt_msgq_buf = 0;
+	struct k_msgq evt_msgq;
+
+	k_msgq_init(&evt_msgq, &evt_msgq_buf, sizeof(uint8_t), 1);
+	mctp_msg.evt_msgq = &evt_msgq;
+
+	int ret = k_msgq_put(&mctp_inst->mctp_tx_queue, &mctp_msg, K_NO_WAIT);
+	if (!ret) {
+		uint8_t evt = MCTP_ERROR;
+		if (k_msgq_get(&evt_msgq, &evt, K_FOREVER)) {
+			LOG_WRN("failed to get status from msgq!");
+			goto error;
+		}
+
+		printk("evt from msg recv : evt");
+	}
+
+error:
+	if (mctp_msg.buf)
+		free(mctp_msg.buf);
+
+	return MCTP_ERROR;
 
 	// switch (msg_type) {
 	// case MCTP_MSG_TYPE_CTRL:
@@ -144,28 +175,28 @@ static uint8_t mctp_msg_recv(void *mctp_p, uint8_t *buf, uint32_t len, mctp_ext_
 	return MCTP_SUCCESS;
 }
 
-// static uint8_t get_mctp_route_info(uint8_t dest_endpoint, void **mctp_inst,
-// 				   mctp_ext_params *ext_params)
-// {
-// 	if (!mctp_inst || !ext_params)
-// 		return MCTP_ERROR;
+static uint8_t get_mctp_route_info(uint8_t dest_endpoint, void **mctp_inst,
+				   mctp_ext_params *ext_params)
+{
+	if (!mctp_inst || !ext_params)
+		return MCTP_ERROR;
 
-// 	uint8_t rc = MCTP_ERROR;
-// 	uint32_t i;
+	uint8_t rc = MCTP_ERROR;
+	uint32_t i;
 
-// 	for (i = 0; i < ARRAY_SIZE(mctp_route_tbl); i++) {
-// 		mctp_route_entry *p = mctp_route_tbl + i;
-// 		if (p->endpoint == dest_endpoint) {
-// 			*mctp_inst = find_mctp_by_smbus(p->bus);
-// 			ext_params->type = MCTP_MEDIUM_TYPE_SMBUS;
-// 			ext_params->smbus_ext_params.addr = p->addr;
-// 			rc = MCTP_SUCCESS;
-// 			break;
-// 		}
-// 	}
+	for (i = 0; i < ARRAY_SIZE(mctp_route_tbl); i++) {
+		mctp_route_entry *p = mctp_route_tbl + i;
+		if (p->endpoint == dest_endpoint) {
+			*mctp_inst = find_mctp_by_smbus(p->bus);
+			ext_params->type = MCTP_MEDIUM_TYPE_SMBUS;
+			ext_params->smbus_ext_params.addr = p->addr;
+			rc = MCTP_SUCCESS;
+			break;
+		}
+	}
 
-// 	return rc;
-// }
+	return rc;
+}
 
 void plat_mctp_init(void)
 {
@@ -199,7 +230,7 @@ void plat_mctp_init(void)
 			continue;
 		}
 
-		// mctp_reg_endpoint_resolve_func(p->mctp_inst, get_mctp_route_info);
+		mctp_reg_endpoint_resolve_func(p->mctp_inst, get_mctp_route_info);
 
 		mctp_reg_msg_rx_func(p->mctp_inst, mctp_msg_recv);
 
