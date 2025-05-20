@@ -23,7 +23,7 @@
 
 /* Define sensors address(7 bit) */
 #define UBC1_ADDR (0x28 >> 1)
-#define UBC2_ADDR (0x34 >> 1)
+?#define UBC2_ADDR (0x34 >> 1)
 
 #define TOP_INLET_TEMP_ADDR (0x92 >> 1)
 #define TOP_OUTLET_TEMP_ADDR (0x9E >> 1)
