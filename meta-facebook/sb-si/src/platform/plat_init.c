@@ -54,11 +54,13 @@ void pal_pre_init()
 	vr_mutex_init();
 	pwr_level_mutex_init();
 
-	if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH)
-		plat_clock_init();
+	// if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH)
+	// 	plat_clock_init();
 
-	plat_eusb_init();
-	init_temp_alert_mode();
+	// plat_eusb_init();
+
+
+	// init_temp_alert_mode();
 }
 
 void pal_set_sys_status()
@@ -69,15 +71,15 @@ void pal_set_sys_status()
 void pal_post_init()
 {
 	plat_mctp_init();
-	init_temp_limit(); //should be before temp_threshold_default_settings_init() and after pldm sensor init
+	// init_temp_limit(); //should be before temp_threshold_default_settings_init() and after pldm sensor init
 	user_settings_init();
 	pldm_load_state_effecter_table(MAX_STATE_EFFECTER_IDX);
 	pldm_assign_gpio_effecter_id(PLAT_EFFECTER_ID_GPIO_HIGH_BYTE);
-	init_fru_info();
-	init_load_eeprom_log();
-	plat_set_ac_on_log();
-	init_cpld_polling();
-	sensor_data_table_init();
+	// init_fru_info();
+	// init_load_eeprom_log();
+	// plat_set_ac_on_log();
+	// init_cpld_polling();
+	// sensor_data_table_init();
 
 	LOG_INF("Init done");
 }

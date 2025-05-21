@@ -281,10 +281,11 @@ uint8_t get_tmp_type()
 
 void init_platform_config()
 {
-	init_board_type();
-	init_board_stage();
-	init_vr_vendor_type();
-	init_tmp_type();
+	// init_board_type();
+	// init_board_stage();
+	// wait until second source appear
+	// init_vr_vendor_type();
+	// init_tmp_type();
 }
 
 void pal_show_board_types(const struct shell *shell)
