@@ -196,10 +196,7 @@ vr_pre_proc_arg vr_pre_read_args[] = {
 	{ .mutex = vr_mutex + 4, .vr_page = 0x0 },  { .mutex = vr_mutex + 4, .vr_page = 0x1 },
 	{ .mutex = vr_mutex + 5, .vr_page = 0x0 },  { .mutex = vr_mutex + 5, .vr_page = 0x1 },
 	{ .mutex = vr_mutex + 6, .vr_page = 0x0 },  { .mutex = vr_mutex + 6, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 7, .vr_page = 0x0 },  { .mutex = vr_mutex + 7, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 8, .vr_page = 0x0 },  { .mutex = vr_mutex + 8, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 9, .vr_page = 0x0 },  { .mutex = vr_mutex + 9, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 10, .vr_page = 0x0 }, { .mutex = vr_mutex + 10, .vr_page = 0x1 }
+	{ .mutex = vr_mutex + 7, .vr_page = 0x0 },  { .mutex = vr_mutex + 7, .vr_page = 0x1 }
 };
 
 mp2971_init_arg mp2971_init_args[] = {
@@ -693,35 +690,35 @@ bool vr_status_enum_get(uint8_t *name, uint8_t *num)
 	return false;
 }
 
-bool plat_get_vout_range(uint8_t rail, uint16_t *vout_max_millivolt, uint16_t *vout_min_millivolt)
-{
-	CHECK_NULL_ARG_WITH_RETURN(vout_max_millivolt, false);
-	CHECK_NULL_ARG_WITH_RETURN(vout_min_millivolt, false);
+// bool plat_get_vout_range(uint8_t rail, uint16_t *vout_max_millivolt, uint16_t *vout_min_millivolt)
+// {
+// 	CHECK_NULL_ARG_WITH_RETURN(vout_max_millivolt, false);
+// 	CHECK_NULL_ARG_WITH_RETURN(vout_min_millivolt, false);
 
-	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
-	const sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+// 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+// 	const sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
-	if (cfg == NULL) {
-		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
-		return false;
-	}
+// 	if (cfg == NULL) {
+// 		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+// 		return false;
+// 	}
 
-	if (check_supported_threshold_with_sensor_id(sensor_id) != 0) {
-		LOG_ERR("sensor id: 0x%x unsupported thresholds", sensor_id);
-		return false;
-	}
+// 	if (check_supported_threshold_with_sensor_id(sensor_id) != 0) {
+// 		LOG_ERR("sensor id: 0x%x unsupported thresholds", sensor_id);
+// 		return false;
+// 	}
 
-	float critical_high, critical_low;
-	if (get_pdr_table_critical_high_and_low_with_sensor_id(sensor_id, &critical_high,
-							       &critical_low) != 0) {
-		LOG_ERR("sensor id: 0x%x get threshold failed", sensor_id);
-		return false;
-	}
+// 	float critical_high, critical_low;
+// 	if (get_pdr_table_critical_high_and_low_with_sensor_id(sensor_id, &critical_high,
+// 							       &critical_low) != 0) {
+// 		LOG_ERR("sensor id: 0x%x get threshold failed", sensor_id);
+// 		return false;
+// 	}
 
-	*vout_max_millivolt = (uint16_t)(critical_high * 1000.0);
-	*vout_min_millivolt = (uint16_t)(critical_low * 1000.0);
-	return true;
-}
+// 	*vout_max_millivolt = (uint16_t)(critical_high * 1000.0);
+// 	*vout_min_millivolt = (uint16_t)(critical_low * 1000.0);
+// 	return true;
+// }
 
 bool plat_set_vout_range_min(uint8_t rail, uint16_t *millivolt)
 {
@@ -755,29 +752,29 @@ bool plat_set_vout_range_max(uint8_t rail, uint16_t *millivolt)
 	return true;
 }
 
-bool vr_vout_user_settings_get(void *user_settings)
-{
-	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
+// bool vr_vout_user_settings_get(void *user_settings)
+// {
+// 	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
 
-	/* read the user_settings from eeprom */
-	I2C_MSG msg = { 0 };
-	uint8_t retry = 5;
-	msg.bus = I2C_BUS12;
-	msg.target_addr = 0xA0 >> 1;
-	msg.tx_len = 2;
-	msg.data[0] = VR_VOUT_USER_SETTINGS_OFFSET >> 8;
-	msg.data[1] = VR_VOUT_USER_SETTINGS_OFFSET & 0xff;
-	msg.rx_len = sizeof(struct vr_vout_user_settings);
+// 	/* read the user_settings from eeprom */
+// 	I2C_MSG msg = { 0 };
+// 	uint8_t retry = 5;
+// 	msg.bus = I2C_BUS12;
+// 	msg.target_addr = 0xA0 >> 1;
+// 	msg.tx_len = 2;
+// 	msg.data[0] = VR_VOUT_USER_SETTINGS_OFFSET >> 8;
+// 	msg.data[1] = VR_VOUT_USER_SETTINGS_OFFSET & 0xff;
+// 	msg.rx_len = sizeof(struct vr_vout_user_settings);
 
-	if (i2c_master_read(&msg, retry)) {
-		LOG_ERR("Failed to read eeprom, bus: %d, addr: 0x%x, reg: 0x%x 0x%x", msg.bus,
-			msg.target_addr, msg.data[0], msg.data[1]);
-		return false;
-	}
-	memcpy(user_settings, msg.data, sizeof(struct vr_vout_user_settings));
+// 	if (i2c_master_read(&msg, retry)) {
+// 		LOG_ERR("Failed to read eeprom, bus: %d, addr: 0x%x, reg: 0x%x 0x%x", msg.bus,
+// 			msg.target_addr, msg.data[0], msg.data[1]);
+// 		return false;
+// 	}
+// 	memcpy(user_settings, msg.data, sizeof(struct vr_vout_user_settings));
 
-	return true;
-}
+// 	return true;
+// }
 
 bool vr_vout_user_settings_set(void *user_settings)
 {
@@ -901,111 +898,114 @@ int get_user_settings_alert_level_from_eeprom(void *user_settings, uint8_t data_
 	return 0;
 }
 
-static int alert_level_user_settings_init(void)
-{
-	char setting_data[4] = { 0 };
+// static int alert_level_user_settings_init(void)
+// {
+	// char setting_data[4] = { 0 };
 
-	if (get_user_settings_alert_level_from_eeprom(setting_data, sizeof(setting_data)) == -1) {
-		LOG_ERR("get alert level user settings failed");
-		return -1;
-	}
+	// if (get_user_settings_alert_level_from_eeprom(setting_data, sizeof(setting_data)) == -1) {
+	// 	LOG_ERR("get alert level user settings failed");
+	// 	return -1;
+	// }
 
-	int32_t alert_level_value = ((setting_data[3] << 24) | (setting_data[2] << 16) |
-				     (setting_data[1] << 8) | setting_data[0]);
+	// int32_t alert_level_value = ((setting_data[3] << 24) | (setting_data[2] << 16) |
+	// 			     (setting_data[1] << 8) | setting_data[0]);
 
-	if (alert_level_value != 0xffffffff) {
-		alert_level_mA_user_setting = alert_level_value;
-	} else {
-		alert_level_mA_user_setting = alert_level_mA_default;
-	}
+	// if (alert_level_value != 0xffffffff) {
+	// 	alert_level_mA_user_setting = alert_level_value;
+	// } else {
+	// 	alert_level_mA_user_setting = alert_level_mA_default;
+	// }
 
-	return 0;
-}
+// 	return 0;
+// }
 
-static bool soc_pcie_perst_user_settings_init(void)
-{
-	uint8_t setting_data = 0xFF;
-	if (!get_user_settings_soc_pcie_perst_from_eeprom(&setting_data, sizeof(setting_data))) {
-		LOG_ERR("get soc_pcie_perst user settings fail");
-		return false;
-	}
+// static bool soc_pcie_perst_user_settings_init(void)
+// {
+// 	uint8_t setting_data = 0xFF;
+// 	if (!get_user_settings_soc_pcie_perst_from_eeprom(&setting_data, sizeof(setting_data))) {
+// 		LOG_ERR("get soc_pcie_perst user settings fail");
+// 		return false;
+// 	}
 
-	if (setting_data != 0xFF) {
-		if (!plat_i2c_write(I2C_BUS5, AEGIS_CPLD_ADDR, 0x43, &setting_data,
-				    sizeof(setting_data))) {
-			LOG_ERR("Can't set soc_pcie_perst=%d by user settings", setting_data);
-			return false;
-		}
-	}
+// 	if (setting_data != 0xFF) {
+// 		if (!plat_i2c_write(I2C_BUS5, AEGIS_CPLD_ADDR, 0x43, &setting_data,
+// 				    sizeof(setting_data))) {
+// 			LOG_ERR("Can't set soc_pcie_perst=%d by user settings", setting_data);
+// 			return false;
+// 		}
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
 bool vr_vout_user_settings_init(void)
 {
-	if (vr_vout_user_settings_get(&user_settings) == false) {
-		LOG_ERR("get vout user settings fail");
-		return false;
-	}
+	LOG_INF("vr_vout_user_settings_init not use");
+	return false;
+	// if (vr_vout_user_settings_get(&user_settings) == false) {
+	// 	LOG_ERR("get vout user settings fail");
+	// 	return false;
+	// }
 
-	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-		if (user_settings.vout[i] != 0xffff) {
-			/* write vout */
-			uint16_t millivolt = user_settings.vout[i];
-			if (!plat_set_vout_command(i, &millivolt, false, false)) {
-				LOG_ERR("Can't set vout[%d]=%x by user settings", i, millivolt);
-				return false;
-			}
-			LOG_INF("set [%x]%s: %dmV", i, vr_rail_table[i].sensor_name,
-				user_settings.vout[i]);
-		}
-	}
+	// for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+	// 	if (user_settings.vout[i] != 0xffff) {
+	// 		/* write vout */
+	// 		uint16_t millivolt = user_settings.vout[i];
+	// 		if (!plat_set_vout_command(i, &millivolt, false, false)) {
+	// 			LOG_ERR("Can't set vout[%d]=%x by user settings", i, millivolt);
+	// 			return false;
+	// 		}
+	// 		LOG_INF("set [%x]%s: %dmV", i, vr_rail_table[i].sensor_name,
+	// 			user_settings.vout[i]);
+	// 	}
+	// }
 
-	return true;
+	// return true;
 }
 
 bool vr_vout_default_settings_init(void)
 {
-	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-		if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0)) {
-			default_settings.vout[i] = 0xffff;
-			continue; // skip osfp p3v3 on AEGIS BD
-		}
-		uint16_t vout = 0;
-		if (!plat_get_vout_command(i, &vout)) {
-			LOG_ERR("Can't find vout default by rail index: %d", i);
-			return false;
-		}
-		default_settings.vout[i] = vout;
-	}
+	LOG_INF("vr_vout_default_settings_init not use");
+	// for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+	// 	if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0)) {
+	// 		default_settings.vout[i] = 0xffff;
+	// 		continue; // skip osfp p3v3 on AEGIS BD
+	// 	}
+	// 	uint16_t vout = 0;
+	// 	if (!plat_get_vout_command(i, &vout)) {
+	// 		LOG_ERR("Can't find vout default by rail index: %d", i);
+	// 		return false;
+	// 	}
+	// 	default_settings.vout[i] = vout;
+	// }
 
-	return true;
+	return false;
 }
 
-static bool vr_vout_range_user_settings_init(void)
-{
-	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-		if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0)) {
-			vout_range_user_settings.default_vout_max[i] = 0xffff;
-			vout_range_user_settings.default_vout_min[i] = 0xffff;
-			vout_range_user_settings.change_vout_max[i] = 0xffff;
-			vout_range_user_settings.change_vout_min[i] = 0xffff;
-			continue; // skip osfp p3v3 on AEGIS BD
-		}
-		uint16_t vout_max = 0;
-		uint16_t vout_min = 0;
-		if (!plat_get_vout_range(i, &vout_max, &vout_min)) {
-			LOG_ERR("Can't find vout range default by rail index: %d", i);
-			return false;
-		}
-		vout_range_user_settings.default_vout_max[i] = vout_max;
-		vout_range_user_settings.default_vout_min[i] = vout_min;
-		vout_range_user_settings.change_vout_max[i] = vout_max;
-		vout_range_user_settings.change_vout_min[i] = vout_min;
-	}
+// static bool vr_vout_range_user_settings_init(void)
+// {
+// 	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+// 		if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0)) {
+// 			vout_range_user_settings.default_vout_max[i] = 0xffff;
+// 			vout_range_user_settings.default_vout_min[i] = 0xffff;
+// 			vout_range_user_settings.change_vout_max[i] = 0xffff;
+// 			vout_range_user_settings.change_vout_min[i] = 0xffff;
+// 			continue; // skip osfp p3v3 on AEGIS BD
+// 		}
+// 		uint16_t vout_max = 0;
+// 		uint16_t vout_min = 0;
+// 		if (!plat_get_vout_range(i, &vout_max, &vout_min)) {
+// 			LOG_ERR("Can't find vout range default by rail index: %d", i);
+// 			return false;
+// 		}
+// 		vout_range_user_settings.default_vout_max[i] = vout_max;
+// 		vout_range_user_settings.default_vout_min[i] = vout_min;
+// 		vout_range_user_settings.change_vout_max[i] = vout_max;
+// 		vout_range_user_settings.change_vout_min[i] = vout_min;
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
 bool temp_index_threshold_type_name_get(uint8_t type, uint8_t **name)
 {
@@ -1088,45 +1088,45 @@ bool temp_threshold_user_settings_set(void *temp_threshold_user_settings)
 	return true;
 }
 
-static bool temp_threshold_user_settings_init(void)
-{
-	if (temp_threshold_user_settings_get(&temp_threshold_user_settings) == false) {
-		LOG_ERR("get temp_threshold user settings fail");
-		return false;
-	}
+// static bool temp_threshold_user_settings_init(void)
+// {
+// 	if (temp_threshold_user_settings_get(&temp_threshold_user_settings) == false) {
+// 		LOG_ERR("get temp_threshold user settings fail");
+// 		return false;
+// 	}
 
-	for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
-		if (temp_threshold_user_settings.temperature_reg_val[i] != 0xffffffff) {
-			/* TODO: write temp_threshold */
-			uint32_t temp_threshold =
-				temp_threshold_user_settings.temperature_reg_val[i];
-			if (!plat_set_temp_threshold(i, &temp_threshold, false, false)) {
-				LOG_ERR("Can't set temp_threshold[%x]=%x by temp_threshold user settings",
-					i, temp_threshold);
-				return false;
-			}
-			LOG_INF("set [%x]%s: %d", i,
-				temp_index_threshold_type_table[i].temp_threshold_name,
-				temp_threshold_user_settings.temperature_reg_val[i]);
-		}
-	}
+// 	for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
+// 		if (temp_threshold_user_settings.temperature_reg_val[i] != 0xffffffff) {
+// 			/* TODO: write temp_threshold */
+// 			uint32_t temp_threshold =
+// 				temp_threshold_user_settings.temperature_reg_val[i];
+// 			if (!plat_set_temp_threshold(i, &temp_threshold, false, false)) {
+// 				LOG_ERR("Can't set temp_threshold[%x]=%x by temp_threshold user settings",
+// 					i, temp_threshold);
+// 				return false;
+// 			}
+// 			LOG_INF("set [%x]%s: %d", i,
+// 				temp_index_threshold_type_table[i].temp_threshold_name,
+// 				temp_threshold_user_settings.temperature_reg_val[i]);
+// 		}
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
-static bool temp_threshold_default_settings_init(void)
-{
-	for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
-		uint32_t temp_threshold = 0;
-		if (!plat_get_temp_threshold(i, &temp_threshold)) {
-			LOG_ERR("Can't find temp_threshold default by type index: %x", i);
-			return false;
-		}
-		temp_threshold_default_settings.temperature_reg_val[i] = temp_threshold;
-	}
+// static bool temp_threshold_default_settings_init(void)
+// {
+// 	for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
+// 		uint32_t temp_threshold = 0;
+// 		if (!plat_get_temp_threshold(i, &temp_threshold)) {
+// 			LOG_ERR("Can't find temp_threshold default by type index: %x", i);
+// 			return false;
+// 		}
+// 		temp_threshold_default_settings.temperature_reg_val[i] = temp_threshold;
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
 bool bootstrap_user_settings_get(void *bootstrap_user_settings)
 {
@@ -1341,101 +1341,101 @@ bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting
 	return false;
 }
 
-static bool thermaltrip_user_settings_init(void)
-{
-	uint8_t setting_data = 0xFF;
-	if (!get_user_settings_thermaltrip_from_eeprom(&setting_data, sizeof(setting_data))) {
-		LOG_ERR("get thermaltrip user settings fail");
-		return false;
-	}
+// static bool thermaltrip_user_settings_init(void)
+// {
+// 	uint8_t setting_data = 0xFF;
+// 	if (!get_user_settings_thermaltrip_from_eeprom(&setting_data, sizeof(setting_data))) {
+// 		LOG_ERR("get thermaltrip user settings fail");
+// 		return false;
+// 	}
 
-	if (setting_data != 0xFF) {
-		if (!plat_i2c_write(I2C_BUS5, AEGIS_CPLD_ADDR, CPLD_THERMALTRIP_SWITCH_ADDR,
-				    &setting_data, sizeof(setting_data))) {
-			LOG_ERR("Can't set thermaltrip=%d by user settings", setting_data);
-			return false;
-		}
-	}
+// 	if (setting_data != 0xFF) {
+// 		if (!plat_i2c_write(I2C_BUS5, AEGIS_CPLD_ADDR, CPLD_THERMALTRIP_SWITCH_ADDR,
+// 				    &setting_data, sizeof(setting_data))) {
+// 			LOG_ERR("Can't set thermaltrip=%d by user settings", setting_data);
+// 			return false;
+// 		}
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
-static bool bootstrap_user_settings_init(void)
-{
-	if (bootstrap_user_settings_get(&bootstrap_user_settings) == false) {
-		LOG_ERR("get bootstrap user settings fail");
-		return false;
-	}
+// static bool bootstrap_user_settings_init(void)
+// {
+// 	if (bootstrap_user_settings_get(&bootstrap_user_settings) == false) {
+// 		LOG_ERR("get bootstrap user settings fail");
+// 		return false;
+// 	}
 
-	for (int i = 0; i < STRAP_INDEX_MAX; i++) {
-		uint8_t is_perm = ((bootstrap_user_settings.user_setting_value[i] >> 8) != 0xff) ?
-					  true :
-					  false;
-		if (is_perm) {
-			// write bootstrap_table
-			uint8_t change_setting_value;
-			uint8_t drive_index_level =
-				bootstrap_user_settings.user_setting_value[i] & 0xFF;
-			if (!set_bootstrap_table_and_user_settings(
-				    i, &change_setting_value, drive_index_level, false, false)) {
-				LOG_ERR("set bootstrap_table[%2d]:%d failed", i, drive_index_level);
-				return false;
-			}
+// 	for (int i = 0; i < STRAP_INDEX_MAX; i++) {
+// 		uint8_t is_perm = ((bootstrap_user_settings.user_setting_value[i] >> 8) != 0xff) ?
+// 					  true :
+// 					  false;
+// 		if (is_perm) {
+// 			// write bootstrap_table
+// 			uint8_t change_setting_value;
+// 			uint8_t drive_index_level =
+// 				bootstrap_user_settings.user_setting_value[i] & 0xFF;
+// 			if (!set_bootstrap_table_and_user_settings(
+// 				    i, &change_setting_value, drive_index_level, false, false)) {
+// 				LOG_ERR("set bootstrap_table[%2d]:%d failed", i, drive_index_level);
+// 				return false;
+// 			}
 
-			// write cpld
-			if (!plat_i2c_write(I2C_BUS5, AEGIS_CPLD_ADDR,
-					    bootstrap_table[i].cpld_offsets, &change_setting_value,
-					    1)) {
-				LOG_ERR("Can't set bootstrap[%2d]=%02x by user settings", i,
-					change_setting_value);
-				return false;
-			}
+// 			// write cpld
+// 			if (!plat_i2c_write(I2C_BUS5, AEGIS_CPLD_ADDR,
+// 					    bootstrap_table[i].cpld_offsets, &change_setting_value,
+// 					    1)) {
+// 				LOG_ERR("Can't set bootstrap[%2d]=%02x by user settings", i,
+// 					change_setting_value);
+// 				return false;
+// 			}
 
-			LOG_INF("set [%2d]%s: %02x", i, bootstrap_table[i].strap_name,
-				change_setting_value);
-		}
-	}
+// 			LOG_INF("set [%2d]%s: %02x", i, bootstrap_table[i].strap_name,
+// 				change_setting_value);
+// 		}
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
-static bool bootstrap_default_settings_init(void)
-{
-	// read cpld value and write to bootstrap_table
-	for (int i = 0; i < STRAP_INDEX_MAX; i++) {
-		uint8_t data = 0;
-		if (!plat_i2c_read(I2C_BUS5, AEGIS_CPLD_ADDR, bootstrap_table[i].cpld_offsets,
-				   &data, 1)) {
-			LOG_ERR("Can't find bootstrap default by rail index from cpld: %d", i);
-			return false;
-		}
+// static bool bootstrap_default_settings_init(void)
+// {
+// 	// read cpld value and write to bootstrap_table
+// 	for (int i = 0; i < STRAP_INDEX_MAX; i++) {
+// 		uint8_t data = 0;
+// 		if (!plat_i2c_read(I2C_BUS5, AEGIS_CPLD_ADDR, bootstrap_table[i].cpld_offsets,
+// 				   &data, 1)) {
+// 			LOG_ERR("Can't find bootstrap default by rail index from cpld: %d", i);
+// 			return false;
+// 		}
 
-		uint8_t mask =
-			GENMASK(bootstrap_table[i].bit_offset + bootstrap_table[i].bit_count - 1,
-				bootstrap_table[i].bit_offset);
-		bootstrap_table[i].change_setting_value =
-			(data & mask) >> bootstrap_table[i].bit_offset;
-		if (bootstrap_table[i].reverse)
-			bootstrap_table[i].change_setting_value =
-				reverse_bits(bootstrap_table[i].change_setting_value,
-					     bootstrap_table[i].bit_count);
-	}
-	return true;
-}
+// 		uint8_t mask =
+// 			GENMASK(bootstrap_table[i].bit_offset + bootstrap_table[i].bit_count - 1,
+// 				bootstrap_table[i].bit_offset);
+// 		bootstrap_table[i].change_setting_value =
+// 			(data & mask) >> bootstrap_table[i].bit_offset;
+// 		if (bootstrap_table[i].reverse)
+// 			bootstrap_table[i].change_setting_value =
+// 				reverse_bits(bootstrap_table[i].change_setting_value,
+// 					     bootstrap_table[i].bit_count);
+// 	}
+// 	return true;
+// }
 
 /* init the user & default settings value by shell command */
 void user_settings_init(void)
 {
-	alert_level_user_settings_init();
-	vr_vout_default_settings_init();
+	// alert_level_user_settings_init();
+	// vr_vout_default_settings_init();
 	vr_vout_user_settings_init();
-	temp_threshold_default_settings_init();
-	temp_threshold_user_settings_init();
-	soc_pcie_perst_user_settings_init();
-	bootstrap_default_settings_init();
-	bootstrap_user_settings_init();
-	vr_vout_range_user_settings_init();
-	thermaltrip_user_settings_init();
+	// temp_threshold_default_settings_init();
+	// temp_threshold_user_settings_init();
+	// soc_pcie_perst_user_settings_init();
+	// bootstrap_default_settings_init();
+	// bootstrap_user_settings_init();
+	// vr_vout_range_user_settings_init();
+	// thermaltrip_user_settings_init();
 }
 
 bool get_bootstrap_change_drive_level(int rail, int *drive_level)
@@ -1709,64 +1709,66 @@ bool perm_config_clear(void)
 
 bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt)
 {
-	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
+	LOG_INF("plat_get_vout_command not use");
+	return false;
+	// CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
 
-	bool ret = false;
-	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
-	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+	// bool ret = false;
+	// uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+	// sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
-	if (cfg == NULL) {
-		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
-		return false;
-	}
+	// if (cfg == NULL) {
+	// 	LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+	// 	return false;
+// 	}
 
-	vr_pre_proc_arg *pre_proc_args = vr_pre_read_args + rail;
+// 	vr_pre_proc_arg *pre_proc_args = vr_pre_read_args + rail;
 
-	if (cfg->pre_sensor_read_hook) {
-		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
-			LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
-			goto err;
-		}
-	}
+// 	if (cfg->pre_sensor_read_hook) {
+// 		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
+// 			LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
+// 			goto err;
+// 		}
+// 	}
 
-	switch (cfg->type) {
-	case sensor_dev_isl69259:
-		if (!isl69260_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-			LOG_ERR("The VR ISL69260 vout reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_mp2971:
-		if (!mp2971_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-			LOG_ERR("The VR MPS2971 vout reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_mp29816a:
-		if (!mp29816a_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-			LOG_ERR("The VR MPS29816a vout reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_raa228249:
-		if (!raa228249_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-			LOG_ERR("The VR RAA228249 vout reading failed");
-			goto err;
-		}
-		break;
-	default:
-		LOG_ERR("Unsupport VR type(%x)", cfg->type);
-		goto err;
-	}
+// 	switch (cfg->type) {
+// 	case sensor_dev_isl69259:
+// 		if (!isl69260_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+// 			LOG_ERR("The VR ISL69260 vout reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_mp2971:
+// 		if (!mp2971_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+// 			LOG_ERR("The VR MPS2971 vout reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_mp29816a:
+// 		if (!mp29816a_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+// 			LOG_ERR("The VR MPS29816a vout reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_raa228249:
+// 		if (!raa228249_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+// 			LOG_ERR("The VR RAA228249 vout reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	default:
+// 		LOG_ERR("Unsupport VR type(%x)", cfg->type);
+// 		goto err;
+// 	}
 
-	ret = true;
-err:
-	if (cfg->post_sensor_read_hook) {
-		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
-			LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
-		}
-	}
-	return ret;
+// 	ret = true;
+// err:
+// 	if (cfg->post_sensor_read_hook) {
+// 		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
+// 			LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
+// 		}
+// 	}
+// 	return ret;
 }
 
 bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_default, bool is_perm)
@@ -2052,152 +2054,152 @@ bool plat_set_temp_threshold(uint8_t temp_index_threshold_type, uint32_t *millid
 	return true;
 }
 
-#define PLAT_TMP432_THERM_HYSTERESIS_VAL 0x64 //100
+// #define PLAT_TMP432_THERM_HYSTERESIS_VAL 0x64 //100
 
 #ifndef TMP432_THERM_HYSTERESIS_REG
 #define TMP432_THERM_HYSTERESIS_REG 0x21
 #endif
 
-void init_temp_alert_mode(void)
-{
-	size_t num_of_temp = sizeof(temp_index_table) / sizeof(temp_index_table[0]);
+// void init_temp_alert_mode(void)
+// {
+// 	size_t num_of_temp = sizeof(temp_index_table) / sizeof(temp_index_table[0]);
 
-	for (size_t i = 0; i < num_of_temp; i++) {
-		uint32_t sensor_id = temp_index_table[i].sensor_id;
-		const char *name = temp_index_table[i].sensor_name;
+// 	for (size_t i = 0; i < num_of_temp; i++) {
+// 		uint32_t sensor_id = temp_index_table[i].sensor_id;
+// 		const char *name = temp_index_table[i].sensor_name;
 
-		if (sensor_id != ASIC_DIE_ATH_SENSOR_0_TEMP_C &&
-		    sensor_id != ASIC_DIE_ATH_SENSOR_1_TEMP_C) {
-			continue;
-		}
+// 		if (sensor_id != ASIC_DIE_ATH_SENSOR_0_TEMP_C &&
+// 		    sensor_id != ASIC_DIE_ATH_SENSOR_1_TEMP_C) {
+// 			continue;
+// 		}
 
-		const sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
-		if (cfg == NULL) {
-			LOG_ERR("Failed to get sensor config for sensor %s (0x%x)", name,
-				sensor_id);
-			continue;
-		}
+// 		const sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+// 		if (cfg == NULL) {
+// 			LOG_ERR("Failed to get sensor config for sensor %s (0x%x)", name,
+// 				sensor_id);
+// 			continue;
+// 		}
 
-		//set to temp alert mode
-		uint8_t data = 0;
-		if (!plat_i2c_read(cfg->port, cfg->target_addr, TMP432_CONFIG_READ_REG1, &data,
-				   1)) {
-			LOG_ERR("Failed to read TMP432 config for sensor %s (0x%x), set TMP432_CONFIG_WRITE_REG1 to %lx ",
-				name, sensor_id, BIT(5));
-		}
+// 		//set to temp alert mode
+// 		uint8_t data = 0;
+// 		if (!plat_i2c_read(cfg->port, cfg->target_addr, TMP432_CONFIG_READ_REG1, &data,
+// 				   1)) {
+// 			LOG_ERR("Failed to read TMP432 config for sensor %s (0x%x), set TMP432_CONFIG_WRITE_REG1 to %lx ",
+// 				name, sensor_id, BIT(5));
+// 		}
 
-		data |= BIT(5);
-		if (!plat_i2c_write(cfg->port, cfg->target_addr, TMP432_CONFIG_WRITE_REG1, &data,
-				    1)) {
-			LOG_ERR("Failed to set TMP432 to temp alert mode for sensor %s (0x%x)",
-				name, sensor_id);
-		} else {
-			LOG_INF("Sensor %s (0x%x) init temp alert mode successfully", name,
-				sensor_id);
-		}
+// 		data |= BIT(5);
+// 		if (!plat_i2c_write(cfg->port, cfg->target_addr, TMP432_CONFIG_WRITE_REG1, &data,
+// 				    1)) {
+// 			LOG_ERR("Failed to set TMP432 to temp alert mode for sensor %s (0x%x)",
+// 				name, sensor_id);
+// 		} else {
+// 			LOG_INF("Sensor %s (0x%x) init temp alert mode successfully", name,
+// 				sensor_id);
+// 		}
 
-		//set therm hysteresis
-		data = PLAT_TMP432_THERM_HYSTERESIS_VAL;
-		if (!plat_i2c_write(cfg->port, cfg->target_addr, TMP432_THERM_HYSTERESIS_REG, &data,
-				    1)) {
-			LOG_ERR("Failed to set TMP432 therm hysteresis to %d for sensor %s (0x%x)",
-				PLAT_TMP432_THERM_HYSTERESIS_VAL, name, sensor_id);
-			continue;
-		}
+// 		//set therm hysteresis
+// 		data = PLAT_TMP432_THERM_HYSTERESIS_VAL;
+// 		if (!plat_i2c_write(cfg->port, cfg->target_addr, TMP432_THERM_HYSTERESIS_REG, &data,
+// 				    1)) {
+// 			LOG_ERR("Failed to set TMP432 therm hysteresis to %d for sensor %s (0x%x)",
+// 				PLAT_TMP432_THERM_HYSTERESIS_VAL, name, sensor_id);
+// 			continue;
+// 		}
 
-		LOG_INF("Sensor %s (0x%x) init therm hysteresis to %d successfully", name,
-			sensor_id, PLAT_TMP432_THERM_HYSTERESIS_VAL);
-	}
-}
+// 		LOG_INF("Sensor %s (0x%x) init therm hysteresis to %d successfully", name,
+// 			sensor_id, PLAT_TMP432_THERM_HYSTERESIS_VAL);
+// 	}
+// }
 
-void init_temp_limit(void)
-{
-	uint8_t followed_ucr_lcr_limit_temp[] = { DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT,
-						  DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT,
-						  DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT,
-						  DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT };
+// void init_temp_limit(void)
+// {
+// 	uint8_t followed_ucr_lcr_limit_temp[] = { DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT,
+// 						  DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT,
+// 						  DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT,
+// 						  DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT };
 
-	uint8_t followed_ucr_only_limit_temp[] = { TOP_INLET_HIGH_LIMIT, TOP_OUTLET_HIGH_LIMIT,
-						   BOT_INLET_HIGH_LIMIT, BOT_OUTLET_HIGH_LIMIT };
+// 	uint8_t followed_ucr_only_limit_temp[] = { TOP_INLET_HIGH_LIMIT, TOP_OUTLET_HIGH_LIMIT,
+// 						   BOT_INLET_HIGH_LIMIT, BOT_OUTLET_HIGH_LIMIT };
 
-	uint8_t followed_ucr_only_limit_on_die_local_temp[] = { TEMP_INDEX_ON_DIE_ATH_0_N_OWL,
-								TEMP_INDEX_ON_DIE_ATH_1_S_OWL };
+// 	uint8_t followed_ucr_only_limit_on_die_local_temp[] = { TEMP_INDEX_ON_DIE_ATH_0_N_OWL,
+// 								TEMP_INDEX_ON_DIE_ATH_1_S_OWL };
 
-	for (int i = 0; i < ARRAY_SIZE(followed_ucr_lcr_limit_temp); i++) {
-		float critical_high = 0;
-		float critical_low = 0;
-		uint8_t sensor_id =
-			temp_index_threshold_type_table[followed_ucr_lcr_limit_temp[i]].sensor_id;
-		get_pdr_table_critical_high_and_low_with_sensor_id(sensor_id, &critical_high,
-								   &critical_low);
+// 	for (int i = 0; i < ARRAY_SIZE(followed_ucr_lcr_limit_temp); i++) {
+// 		float critical_high = 0;
+// 		float critical_low = 0;
+// 		uint8_t sensor_id =
+// 			temp_index_threshold_type_table[followed_ucr_lcr_limit_temp[i]].sensor_id;
+// 		get_pdr_table_critical_high_and_low_with_sensor_id(sensor_id, &critical_high,
+// 								   &critical_low);
 
-		uint32_t high_threshold = (uint32_t)(critical_high * 1000);
-		uint32_t low_threshold = (uint32_t)(critical_low * 1000);
-		LOG_INF("set %s: %d",
-			temp_index_threshold_type_table[(followed_ucr_lcr_limit_temp[i] + 1)]
-				.temp_threshold_name,
-			low_threshold);
-		// low limit enum is followed_ucr_lcr_limit_temp[i] + 1
-		plat_set_temp_threshold((followed_ucr_lcr_limit_temp[i] + 1), &low_threshold, false,
-					false);
+// 		uint32_t high_threshold = (uint32_t)(critical_high * 1000);
+// 		uint32_t low_threshold = (uint32_t)(critical_low * 1000);
+// 		LOG_INF("set %s: %d",
+// 			temp_index_threshold_type_table[(followed_ucr_lcr_limit_temp[i] + 1)]
+// 				.temp_threshold_name,
+// 			low_threshold);
+// 		// low limit enum is followed_ucr_lcr_limit_temp[i] + 1
+// 		plat_set_temp_threshold((followed_ucr_lcr_limit_temp[i] + 1), &low_threshold, false,
+// 					false);
 
-		LOG_INF("set %s: %d",
-			temp_index_threshold_type_table[followed_ucr_lcr_limit_temp[i]]
-				.temp_threshold_name,
-			high_threshold);
-		plat_set_temp_threshold(followed_ucr_lcr_limit_temp[i], &high_threshold, false,
-					false);
-	}
+// 		LOG_INF("set %s: %d",
+// 			temp_index_threshold_type_table[followed_ucr_lcr_limit_temp[i]]
+// 				.temp_threshold_name,
+// 			high_threshold);
+// 		plat_set_temp_threshold(followed_ucr_lcr_limit_temp[i], &high_threshold, false,
+// 					false);
+// 	}
 
-	for (int i = 0; i < ARRAY_SIZE(followed_ucr_only_limit_temp); i++) {
-		float critical_high = 0;
-		float critical_low = 0;
-		uint8_t sensor_id =
-			temp_index_threshold_type_table[followed_ucr_only_limit_temp[i]].sensor_id;
-		get_pdr_table_critical_high_and_low_with_sensor_id(sensor_id, &critical_high,
-								   &critical_low);
+// 	for (int i = 0; i < ARRAY_SIZE(followed_ucr_only_limit_temp); i++) {
+// 		float critical_high = 0;
+// 		float critical_low = 0;
+// 		uint8_t sensor_id =
+// 			temp_index_threshold_type_table[followed_ucr_only_limit_temp[i]].sensor_id;
+// 		get_pdr_table_critical_high_and_low_with_sensor_id(sensor_id, &critical_high,
+// 								   &critical_low);
 
-		// set low limit to high limit - 2 degree
-		// set low limit first to avoid the temp alert jump
-		uint32_t dynamic_threshold = (uint32_t)(critical_high * 1000);
-		uint32_t low_threshold = dynamic_threshold - 2000;
-		LOG_INF("set %s: %d",
-			temp_index_threshold_type_table[(followed_ucr_only_limit_temp[i] - 1)]
-				.temp_threshold_name,
-			low_threshold);
-		// low limit enum is followed_ucr_only_limit_temp[i] - 1
-		plat_set_temp_threshold((followed_ucr_only_limit_temp[i] - 1), &low_threshold,
-					false, false);
+// 		// set low limit to high limit - 2 degree
+// 		// set low limit first to avoid the temp alert jump
+// 		uint32_t dynamic_threshold = (uint32_t)(critical_high * 1000);
+// 		uint32_t low_threshold = dynamic_threshold - 2000;
+// 		LOG_INF("set %s: %d",
+// 			temp_index_threshold_type_table[(followed_ucr_only_limit_temp[i] - 1)]
+// 				.temp_threshold_name,
+// 			low_threshold);
+// 		// low limit enum is followed_ucr_only_limit_temp[i] - 1
+// 		plat_set_temp_threshold((followed_ucr_only_limit_temp[i] - 1), &low_threshold,
+// 					false, false);
 
-		LOG_INF("set %s: %d",
-			temp_index_threshold_type_table[followed_ucr_only_limit_temp[i]]
-				.temp_threshold_name,
-			dynamic_threshold);
-		plat_set_temp_threshold(followed_ucr_only_limit_temp[i], &dynamic_threshold, false,
-					false);
-	}
+// 		LOG_INF("set %s: %d",
+// 			temp_index_threshold_type_table[followed_ucr_only_limit_temp[i]]
+// 				.temp_threshold_name,
+// 			dynamic_threshold);
+// 		plat_set_temp_threshold(followed_ucr_only_limit_temp[i], &dynamic_threshold, false,
+// 					false);
+// 	}
 
-	for (int i = 0; i < ARRAY_SIZE(followed_ucr_only_limit_on_die_local_temp); i++) {
-		float critical_high = 130;
-		uint8_t sensor_id =
-			temp_index_table[followed_ucr_only_limit_on_die_local_temp[i]].sensor_id;
-		sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+// 	for (int i = 0; i < ARRAY_SIZE(followed_ucr_only_limit_on_die_local_temp); i++) {
+// 		float critical_high = 130;
+// 		uint8_t sensor_id =
+// 			temp_index_table[followed_ucr_only_limit_on_die_local_temp[i]].sensor_id;
+// 		sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
-		uint32_t high_threshold = (uint32_t)(critical_high * 1000);
-		LOG_INF("set %s %s: %d",
-			temp_index_table[followed_ucr_only_limit_on_die_local_temp[i]].sensor_name,
-			"LOCAL_HIGH_LIMIT", high_threshold);
-		switch (cfg->type) {
-		case sensor_dev_tmp431:
-			tmp432_set_temp_threshold(cfg, LOCAL_HIGH_LIMIT, &high_threshold);
-			break;
-		case sensor_dev_emc1413:
-			emc1413_set_temp_threshold(cfg, LOCAL_HIGH_LIMIT, &high_threshold);
-			break;
-		default:
-			LOG_ERR("Unsupport temp type(%x)", cfg->type);
-		}
-	}
+// 		uint32_t high_threshold = (uint32_t)(critical_high * 1000);
+// 		LOG_INF("set %s %s: %d",
+// 			temp_index_table[followed_ucr_only_limit_on_die_local_temp[i]].sensor_name,
+// 			"LOCAL_HIGH_LIMIT", high_threshold);
+// 		switch (cfg->type) {
+// 		case sensor_dev_tmp431:
+// 			tmp432_set_temp_threshold(cfg, LOCAL_HIGH_LIMIT, &high_threshold);
+// 			break;
+// 		case sensor_dev_emc1413:
+// 			emc1413_set_temp_threshold(cfg, LOCAL_HIGH_LIMIT, &high_threshold);
+// 			break;
+// 		default:
+// 			LOG_ERR("Unsupport temp type(%x)", cfg->type);
+// 		}
+// 	}
 
-	LOG_INF("temp limit init done");
-}
+// 	LOG_INF("temp limit init done");
+// }

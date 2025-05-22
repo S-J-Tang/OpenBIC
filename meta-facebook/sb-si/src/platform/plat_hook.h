@@ -19,7 +19,7 @@
 
 #include "sensor.h"
 
-#define VR_MAX_NUM 11
+#define VR_MAX_NUM 8
 #define VR_MUTEX_LOCK_TIMEOUT_MS 1000
 
 #include "plat_pldm_sensor.h"
@@ -229,7 +229,7 @@ typedef struct bootstrap_mapping_register {
 	bool reverse;
 } bootstrap_mapping_register;
 
-bool plat_get_vout_range(uint8_t rail, uint16_t *vout_max_millivolt, uint16_t *vout_min_millivolt);
+// bool plat_get_vout_range(uint8_t rail, uint16_t *vout_max_millivolt, uint16_t *vout_min_millivolt);
 bool plat_set_vout_range_min(uint8_t rail, uint16_t *millivolt);
 bool plat_set_vout_range_max(uint8_t rail, uint16_t *millivolt);
 bool temp_sensor_rail_name_get(uint8_t rail, uint8_t **name);
@@ -257,7 +257,7 @@ bool set_user_settings_soc_pcie_perst_to_eeprom(void *user_settings, uint8_t dat
 bool get_user_settings_soc_pcie_perst_from_eeprom(void *user_settings, uint8_t data_length);
 bool vr_rail_voltage_peak_get(uint8_t *name, int *peak_value);
 bool vr_rail_voltage_peak_clear(uint8_t rail_index);
-bool vr_vout_user_settings_get(void *user_settings);
+// bool vr_vout_user_settings_get(void *user_settings);
 void user_settings_init(void);
 bool temp_index_threshold_type_name_get(uint8_t type, uint8_t **name);
 bool temp_threshold_type_enum_get(uint8_t *name, uint8_t *num);

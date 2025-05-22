@@ -282,33 +282,33 @@ void plat_clock_init(void)
 		k_work_schedule(&check_clk_buffer_work, K_MSEC(200));
 }
 
-void plat_eusb_init(void)
-{
-	LOG_DBG("plat_eusb_init started");
-	uint8_t board_stage = get_board_stage();
-	if (board_stage == FAB2_DVT || board_stage == FAB3_PVT || board_stage == FAB4_MP) {
-		uint8_t data[1] = { 0 };
-		if (!plat_i2c_read(I2C_BUS1, AEGIS_EUSB_REPEATER_ADDR, 0x05, data, 1)) {
-			LOG_ERR("Failed to read eUSB Repeater");
-			return;
-		}
+// void plat_eusb_init(void)
+// {
+// 	LOG_DBG("plat_eusb_init started");
+// 	uint8_t board_stage = get_board_stage();
+// 	if (board_stage == FAB2_DVT || board_stage == FAB3_PVT || board_stage == FAB4_MP) {
+// 		uint8_t data[1] = { 0 };
+// 		if (!plat_i2c_read(I2C_BUS1, AEGIS_EUSB_REPEATER_ADDR, 0x05, data, 1)) {
+// 			LOG_ERR("Failed to read eUSB Repeater");
+// 			return;
+// 		}
 
-		uint8_t eusb_default_setting = data[0];
-		if (eusb_default_setting == 0x10) {
-			memset(data, 0, sizeof(data));
-			memcpy(data, (uint8_t[]){ 0x20 }, 1);
-			if (!plat_i2c_write(I2C_BUS1, AEGIS_EUSB_REPEATER_ADDR, 0x05, data, 1)) {
-				LOG_ERR("Failed to write eUSB Repeater");
-				return;
-			}
-			LOG_INF("Init eUSB Repeater, set offset 0x05 to 0x20, default seeting=0x%02X",
-				eusb_default_setting);
-		} else {
-			LOG_INF("eUSB Repeater offset 0x05 default seeting=0x%02X",
-				eusb_default_setting);
-		}
-	}
-}
+// 		uint8_t eusb_default_setting = data[0];
+// 		if (eusb_default_setting == 0x10) {
+// 			memset(data, 0, sizeof(data));
+// 			memcpy(data, (uint8_t[]){ 0x20 }, 1);
+// 			if (!plat_i2c_write(I2C_BUS1, AEGIS_EUSB_REPEATER_ADDR, 0x05, data, 1)) {
+// 				LOG_ERR("Failed to write eUSB Repeater");
+// 				return;
+// 			}
+// 			LOG_INF("Init eUSB Repeater, set offset 0x05 to 0x20, default seeting=0x%02X",
+// 				eusb_default_setting);
+// 		} else {
+// 			LOG_INF("eUSB Repeater offset 0x05 default seeting=0x%02X",
+// 				eusb_default_setting);
+// 		}
+// 	}
+// }
 
 bool plat_power_control(bool is_power_on)
 {
