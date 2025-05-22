@@ -43,13 +43,13 @@ LOG_MODULE_REGISTER(plat_init);
 void pal_pre_init()
 {
 	/* init i2c target */
-	for (int index = 0; index < MAX_TARGET_NUM; index++) {
-		if (I2C_TARGET_ENABLE_TABLE[index])
-			i2c_target_control(
-				index, (struct _i2c_target_config *)&I2C_TARGET_CONFIG_TABLE[index],
-				1);
-	}
-	init_platform_config();
+	// for (int index = 0; index < MAX_TARGET_NUM; index++) {
+	// 	if (I2C_TARGET_ENABLE_TABLE[index])
+	// 		i2c_target_control(
+	// 			index, (struct _i2c_target_config *)&I2C_TARGET_CONFIG_TABLE[index],
+	// 			1);
+	// }
+	// init_platform_config();
 	plat_led_init();
 	vr_mutex_init();
 	pwr_level_mutex_init();
@@ -76,7 +76,7 @@ void pal_post_init()
 	init_fru_info();
 	init_load_eeprom_log();
 	plat_set_ac_on_log();
-	init_cpld_polling();
+	// init_cpld_polling();
 	sensor_data_table_init();
 
 	LOG_INF("Init done");

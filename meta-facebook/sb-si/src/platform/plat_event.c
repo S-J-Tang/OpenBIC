@@ -447,71 +447,71 @@ bool vr_error_callback(aegis_cpld_info *cpld_info, uint8_t *current_cpld_value)
 	return true;
 }
 
-void poll_cpld_registers()
-{
-	uint8_t data = 0;
-	bool prev_alert_status = false;
+// void poll_cpld_registers()
+// {
+// 	uint8_t data = 0;
+// 	bool prev_alert_status = false;
 
-	while (1) {
-		/* Sleep for the polling interval */
-		k_msleep(CPLD_POLLING_INTERVAL_MS);
+// 	while (1) {
+// 		/* Sleep for the polling interval */
+// 		k_msleep(CPLD_POLLING_INTERVAL_MS);
 
-		LOG_DBG("cpld_polling_alert_status = %d, cpld_polling_enable_flag = %d",
-			cpld_polling_alert_status, cpld_polling_enable_flag);
+// 		LOG_DBG("cpld_polling_alert_status = %d, cpld_polling_enable_flag = %d",
+// 			cpld_polling_alert_status, cpld_polling_enable_flag);
 
-		// Check for falling edge of cpld_polling_alert_status (true -> false)
-		if (prev_alert_status && !cpld_polling_alert_status) {
-			uint8_t err_type = CPLD_UNEXPECTED_VAL_TRIGGER_CAUSE;
-			LOG_DBG("cpld_polling_alert_status: true -> false, reset_error_log_states: %x",
-				err_type);
-			reset_error_log_states(err_type);
-		}
-		// Save current alert status for next loop comparison
-		prev_alert_status = cpld_polling_alert_status;
+// 		// Check for falling edge of cpld_polling_alert_status (true -> false)
+// 		if (prev_alert_status && !cpld_polling_alert_status) {
+// 			uint8_t err_type = CPLD_UNEXPECTED_VAL_TRIGGER_CAUSE;
+// 			LOG_DBG("cpld_polling_alert_status: true -> false, reset_error_log_states: %x",
+// 				err_type);
+// 			reset_error_log_states(err_type);
+// 		}
+// 		// Save current alert status for next loop comparison
+// 		prev_alert_status = cpld_polling_alert_status;
 
-		if (!cpld_polling_alert_status || !cpld_polling_enable_flag)
-			continue;
+// 		if (!cpld_polling_alert_status || !cpld_polling_enable_flag)
+// 			continue;
 
-		LOG_DBG("Polling CPLD registers");
+// 		LOG_DBG("Polling CPLD registers");
 
-		for (size_t i = 0; i < ARRAY_SIZE(aegis_cpld_info_table); i++) {
-			uint8_t expected_val = ubc_enabled_delayed_status ?
-						       aegis_cpld_info_table[i].dc_on_defaut :
-						       aegis_cpld_info_table[i].dc_off_defaut;
+// 		for (size_t i = 0; i < ARRAY_SIZE(aegis_cpld_info_table); i++) {
+// 			uint8_t expected_val = ubc_enabled_delayed_status ?
+// 						       aegis_cpld_info_table[i].dc_on_defaut :
+// 						       aegis_cpld_info_table[i].dc_off_defaut;
 
-			// Read from CPLD
-			if (!plat_read_cpld(aegis_cpld_info_table[i].cpld_offset, &data)) {
-				LOG_ERR("Failed to read CPLD register 0x%02X",
-					aegis_cpld_info_table[i].cpld_offset);
-				continue;
-			}
+// 			// Read from CPLD
+// 			if (!plat_read_cpld(aegis_cpld_info_table[i].cpld_offset, &data)) {
+// 				LOG_ERR("Failed to read CPLD register 0x%02X",
+// 					aegis_cpld_info_table[i].cpld_offset);
+// 				continue;
+// 			}
 
-			LOG_DBG("Polling CPLD 0x%02X raw=0x%02X, expected=0x%02X, mask=0x%02X",
-				aegis_cpld_info_table[i].cpld_offset, data, expected_val,
-				aegis_cpld_info_table[i].bit_check_mask);
+// 			LOG_DBG("Polling CPLD 0x%02X raw=0x%02X, expected=0x%02X, mask=0x%02X",
+// 				aegis_cpld_info_table[i].cpld_offset, data, expected_val,
+// 				aegis_cpld_info_table[i].bit_check_mask);
 
-			if (!aegis_cpld_info_table[i].is_fault_log)
-				continue;
+// 			if (!aegis_cpld_info_table[i].is_fault_log)
+// 				continue;
 
-			uint8_t new_fault_map =
-				(data ^ expected_val) & aegis_cpld_info_table[i].bit_check_mask;
+// 			uint8_t new_fault_map =
+// 				(data ^ expected_val) & aegis_cpld_info_table[i].bit_check_mask;
 
-			// get unrecorded fault bit map
-			uint8_t is_status_changed =
-				new_fault_map ^ aegis_cpld_info_table[i].is_fault_bit_map;
+// 			// get unrecorded fault bit map
+// 			uint8_t is_status_changed =
+// 				new_fault_map ^ aegis_cpld_info_table[i].is_fault_bit_map;
 
-			if (is_status_changed) {
-				if (aegis_cpld_info_table[i].status_changed_cb) {
-					aegis_cpld_info_table[i].status_changed_cb(
-						&aegis_cpld_info_table[i], &data);
-				}
-				// update map
-				aegis_cpld_info_table[i].is_fault_bit_map = new_fault_map;
-				aegis_cpld_info_table[i].last_polling_value = data;
-			}
-		}
-	}
-}
+// 			if (is_status_changed) {
+// 				if (aegis_cpld_info_table[i].status_changed_cb) {
+// 					aegis_cpld_info_table[i].status_changed_cb(
+// 						&aegis_cpld_info_table[i], &data);
+// 				}
+// 				// update map
+// 				aegis_cpld_info_table[i].is_fault_bit_map = new_fault_map;
+// 				aegis_cpld_info_table[i].last_polling_value = data;
+// 			}
+// 		}
+// 	}
+// }
 
 void check_cpld_handler()
 {
@@ -526,20 +526,20 @@ void check_cpld_handler()
 	k_work_schedule(&check_cpld_work, K_MSEC(5000));
 }
 
-void init_cpld_polling(void)
-{
-	check_cpld_polling_alert_status();
+// void init_cpld_polling(void)
+// {
+// 	check_cpld_polling_alert_status();
 
-	cpld_polling_tid =
-		k_thread_create(&cpld_polling_thread, cpld_polling_stack,
-				K_THREAD_STACK_SIZEOF(cpld_polling_stack), poll_cpld_registers,
-				NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0,
-				K_MSEC(1000)); /* Start accessing CPLD 2 seconds after BIC reboot 
-                   (1-second thread start delay + 1-second CPLD_POLLING_INTERVAL_MS) 
-                   to prevent DC status changes during BIC reboot */
-	k_thread_name_set(&cpld_polling_thread, "cpld_polling_thread");
+// 	cpld_polling_tid =
+// 		k_thread_create(&cpld_polling_thread, cpld_polling_stack,
+// 				K_THREAD_STACK_SIZEOF(cpld_polling_stack), poll_cpld_registers,
+// 				NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0,
+// 				K_MSEC(1000)); /* Start accessing CPLD 2 seconds after BIC reboot 
+//                    (1-second thread start delay + 1-second CPLD_POLLING_INTERVAL_MS) 
+//                    to prevent DC status changes during BIC reboot */
+// 	k_thread_name_set(&cpld_polling_thread, "cpld_polling_thread");
 
-	k_timer_start(&init_ubc_delayed_timer, K_MSEC(1000), K_NO_WAIT);
+// 	k_timer_start(&init_ubc_delayed_timer, K_MSEC(1000), K_NO_WAIT);
 
-	k_work_schedule(&check_cpld_work, K_MSEC(100));
-}
+// 	k_work_schedule(&check_cpld_work, K_MSEC(100));
+// }

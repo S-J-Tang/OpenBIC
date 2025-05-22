@@ -55,7 +55,7 @@
 #define STRAP_SET_TYPE 0x44 // 01000100
 #define TELEMETRY_MSG_MAX_LENGTH 32
 
-static bool command_reply_data_handle(void *arg);
+// static bool command_reply_data_handle(void *arg);
 void set_bootstrap_element_handler();
 K_WORK_DEFINE(set_bootstrap_element_work, set_bootstrap_element_handler);
 
@@ -146,27 +146,27 @@ static uint8_t user_setting_level;
 
 LOG_MODULE_REGISTER(plat_i2c_target);
 /* I2C target init-enable table */
-const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
-	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_ENABLE,
-	TARGET_DISABLE, TARGET_DISABLE, TARGET_ENABLE,	TARGET_DISABLE,
-	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
-};
+// const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
+// 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_ENABLE,
+// 	TARGET_DISABLE, TARGET_DISABLE, TARGET_ENABLE,	TARGET_DISABLE,
+// 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
+// };
 
 /* I2C target init-config table */
-const struct _i2c_target_config I2C_TARGET_CONFIG_TABLE[MAX_TARGET_NUM] = {
-	{ 0xFF, 0xA },
-	{ 0xFF, 0xA },
-	{ 0xFF, 0xA },
-	{ 0x40, 0xA },
-	{ 0xFF, 0xA },
-	{ 0xFF, 0xA },
-	{ 0x40, 0xA, command_reply_data_handle },
-	{ 0xFF, 0xA },
-	{ 0xFF, 0xA },
-	{ 0xFF, 0xA },
-	{ 0xFF, 0xA },
-	{ 0xFF, 0xA },
-};
+// const struct _i2c_target_config I2C_TARGET_CONFIG_TABLE[MAX_TARGET_NUM] = {
+// 	{ 0xFF, 0xA },
+// 	{ 0xFF, 0xA },
+// 	{ 0xFF, 0xA },
+// 	{ 0x40, 0xA },
+// 	{ 0xFF, 0xA },
+// 	{ 0xFF, 0xA },
+// 	{ 0x40, 0xA, command_reply_data_handle },
+// 	{ 0xFF, 0xA },
+// 	{ 0xFF, 0xA },
+// 	{ 0xFF, 0xA },
+// 	{ 0xFF, 0xA },
+// 	{ 0xFF, 0xA },
+// };
 
 plat_sensor_init_data_0_1 *sensor_init_data_0_1_table[DATA_TABLE_LENGTH_2] = { NULL };
 plat_sensor_init_data_2_5 *sensor_init_data_2_5_table[DATA_TABLE_LENGTH_4] = { NULL };
@@ -649,142 +649,142 @@ telemetry_info telemetry_info_table[] = {
 	{ FRU_PRODUCT_CUSTOM_DATA_2_REG, 0x00, .sensor_data_init = initialize_sensor_data_70_76 },
 };
 
-static bool command_reply_data_handle(void *arg)
-{
-	struct i2c_target_data *data = (struct i2c_target_data *)arg;
+// static bool command_reply_data_handle(void *arg)
+// {
+// 	struct i2c_target_data *data = (struct i2c_target_data *)arg;
 
-	/*TODO: put board telemetry here*/
+// 	/*TODO: put board telemetry here*/
 
-	/* Only check fisrt byte from received data */
-	if (data->wr_buffer_idx >= 1) {
-		if (data->wr_buffer_idx == 1) {
-			uint8_t reg_offset = data->target_wr_msg.msg[0];
-			size_t struct_size = 0;
-			for (int i = 0; i < ARRAY_SIZE(telemetry_info_table); i++) {
-				if (telemetry_info_table[i].telemetry_offset == reg_offset) {
-					struct_size = telemetry_info_table[i].data_size;
-					break;
-				}
-			}
-			// Make sure the target buffer is not exceeded when reading
-			if (struct_size > sizeof(data->target_rd_msg.msg)) {
-				struct_size = sizeof(data->target_rd_msg.msg);
-			}
-			switch (reg_offset) {
-			case SENSOR_INIT_DATA_0_REG:
-			case SENSOR_INIT_DATA_1_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_init_data_0_1_table[reg_offset -
-								  SENSOR_INIT_DATA_0_REG],
-				       struct_size);
-			} break;
-			case SENSOR_READING_0_REG:
-			case SENSOR_READING_1_REG:
-			case SENSOR_READING_2_REG:
-			case SENSOR_READING_3_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_init_data_2_5_table[reg_offset - SENSOR_READING_0_REG],
-				       struct_size);
-			} break;
-			case INVENTORY_IDS_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_init_data_6_table[reg_offset - INVENTORY_IDS_REG],
-				       struct_size);
-			} break;
-			case STRAP_CAPABILTITY_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_init_data_8_table[reg_offset - STRAP_CAPABILTITY_REG],
-				       struct_size);
-			} break;
-			case FRU_BOARD_PART_NUMBER_REG:
-			case FRU_BOARD_SERIAL_NUMBER_REG:
-			case FRU_BOARD_PRODUCT_NAME_REG:
-			case FRU_BOARD_CUSTOM_DATA_1_REG:
-			case FRU_BOARD_CUSTOM_DATA_2_REG:
-			case FRU_BOARD_CUSTOM_DATA_3_REG:
-			case FRU_BOARD_CUSTOM_DATA_4_REG:
-			case FRU_BOARD_CUSTOM_DATA_5_REG:
-			case FRU_BOARD_CUSTOM_DATA_6_REG:
-			case FRU_BOARD_CUSTOM_DATA_7_REG:
-			case FRU_BOARD_CUSTOM_DATA_8_REG:
-			case FRU_BOARD_CUSTOM_DATA_9_REG:
-			case FRU_BOARD_CUSTOM_DATA_10_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_init_data_60_66_table[reg_offset -
-								    FRU_BOARD_PART_NUMBER_REG],
-				       struct_size);
-			} break;
-			case FRU_PRODUCT_NAME_REG:
-			case FRU_PRODUCT_PART_NUMBER_REG:
-			case FRU_PRODUCT_PART_VERSION_REG:
-			case FRU_PRODUCT_SERIAL_NUMBER_REG:
-			case FRU_PRODUCT_ASSET_TAG_REG:
-			case FRU_PRODUCT_CUSTOM_DATA_1_REG:
-			case FRU_PRODUCT_CUSTOM_DATA_2_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_init_data_70_76_table[reg_offset -
-								    FRU_PRODUCT_NAME_REG],
-				       struct_size);
-			} break;
-			case I2C_BRIDGE_COMMAND_STATUS_REG: {
-				data->target_rd_msg.msg_length = 1;
-				data->target_rd_msg.msg[0] =
-					sensor_init_data_41_table[0] ?
-						sensor_init_data_41_table[0]->data_status :
-						I2C_BRIDGE_COMMAND_FAILURE;
-			} break;
-			case I2C_BRIDGE_COMMAND_RESPONSE_REG: {
-				if (sensor_init_data_42_table[0]) {
-					struct_size = sensor_init_data_42_table[0]->data_length + 1;
-					data->target_rd_msg.msg_length = struct_size;
-					memcpy(data->target_rd_msg.msg,
-					       sensor_init_data_42_table[0], struct_size);
-				} else {
-					data->target_rd_msg.msg_length = 1;
-					data->target_rd_msg.msg[0] = 0xFF;
-				}
-			} break;
-			default:
-				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
-				data->target_rd_msg.msg_length = 1;
-				data->target_rd_msg.msg[0] = 0xFF;
-				break;
-			}
-		} else if (data->wr_buffer_idx == 2) {
-			uint8_t reg_offset = data->target_wr_msg.msg[0];
-			switch (reg_offset) {
-			case WRITE_STRAP_PIN_VALUE_REG: {
-				int rail = data->target_wr_msg.msg[1];
-				int drive_level = -1;
-				if (!get_bootstrap_change_drive_level(rail, &drive_level)) {
-					LOG_ERR("Can't get_bootstrap_change_drive_level by rail index: %x",
-						rail);
-					data->target_rd_msg.msg[0] = 0xFF;
-				} else {
-					data->target_rd_msg.msg[0] = drive_level;
-				}
-				data->target_rd_msg.msg_length = 1;
-			} break;
-			default:
-				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
-				data->target_rd_msg.msg_length = 1;
-				data->target_rd_msg.msg[0] = 0xFF;
-				break;
-			}
-		} else {
-			LOG_ERR("Received data length: 0x%02x", data->wr_buffer_idx);
-			data->target_rd_msg.msg_length = 1;
-			data->target_rd_msg.msg[0] = 0xFF;
-		}
-	}
-	return false;
-}
+// 	/* Only check fisrt byte from received data */
+// 	if (data->wr_buffer_idx >= 1) {
+// 		if (data->wr_buffer_idx == 1) {
+// 			uint8_t reg_offset = data->target_wr_msg.msg[0];
+// 			size_t struct_size = 0;
+// 			for (int i = 0; i < ARRAY_SIZE(telemetry_info_table); i++) {
+// 				if (telemetry_info_table[i].telemetry_offset == reg_offset) {
+// 					struct_size = telemetry_info_table[i].data_size;
+// 					break;
+// 				}
+// 			}
+// 			// Make sure the target buffer is not exceeded when reading
+// 			if (struct_size > sizeof(data->target_rd_msg.msg)) {
+// 				struct_size = sizeof(data->target_rd_msg.msg);
+// 			}
+// 			switch (reg_offset) {
+// 			case SENSOR_INIT_DATA_0_REG:
+// 			case SENSOR_INIT_DATA_1_REG: {
+// 				data->target_rd_msg.msg_length = struct_size;
+// 				memcpy(data->target_rd_msg.msg,
+// 				       sensor_init_data_0_1_table[reg_offset -
+// 								  SENSOR_INIT_DATA_0_REG],
+// 				       struct_size);
+// 			} break;
+// 			case SENSOR_READING_0_REG:
+// 			case SENSOR_READING_1_REG:
+// 			case SENSOR_READING_2_REG:
+// 			case SENSOR_READING_3_REG: {
+// 				data->target_rd_msg.msg_length = struct_size;
+// 				memcpy(data->target_rd_msg.msg,
+// 				       sensor_init_data_2_5_table[reg_offset - SENSOR_READING_0_REG],
+// 				       struct_size);
+// 			} break;
+// 			case INVENTORY_IDS_REG: {
+// 				data->target_rd_msg.msg_length = struct_size;
+// 				memcpy(data->target_rd_msg.msg,
+// 				       sensor_init_data_6_table[reg_offset - INVENTORY_IDS_REG],
+// 				       struct_size);
+// 			} break;
+// 			case STRAP_CAPABILTITY_REG: {
+// 				data->target_rd_msg.msg_length = struct_size;
+// 				memcpy(data->target_rd_msg.msg,
+// 				       sensor_init_data_8_table[reg_offset - STRAP_CAPABILTITY_REG],
+// 				       struct_size);
+// 			} break;
+// 			case FRU_BOARD_PART_NUMBER_REG:
+// 			case FRU_BOARD_SERIAL_NUMBER_REG:
+// 			case FRU_BOARD_PRODUCT_NAME_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_1_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_2_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_3_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_4_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_5_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_6_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_7_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_8_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_9_REG:
+// 			case FRU_BOARD_CUSTOM_DATA_10_REG: {
+// 				data->target_rd_msg.msg_length = struct_size;
+// 				memcpy(data->target_rd_msg.msg,
+// 				       sensor_init_data_60_66_table[reg_offset -
+// 								    FRU_BOARD_PART_NUMBER_REG],
+// 				       struct_size);
+// 			} break;
+// 			case FRU_PRODUCT_NAME_REG:
+// 			case FRU_PRODUCT_PART_NUMBER_REG:
+// 			case FRU_PRODUCT_PART_VERSION_REG:
+// 			case FRU_PRODUCT_SERIAL_NUMBER_REG:
+// 			case FRU_PRODUCT_ASSET_TAG_REG:
+// 			case FRU_PRODUCT_CUSTOM_DATA_1_REG:
+// 			case FRU_PRODUCT_CUSTOM_DATA_2_REG: {
+// 				data->target_rd_msg.msg_length = struct_size;
+// 				memcpy(data->target_rd_msg.msg,
+// 				       sensor_init_data_70_76_table[reg_offset -
+// 								    FRU_PRODUCT_NAME_REG],
+// 				       struct_size);
+// 			} break;
+// 			case I2C_BRIDGE_COMMAND_STATUS_REG: {
+// 				data->target_rd_msg.msg_length = 1;
+// 				data->target_rd_msg.msg[0] =
+// 					sensor_init_data_41_table[0] ?
+// 						sensor_init_data_41_table[0]->data_status :
+// 						I2C_BRIDGE_COMMAND_FAILURE;
+// 			} break;
+// 			case I2C_BRIDGE_COMMAND_RESPONSE_REG: {
+// 				if (sensor_init_data_42_table[0]) {
+// 					struct_size = sensor_init_data_42_table[0]->data_length + 1;
+// 					data->target_rd_msg.msg_length = struct_size;
+// 					memcpy(data->target_rd_msg.msg,
+// 					       sensor_init_data_42_table[0], struct_size);
+// 				} else {
+// 					data->target_rd_msg.msg_length = 1;
+// 					data->target_rd_msg.msg[0] = 0xFF;
+// 				}
+// 			} break;
+// 			default:
+// 				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
+// 				data->target_rd_msg.msg_length = 1;
+// 				data->target_rd_msg.msg[0] = 0xFF;
+// 				break;
+// 			}
+// 		} else if (data->wr_buffer_idx == 2) {
+// 			uint8_t reg_offset = data->target_wr_msg.msg[0];
+// 			switch (reg_offset) {
+// 			case WRITE_STRAP_PIN_VALUE_REG: {
+// 				int rail = data->target_wr_msg.msg[1];
+// 				int drive_level = -1;
+// 				if (!get_bootstrap_change_drive_level(rail, &drive_level)) {
+// 					LOG_ERR("Can't get_bootstrap_change_drive_level by rail index: %x",
+// 						rail);
+// 					data->target_rd_msg.msg[0] = 0xFF;
+// 				} else {
+// 					data->target_rd_msg.msg[0] = drive_level;
+// 				}
+// 				data->target_rd_msg.msg_length = 1;
+// 			} break;
+// 			default:
+// 				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
+// 				data->target_rd_msg.msg_length = 1;
+// 				data->target_rd_msg.msg[0] = 0xFF;
+// 				break;
+// 			}
+// 		} else {
+// 			LOG_ERR("Received data length: 0x%02x", data->wr_buffer_idx);
+// 			data->target_rd_msg.msg_length = 1;
+// 			data->target_rd_msg.msg[0] = 0xFF;
+// 		}
+// 	}
+// 	return false;
+// }
 
 void plat_master_write_thread_handler()
 {
