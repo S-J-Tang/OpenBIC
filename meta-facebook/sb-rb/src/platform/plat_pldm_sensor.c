@@ -6420,7 +6420,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V895_PEX_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0001, //uint16_t entity_instance_number;
+			0x004D, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6492,7 +6492,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V895_PEX_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0002, //uint16_t entity_instance_number;
+			0x004E, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6564,7 +6564,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V895_PEX_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0003, //uint16_t entity_instance_number;
+			0x004F, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6636,7 +6636,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V895_PEX_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0004, //uint16_t entity_instance_number;
+			0x0050, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6708,7 +6708,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V895_PEX_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0001, //uint16_t entity_instance_number;
+			0x0051, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6780,7 +6780,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A0_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0002, //uint16_t entity_instance_number;
+			0x0052, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6852,7 +6852,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A0_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0003, //uint16_t entity_instance_number;
+			0x0053, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6924,7 +6924,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A0_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0004, //uint16_t entity_instance_number;
+			0x0054, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -6996,7 +6996,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A1_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0001, //uint16_t entity_instance_number;
+			0x0055, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7068,7 +7068,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A1_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0002, //uint16_t entity_instance_number;
+			0x0056, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7140,7 +7140,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A1_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0003, //uint16_t entity_instance_number;
+			0x0057, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7212,7 +7212,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A1_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0004, //uint16_t entity_instance_number;
+			0x0058, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7284,7 +7284,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A2_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0001, //uint16_t entity_instance_number;
+			0x0059, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7356,7 +7356,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A2_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0002, //uint16_t entity_instance_number;
+			0x005A, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7428,7 +7428,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A2_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0003, //uint16_t entity_instance_number;
+			0x005B, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7500,7 +7500,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			0x0000, //uint16_t PLDM_terminus_handle;
 			VR_ASIC_P0V825_A2_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			0x0004, //uint16_t entity_instance_number;
+			0x005C, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
