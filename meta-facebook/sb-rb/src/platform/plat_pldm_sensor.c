@@ -32,10 +32,10 @@
 LOG_MODULE_REGISTER(plat_pldm_sensor);
 
 static bool plat_sensor_polling_enable_flag = true;
-static bool plat_sensor_ubc_polling_enable_flag = true;
+static bool plat_sensor_ubc_polling_enable_flag = false;
 static bool plat_sensor_adc_polling_enable_flag = true;
 static bool plat_sensor_temp_polling_enable_flag = true;
-static bool plat_sensor_vr_polling_enable_flag = true;
+static bool plat_sensor_vr_polling_enable_flag = false;
 
 void plat_pldm_sensor_change_ubc_dev();
 void plat_pldm_sensor_change_ubc_addr();
@@ -183,7 +183,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 
 			/*** numeric sensor format ***/
 			0x0000, // uint16_t PLDM_terminus_handle;
-			ADC_P12V_SCALED, // uint16_t sensor_id;
+			SENSOR_NUM_ADC_P12V_SCALED, // uint16_t sensor_id;
 			0x0000, // uint16_t entity_type; // Need to check
 			0x0001, // uint16_t entity_instance_number;
 			0x0000, // uint16_t container_id;
@@ -226,7 +226,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = ADC_P12V_SCALED,
+			.num = SENSOR_NUM_ADC_P12V_SCALED,
 			.type = sensor_dev_ads7830,
 			.port = I2C_BUS1,
 			.target_addr = ADS7830_I2C_ADDR,
@@ -257,7 +257,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 
 			/*** numeric sensor format ***/
 			0x0000, // uint16_t PLDM_terminus_handle;
-			ADC_P5V_STBY_SCALED, // uint16_t sensor_id;
+			SENSOR_NUM_ADC_P5V_STBY_SCALED, // uint16_t sensor_id;
 			0x0000, // uint16_t entity_type; // Need to check
 			0x0001, // uint16_t entity_instance_number;
 			0x0000, // uint16_t container_id;
@@ -300,7 +300,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = ADC_P5V_STBY_SCALED,
+			.num = SENSOR_NUM_ADC_P5V_STBY_SCALED,
 			.type = sensor_dev_ads7830,
 			.port = I2C_BUS1,
 			.target_addr = ADS7830_I2C_ADDR,
@@ -331,7 +331,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 
 			/*** numeric sensor format ***/
 			0x0000, // uint16_t PLDM_terminus_handle;
-			ADC_P3V3_AUX_SCALED, // uint16_t sensor_id;
+			SENSOR_NUM_ADC_P3V3_AUX_SCALED, // uint16_t sensor_id;
 			0x0000, // uint16_t entity_type; // Need to check
 			0x0001, // uint16_t entity_instance_number;
 			0x0000, // uint16_t container_id;
@@ -374,7 +374,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = ADC_P3V3_AUX_SCALED,
+			.num = SENSOR_NUM_ADC_P3V3_AUX_SCALED,
 			.type = sensor_dev_ads7830,
 			.port = I2C_BUS1,
 			.target_addr = ADS7830_I2C_ADDR,
@@ -405,7 +405,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 
 			/*** numeric sensor format ***/
 			0x0000, // uint16_t PLDM_terminus_handle;
-			ADC_P1V5_PEX_SCALED, // uint16_t sensor_id;
+			SENSOR_NUM_ADC_P1V5_PEX_SCALED, // uint16_t sensor_id;
 			0x0000, // uint16_t entity_type; // Need to check
 			0x0001, // uint16_t entity_instance_number;
 			0x0000, // uint16_t container_id;
@@ -448,7 +448,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = ADC_P1V5_PEX_SCALED,
+			.num = SENSOR_NUM_ADC_P1V5_PEX_SCALED,
 			.type = sensor_dev_ads7830,
 			.port = I2C_BUS1,
 			.target_addr = ADS7830_I2C_ADDR,
@@ -479,7 +479,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 
 			/*** numeric sensor format ***/
 			0x0000, // uint16_t PLDM_terminus_handle;
-			ADC_P1V2_PEX_SCALED, // uint16_t sensor_id;
+			SENSOR_NUM_ADC_P1V2_PEX_SCALED, // uint16_t sensor_id;
 			0x0000, // uint16_t entity_type; // Need to check
 			0x0001, // uint16_t entity_instance_number;
 			0x0000, // uint16_t container_id;
@@ -522,7 +522,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = ADC_P1V2_PEX_SCALED,
+			.num = SENSOR_NUM_ADC_P1V2_PEX_SCALED,
 			.type = sensor_dev_ads7830,
 			.port = I2C_BUS1,
 			.target_addr = ADS7830_I2C_ADDR,
@@ -553,7 +553,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 
 			/*** numeric sensor format ***/
 			0x0000, // uint16_t PLDM_terminus_handle;
-			ADC_P1V8_PEX_SCALED, // uint16_t sensor_id;
+			SENSOR_NUM_ADC_P1V8_PEX_SCALED, // uint16_t sensor_id;
 			0x0000, // uint16_t entity_type; // Need to check
 			0x0001, // uint16_t entity_instance_number;
 			0x0000, // uint16_t container_id;
@@ -596,7 +596,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = ADC_P1V8_PEX_SCALED,
+			.num = SENSOR_NUM_ADC_P1V8_PEX_SCALED,
 			.type = sensor_dev_ads7830,
 			.port = I2C_BUS1,
 			.target_addr = ADS7830_I2C_ADDR,
@@ -6867,7 +6867,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V895_PEX_TEMP_C, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V895_PEX_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x004D, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -6910,7 +6910,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V895_PEX_TEMP_C,
+			.num = SENSOR_NUM_VR_ASIC_P0V895_PEX_TEMP_C,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V895_PEX_MP2971_ADDR,
@@ -6939,7 +6939,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V895_PEX_VOLT_V, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V895_PEX_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x004E, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -6982,7 +6982,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V895_PEX_VOLT_V,
+			.num = SENSOR_NUM_VR_ASIC_P0V895_PEX_VOLT_V,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V895_PEX_MP2971_ADDR,
@@ -7011,7 +7011,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V895_PEX_CURR_A, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V895_PEX_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x004F, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7054,7 +7054,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V895_PEX_CURR_A,
+			.num = SENSOR_NUM_VR_ASIC_P0V895_PEX_CURR_A,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V895_PEX_MP2971_ADDR,
@@ -7083,7 +7083,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V895_PEX_PWR_W, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V895_PEX_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0050, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7126,7 +7126,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V895_PEX_PWR_W,
+			.num = SENSOR_NUM_VR_ASIC_P0V895_PEX_PWR_W,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V895_PEX_MP2971_ADDR,
@@ -7155,7 +7155,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V895_PEX_TEMP_C, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V895_PEX_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0051, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7198,7 +7198,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A0_TEMP_C,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A0_TEMP_C,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A0_MP2971_ADDR,
@@ -7227,7 +7227,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A0_VOLT_V, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A0_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0052, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7270,7 +7270,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A0_VOLT_V,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A0_VOLT_V,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A0_MP2971_ADDR,
@@ -7299,7 +7299,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A0_CURR_A, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A0_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0053, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7342,7 +7342,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A0_CURR_A,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A0_CURR_A,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A0_MP2971_ADDR,
@@ -7371,7 +7371,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A0_PWR_W, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A0_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0054, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7414,7 +7414,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A0_PWR_W,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A0_PWR_W,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A0_MP2971_ADDR,
@@ -7443,7 +7443,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A1_TEMP_C, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A1_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0055, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7486,7 +7486,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A1_TEMP_C,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A1_TEMP_C,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A1_MP2971_ADDR,
@@ -7515,7 +7515,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A1_VOLT_V, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A1_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0056, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7558,7 +7558,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A1_VOLT_V,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A1_VOLT_V,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A1_MP2971_ADDR,
@@ -7587,7 +7587,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A1_CURR_A, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A1_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0057, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7630,7 +7630,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A1_CURR_A,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A1_CURR_A,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A1_MP2971_ADDR,
@@ -7659,7 +7659,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A1_PWR_W, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A1_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0058, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7702,7 +7702,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A1_PWR_W,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A1_PWR_W,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A1_MP2971_ADDR,
@@ -7731,7 +7731,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A2_TEMP_C, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A2_TEMP_C, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x0059, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7774,7 +7774,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A2_TEMP_C,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A2_TEMP_C,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A2_MP2971_ADDR,
@@ -7803,7 +7803,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A2_VOLT_V, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A2_VOLT_V, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x005A, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7846,7 +7846,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A2_VOLT_V,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A2_VOLT_V,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A2_MP2971_ADDR,
@@ -7875,7 +7875,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A2_CURR_A, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A2_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x005B, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7918,7 +7918,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A2_CURR_A,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A2_CURR_A,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A2_MP2971_ADDR,
@@ -7947,7 +7947,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			VR_ASIC_P0V825_A2_PWR_W, //uint16_t sensor_id;
+			SENSOR_NUM_VR_ASIC_P0V825_A2_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
 			0x005C, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
@@ -7990,7 +7990,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = VR_ASIC_P0V825_A2_PWR_W,
+			.num = SENSOR_NUM_VR_ASIC_P0V825_A2_PWR_W,
 			.type = sensor_dev_mp2971,
 			.port = I2C_BUS1,
 			.target_addr = VR_ASIC_P0V825_A2_MP2971_ADDR,

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "plat_hook.h": "c",
+        "plat_i2c.h": "c",
+        "emc1413.h": "c",
+        "plat_pldm_sensor.h": "c"
+    }
+}
