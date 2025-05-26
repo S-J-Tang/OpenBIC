@@ -3,9 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
-#define ADS7830_I2C_ADDR 0x4B
-
+#include "sensor.h"
 typedef struct {
     float reference_voltage;
     float resistor1;

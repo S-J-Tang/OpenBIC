@@ -8416,41 +8416,6 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 		},
 	},
-	{
-		// THERMAL_SENSOR_1_TEMP_C
-		/*** PDR common header***/
-		{
-			.record_handle = 0x00000000,
-			.PDR_header_version = 0x01,
-			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
-			.record_change_number = 0x0000,
-			.data_length = 0x0000,
-		},
-		.terminus_handle = 0x0000,
-		.sensor_id = THERMAL_SENSOR_1_TEMP_C,
-		.sensor_count = 0x1,
-		.nameStringCount = 0x1,
-		.nameLanguageTag = "en",
-		.sensorName = u"THERMAL_SENSOR_1_TEMP_C",
-	},
-	{
-
-		// THERMAL_SENSOR_2_TEMP_C
-		/*** PDR common header***/
-		{
-			.record_handle = 0x00000000,
-			.PDR_header_version = 0x01,
-			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
-			.record_change_number = 0x0000,
-			.data_length = 0x0000,
-		},
-		.terminus_handle = 0x0000,
-		.sensor_id = THERMAL_SENSOR_2_TEMP_C,
-		.sensor_count = 0x1,
-		.nameStringCount = 0x1,
-		.nameLanguageTag = "en",
-		.sensorName = u"THERMAL_SENSOR_2_TEMP_C",
-	},
 };
 
 PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
@@ -10433,6 +10398,114 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
 		.sensorName = u"VR_ASIC_P0V825_A2_PWR_W",
+	},
+	{
+
+		// ADC_P12V_SCALED
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = ADC_P12V_SCALED,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"ADC_P12V_SCALED",
+	},
+	{
+
+		// ADC_P5V_STBY_SCALED
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = ADC_P5V_STBY_SCALED,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"ADC_P5V_STBY_SCALED",
+	},
+	{
+
+		// ADC_P3V3_AUX_SCALED
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = ADC_P3V3_AUX_SCALED,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"ADC_P3V3_AUX_SCALED",
+	},
+	{
+
+		// ADC_P1V5_PEX_SCALED
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = ADC_P1V5_PEX_SCALED,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"ADC_P1V5_PEX_SCALED",
+	},
+	{
+
+		// ADC_P1V2_PEX_SCALED
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = ADC_P1V2_PEX_SCALED,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"ADC_P1V2_PEX_SCALED",
+	},
+	{
+
+		// ADC_P1V8_PEX_SCALED
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = ADC_P1V8_PEX_SCALED,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"ADC_P1V8_PEX_SCALED",
 	},
 };
 

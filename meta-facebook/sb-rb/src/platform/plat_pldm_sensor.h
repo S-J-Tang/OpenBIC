@@ -110,6 +110,8 @@
 #define VR_ASIC_P0V825_A2_MP2971_ADDR (0x40 >> 1)
 #define VR_ASIC_P0V825_A2_ISL69260_ADDR (0xC2 >> 1)
 
+#define ADS7830_I2C_ADDR (0x96 >> 1)
+
 /* Define the sensor numbers used in this platform */
 enum SENSOR_NUM_LIST {
 	SENSOR_NUM_UBC_1_TEMP_C = 0x01,
@@ -261,13 +263,16 @@ void set_plat_sensor_polling_enable_flag(bool value);
 void set_plat_sensor_ubc_polling_enable_flag(bool value);
 void set_plat_sensor_temp_polling_enable_flag(bool value);
 void set_plat_sensor_vr_polling_enable_flag(bool value);
+void set_plat_sensor_adc_polling_enable_flag(bool value);
 bool get_plat_sensor_polling_enable_flag();
 bool get_plat_sensor_ubc_polling_enable_flag();
 bool get_plat_sensor_temp_polling_enable_flag();
 bool get_plat_sensor_vr_polling_enable_flag();
+bool get_plat_sensor_adc_polling_enable_flag();
 bool is_ubc_access(uint8_t sensor_num);
 bool is_temp_access(uint8_t cfg_idx);
 bool is_vr_access(uint8_t sensor_num);
+bool is_adc_access(uint8_t sensor_num);
 bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *vr_addr,
 				  uint8_t *sensor_dev);
 size_t char16_strlen(const char16_t *str);
