@@ -1,50 +1,24 @@
-/*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-#ifndef ADS7830_ADC_H
-#define ADS7830_ADC_H
+#ifndef _ADS7830_H_
+#define _ADS7830_H_
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "sensor.h"
 
-#define ADS7830_DEVICE_NAME "ADS7830"
+// ADS7830 7-bit I2C address (0x96 >> 1)
+#define ADS7830_I2C_ADDR 0x4B
 
-/* Initialization arguments structure to track initialization status */
-typedef struct {
-    bool is_init;
-    // Additional initialization parameters can be added here if needed
-} ads7830_init_args;
+// Command Byte 定義（單端輸入 + PD=01）
+#define ADC_CH0 0x84
+#define ADC_CH1 0xC4
+#define ADC_CH2 0x94
+#define ADC_CH3 0xD4
+#define ADC_CH4 0xA4
+#define ADC_CH5 0xE4
+#define ADC_CH6 0xB4
+#define ADC_CH7 0xF4
 
-/**
- * @brief Initialize the ADS7830 ADC device.
- *
- * @param cfg Pointer to the sensor configuration structure.
- * @return uint8_t Returns SENSOR_INIT_SUCCESS on success, or SENSOR_INIT_UNSPECIFIED_ERROR on failure.
- */
-uint8_t ads7830_adc_init(sensor_cfg *cfg);
+// 初始化與讀取函式
+uint8_t ads7830_init(sensor_cfg *cfg);
+uint8_t ads7830_read(sensor_cfg *cfg, int *reading);
 
-/**
- * @brief Read sensor data from ADS7830 ADC.
- *
- * @param cfg Pointer to the sensor configuration structure.
- * @param reading Pointer to store the read sensor value.
- * @return uint8_t Returns SENSOR_READ_SUCCESS on success, SENSOR_FAIL_TO_ACCESS if unable to read sensor,
- *                  or SENSOR_UNSPECIFIED_ERROR for invalid parameters.
- */
-uint8_t ads7830_adc_read(sensor_cfg *cfg, int *reading);
-
-#endif /* ADS7830_ADC_H */
+#endif /* _ADS7830_H_ */

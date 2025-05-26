@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "ast_adc.h": "c",
+        "util_sys.h": "c"
+    }
+}

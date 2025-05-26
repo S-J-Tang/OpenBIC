@@ -27,6 +27,7 @@
 #include "plat_sensor_table.h"
 #include "plat_sdr_table.h"
 #include "ast_adc.h"
+#include "ads7830.h"
 #include "intel_peci.h"
 #include "util_sys.h"
 #include "plat_def.h"
@@ -152,6 +153,7 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(emc1413)
 	sensor_name_to_num(bcm85658)
 	sensor_name_to_num(tmp421)
+	sensor_name_to_num(ads7830)
 };
 // clang-format on
 
@@ -372,6 +374,9 @@ SENSOR_DRIVE_INIT_DECLARE(bcm85658);
 #endif
 #ifdef ENABLE_TMP421
 SENSOR_DRIVE_INIT_DECLARE(tmp421);
+#endif
+#ifdef ENABLE_ADS7830
+SENSOR_DRIVE_INIT_DECLARE(ads7830);
 #endif
 
 // The sequence needs to same with SENSOR_DEV ID
@@ -744,6 +749,12 @@ sensor_drive_api sensor_drive_tbl[] = {
 	SENSOR_DRIVE_TYPE_INIT_MAP(tmp421),
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(tmp421),
+#endif
+
+#ifndef DISABLE_ADS7830
+	SENSOR_DRIVE_TYPE_INIT_MAP(ads7830),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(ads7830),
 #endif
 };
 
