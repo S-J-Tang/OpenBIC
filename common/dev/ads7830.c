@@ -66,10 +66,14 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 	uint8_t raw_adc = msg.data[0];
 	*reading = raw_adc;
 
-    // trun raw data to voltage
-	const float VREF = 3.3f;
-	const float resolution = 255.0f;
-	float voltage = (raw_adc / resolution) * VREF;
+	// Fetch reference voltage and resistors from init_args
+	ads7830_init_args *init_args = (ads7830_init_args *)cfg->init_args;
+	float reference_voltage = init_args->reference_voltage;
+	float resistor1 = init_args->resistor1;
+	float resistor2 = init_args->resistor2;
+
+	// Calculate the voltage based on ADC value, resistors, and reference voltage
+	float voltage = ((raw_adc / 255.0f) * reference_voltage) * (resistor2 / (resistor1 + resistor2));
 
 	sensor_val *sval = (sensor_val *)reading;
 	sval->integer = (int)voltage;

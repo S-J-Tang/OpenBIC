@@ -16,7 +16,7 @@
 
 #include <logging/log.h>
 #include "pmbus.h"
-#include "ast_adc.h"
+#include "ads7830.h"
 #include "pdr.h"
 #include "tmp431.h"
 #include "sensor.h"
@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(plat_pldm_sensor);
 
 static bool plat_sensor_polling_enable_flag = true;
 static bool plat_sensor_ubc_polling_enable_flag = true;
+static bool plat_sensor_adc_polling_enable_flag = true;
 static bool plat_sensor_temp_polling_enable_flag = true;
 static bool plat_sensor_vr_polling_enable_flag = true;
 
@@ -164,6 +165,453 @@ static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = 
 	{ UBC_SENSOR_THREAD_ID, "UBC_PLDM_SENSOR_THREAD" },
 	{ VR_SENSOR_THREAD_ID, "VR_PLDM_SENSOR_THREAD" },
 	{ TEMP_SENSOR_THREAD_ID, "TEMP_SENSOR_THREAD" },
+};
+
+pldm_sensor_info plat_pldm_sensor_adc_table[] = {
+	{
+		{
+			// ADC_P12V_SCALED
+			/*** PDR common header ***/
+			{
+				0x00000000, // uint32_t record_handle
+				0x01, // uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, // uint8_t PDR_type
+				0x0000, // uint16_t record_change_number
+				0x0000, // uint16_t data_length
+			},
+
+			/*** numeric sensor format ***/
+			0x0000, // uint16_t PLDM_terminus_handle;
+			ADC_P12V_SCALED, // uint16_t sensor_id;
+			0x0000, // uint16_t entity_type; // Need to check
+			0x0001, // uint16_t entity_instance_number;
+			0x0000, // uint16_t container_id;
+			0x00, // uint8_t sensor_init; // Need to check
+			0x01, // uint8_t sensor_auxiliary_names_pdr;
+			0x02, // uint8_t base_unit;  // unit
+			-3, // int8_t unit_modifier; // Need to check
+			0x00, // uint8_t rate_unit;
+			0x00, // uint8_t base_oem_unit_handle;
+			0x00, // uint8_t aux_unit;
+			0x00, // int8_t aux_unit_modifier;
+			0x00, // uint8_t auxrate_unit;
+			0x00, // uint8_t rel;
+			0x00, // uint8_t aux_oem_unit_handle;
+			0x00, // uint8_t is_linear;
+			0x4, // uint8_t sensor_data_size;
+			1, // real32_t resolution;
+			0, // real32_t offset;
+			0x0000, // uint16_t accuracy;
+			0x00, // uint8_t plus_tolerance;
+			0x00, // uint8_t minus_tolerance;
+			0x00000000, // uint32_t hysteresis;
+			0x00, // uint8_t supported_thresholds; // Need to check
+			0x00, // uint8_t threshold_and_hysteresis_volatility;
+			0, // real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, // real32_t update_interval;
+			0x00000000, // uint32_t max_readable; // Need to check
+			0x00000000, // uint32_t min_readable;
+			0x04, // uint8_t range_field_format;
+			0x00, // uint8_t range_field_support; // Need to check
+			0x00000000, // uint32_t nominal_value;
+			0x00000000, // uint32_t normal_max;
+			0x00000000, // uint32_t normal_min;
+			0x00000000, // uint32_t warning_high; // Need to check
+			0x00000000, // uint32_t warning_low; // Need to check
+			0x00000000, // uint32_t critical_high; // Need to check
+			0x00000000, // uint32_t critical_low; // Need to check
+			0x00000000, // uint32_t fatal_high; // Need to check
+			0x00000000, // uint32_t fatal_low; // Need to check
+		},
+		.update_time = 0,
+		{
+			.num = ADC_P12V_SCALED,
+			.type = sensor_dev_ads7830,
+			.port = I2C_BUS1,
+			.target_addr = ADS7830_I2C_ADDR,
+			.offset = ADC_CH0,
+			.access_checker = is_adc_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+			.init_args = &(ads7830_init_args){
+				.reference_voltage = 12.0f,
+				.resistor1 = 15.8f,
+				.resistor2 = 1.8f,
+				.is_init = false
+			},
+		},
+    },
+	{
+		{
+			// ADC_P5V_STBY_SCALED
+			/*** PDR common header ***/
+			{
+				0x00000000, // uint32_t record_handle
+				0x01, // uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, // uint8_t PDR_type
+				0x0000, // uint16_t record_change_number
+				0x0000, // uint16_t data_length
+			},
+
+			/*** numeric sensor format ***/
+			0x0000, // uint16_t PLDM_terminus_handle;
+			ADC_P5V_STBY_SCALED, // uint16_t sensor_id;
+			0x0000, // uint16_t entity_type; // Need to check
+			0x0001, // uint16_t entity_instance_number;
+			0x0000, // uint16_t container_id;
+			0x00, // uint8_t sensor_init; // Need to check
+			0x01, // uint8_t sensor_auxiliary_names_pdr;
+			0x02, // uint8_t base_unit;  // unit
+			-3, // int8_t unit_modifier; // Need to check
+			0x00, // uint8_t rate_unit;
+			0x00, // uint8_t base_oem_unit_handle;
+			0x00, // uint8_t aux_unit;
+			0x00, // int8_t aux_unit_modifier;
+			0x00, // uint8_t auxrate_unit;
+			0x00, // uint8_t rel;
+			0x00, // uint8_t aux_oem_unit_handle;
+			0x00, // uint8_t is_linear;
+			0x4, // uint8_t sensor_data_size;
+			1, // real32_t resolution;
+			0, // real32_t offset;
+			0x0000, // uint16_t accuracy;
+			0x00, // uint8_t plus_tolerance;
+			0x00, // uint8_t minus_tolerance;
+			0x00000000, // uint32_t hysteresis;
+			0x00, // uint8_t supported_thresholds; // Need to check
+			0x00, // uint8_t threshold_and_hysteresis_volatility;
+			0, // real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, // real32_t update_interval;
+			0x00000000, // uint32_t max_readable; // Need to check
+			0x00000000, // uint32_t min_readable;
+			0x04, // uint8_t range_field_format;
+			0x00, // uint8_t range_field_support; // Need to check
+			0x00000000, // uint32_t nominal_value;
+			0x00000000, // uint32_t normal_max;
+			0x00000000, // uint32_t normal_min;
+			0x00000000, // uint32_t warning_high; // Need to check
+			0x00000000, // uint32_t warning_low; // Need to check
+			0x00000000, // uint32_t critical_high; // Need to check
+			0x00000000, // uint32_t critical_low; // Need to check
+			0x00000000, // uint32_t fatal_high; // Need to check
+			0x00000000, // uint32_t fatal_low; // Need to check
+		},
+		.update_time = 0,
+		{
+			.num = ADC_P5V_STBY_SCALED,
+			.type = sensor_dev_ads7830,
+			.port = I2C_BUS1,
+			.target_addr = ADS7830_I2C_ADDR,
+			.offset = ADC_CH1,
+			.access_checker = is_adc_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+			.init_args = &(ads7830_init_args){
+				.reference_voltage = 12.0f,
+				.resistor1 = 5.36f,
+				.resistor2 = 1.8f,
+				.is_init = false
+			},
+		},
+    },
+	{
+		{
+			// ADC_P3V3_AUX_SCALED
+			/*** PDR common header ***/
+			{
+				0x00000000, // uint32_t record_handle
+				0x01, // uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, // uint8_t PDR_type
+				0x0000, // uint16_t record_change_number
+				0x0000, // uint16_t data_length
+			},
+
+			/*** numeric sensor format ***/
+			0x0000, // uint16_t PLDM_terminus_handle;
+			ADC_P3V3_AUX_SCALED, // uint16_t sensor_id;
+			0x0000, // uint16_t entity_type; // Need to check
+			0x0001, // uint16_t entity_instance_number;
+			0x0000, // uint16_t container_id;
+			0x00, // uint8_t sensor_init; // Need to check
+			0x01, // uint8_t sensor_auxiliary_names_pdr;
+			0x02, // uint8_t base_unit;  // unit
+			-3, // int8_t unit_modifier; // Need to check
+			0x00, // uint8_t rate_unit;
+			0x00, // uint8_t base_oem_unit_handle;
+			0x00, // uint8_t aux_unit;
+			0x00, // int8_t aux_unit_modifier;
+			0x00, // uint8_t auxrate_unit;
+			0x00, // uint8_t rel;
+			0x00, // uint8_t aux_oem_unit_handle;
+			0x00, // uint8_t is_linear;
+			0x4, // uint8_t sensor_data_size;
+			1, // real32_t resolution;
+			0, // real32_t offset;
+			0x0000, // uint16_t accuracy;
+			0x00, // uint8_t plus_tolerance;
+			0x00, // uint8_t minus_tolerance;
+			0x00000000, // uint32_t hysteresis;
+			0x00, // uint8_t supported_thresholds; // Need to check
+			0x00, // uint8_t threshold_and_hysteresis_volatility;
+			0, // real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, // real32_t update_interval;
+			0x00000000, // uint32_t max_readable; // Need to check
+			0x00000000, // uint32_t min_readable;
+			0x04, // uint8_t range_field_format;
+			0x00, // uint8_t range_field_support; // Need to check
+			0x00000000, // uint32_t nominal_value;
+			0x00000000, // uint32_t normal_max;
+			0x00000000, // uint32_t normal_min;
+			0x00000000, // uint32_t warning_high; // Need to check
+			0x00000000, // uint32_t warning_low; // Need to check
+			0x00000000, // uint32_t critical_high; // Need to check
+			0x00000000, // uint32_t critical_low; // Need to check
+			0x00000000, // uint32_t fatal_high; // Need to check
+			0x00000000, // uint32_t fatal_low; // Need to check
+		},
+		.update_time = 0,
+		{
+			.num = ADC_P3V3_AUX_SCALED,
+			.type = sensor_dev_ads7830,
+			.port = I2C_BUS1,
+			.target_addr = ADS7830_I2C_ADDR,
+			.offset = ADC_CH3,
+			.access_checker = is_adc_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+			.init_args = &(ads7830_init_args){
+				.reference_voltage = 12.0f,
+				.resistor1 = 2.87f,
+				.resistor2 = 1.8f,
+				.is_init = false
+			},
+		},
+    },
+	{
+		{
+			// ADC_P1V5_PEX_SCALED
+			/*** PDR common header ***/
+			{
+				0x00000000, // uint32_t record_handle
+				0x01, // uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, // uint8_t PDR_type
+				0x0000, // uint16_t record_change_number
+				0x0000, // uint16_t data_length
+			},
+
+			/*** numeric sensor format ***/
+			0x0000, // uint16_t PLDM_terminus_handle;
+			ADC_P1V5_PEX_SCALED, // uint16_t sensor_id;
+			0x0000, // uint16_t entity_type; // Need to check
+			0x0001, // uint16_t entity_instance_number;
+			0x0000, // uint16_t container_id;
+			0x00, // uint8_t sensor_init; // Need to check
+			0x01, // uint8_t sensor_auxiliary_names_pdr;
+			0x02, // uint8_t base_unit;  // unit
+			-3, // int8_t unit_modifier; // Need to check
+			0x00, // uint8_t rate_unit;
+			0x00, // uint8_t base_oem_unit_handle;
+			0x00, // uint8_t aux_unit;
+			0x00, // int8_t aux_unit_modifier;
+			0x00, // uint8_t auxrate_unit;
+			0x00, // uint8_t rel;
+			0x00, // uint8_t aux_oem_unit_handle;
+			0x00, // uint8_t is_linear;
+			0x4, // uint8_t sensor_data_size;
+			1, // real32_t resolution;
+			0, // real32_t offset;
+			0x0000, // uint16_t accuracy;
+			0x00, // uint8_t plus_tolerance;
+			0x00, // uint8_t minus_tolerance;
+			0x00000000, // uint32_t hysteresis;
+			0x00, // uint8_t supported_thresholds; // Need to check
+			0x00, // uint8_t threshold_and_hysteresis_volatility;
+			0, // real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, // real32_t update_interval;
+			0x00000000, // uint32_t max_readable; // Need to check
+			0x00000000, // uint32_t min_readable;
+			0x04, // uint8_t range_field_format;
+			0x00, // uint8_t range_field_support; // Need to check
+			0x00000000, // uint32_t nominal_value;
+			0x00000000, // uint32_t normal_max;
+			0x00000000, // uint32_t normal_min;
+			0x00000000, // uint32_t warning_high; // Need to check
+			0x00000000, // uint32_t warning_low; // Need to check
+			0x00000000, // uint32_t critical_high; // Need to check
+			0x00000000, // uint32_t critical_low; // Need to check
+			0x00000000, // uint32_t fatal_high; // Need to check
+			0x00000000, // uint32_t fatal_low; // Need to check
+		},
+		.update_time = 0,
+		{
+			.num = ADC_P1V5_PEX_SCALED,
+			.type = sensor_dev_ads7830,
+			.port = I2C_BUS1,
+			.target_addr = ADS7830_I2C_ADDR,
+			.offset = ADC_CH4,
+			.access_checker = is_adc_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+			.init_args = &(ads7830_init_args){
+				.reference_voltage = 12.0f,
+				.resistor1 = 2.87f,
+				.resistor2 = 1.8f,
+				.is_init = false
+			},
+		},
+    },
+	{
+		{
+			// ADC_P1V2_PEX_SCALED
+			/*** PDR common header ***/
+			{
+				0x00000000, // uint32_t record_handle
+				0x01, // uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, // uint8_t PDR_type
+				0x0000, // uint16_t record_change_number
+				0x0000, // uint16_t data_length
+			},
+
+			/*** numeric sensor format ***/
+			0x0000, // uint16_t PLDM_terminus_handle;
+			ADC_P1V2_PEX_SCALED, // uint16_t sensor_id;
+			0x0000, // uint16_t entity_type; // Need to check
+			0x0001, // uint16_t entity_instance_number;
+			0x0000, // uint16_t container_id;
+			0x00, // uint8_t sensor_init; // Need to check
+			0x01, // uint8_t sensor_auxiliary_names_pdr;
+			0x02, // uint8_t base_unit;  // unit
+			-3, // int8_t unit_modifier; // Need to check
+			0x00, // uint8_t rate_unit;
+			0x00, // uint8_t base_oem_unit_handle;
+			0x00, // uint8_t aux_unit;
+			0x00, // int8_t aux_unit_modifier;
+			0x00, // uint8_t auxrate_unit;
+			0x00, // uint8_t rel;
+			0x00, // uint8_t aux_oem_unit_handle;
+			0x00, // uint8_t is_linear;
+			0x4, // uint8_t sensor_data_size;
+			1, // real32_t resolution;
+			0, // real32_t offset;
+			0x0000, // uint16_t accuracy;
+			0x00, // uint8_t plus_tolerance;
+			0x00, // uint8_t minus_tolerance;
+			0x00000000, // uint32_t hysteresis;
+			0x00, // uint8_t supported_thresholds; // Need to check
+			0x00, // uint8_t threshold_and_hysteresis_volatility;
+			0, // real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, // real32_t update_interval;
+			0x00000000, // uint32_t max_readable; // Need to check
+			0x00000000, // uint32_t min_readable;
+			0x04, // uint8_t range_field_format;
+			0x00, // uint8_t range_field_support; // Need to check
+			0x00000000, // uint32_t nominal_value;
+			0x00000000, // uint32_t normal_max;
+			0x00000000, // uint32_t normal_min;
+			0x00000000, // uint32_t warning_high; // Need to check
+			0x00000000, // uint32_t warning_low; // Need to check
+			0x00000000, // uint32_t critical_high; // Need to check
+			0x00000000, // uint32_t critical_low; // Need to check
+			0x00000000, // uint32_t fatal_high; // Need to check
+			0x00000000, // uint32_t fatal_low; // Need to check
+		},
+		.update_time = 0,
+		{
+			.num = ADC_P1V2_PEX_SCALED,
+			.type = sensor_dev_ads7830,
+			.port = I2C_BUS1,
+			.target_addr = ADS7830_I2C_ADDR,
+			.offset = ADC_CH5,
+			.access_checker = is_adc_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+			.init_args = &(ads7830_init_args){
+				.reference_voltage = 12.0f,
+				.resistor1 = 2.87f,
+				.resistor2 = 1.8f,
+				.is_init = false
+			},
+		},
+    },
+	{
+		{
+			// ADC_P1V8_PEX_SCALED
+			/*** PDR common header ***/
+			{
+				0x00000000, // uint32_t record_handle
+				0x01, // uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, // uint8_t PDR_type
+				0x0000, // uint16_t record_change_number
+				0x0000, // uint16_t data_length
+			},
+
+			/*** numeric sensor format ***/
+			0x0000, // uint16_t PLDM_terminus_handle;
+			ADC_P1V8_PEX_SCALED, // uint16_t sensor_id;
+			0x0000, // uint16_t entity_type; // Need to check
+			0x0001, // uint16_t entity_instance_number;
+			0x0000, // uint16_t container_id;
+			0x00, // uint8_t sensor_init; // Need to check
+			0x01, // uint8_t sensor_auxiliary_names_pdr;
+			0x02, // uint8_t base_unit;  // unit
+			-3, // int8_t unit_modifier; // Need to check
+			0x00, // uint8_t rate_unit;
+			0x00, // uint8_t base_oem_unit_handle;
+			0x00, // uint8_t aux_unit;
+			0x00, // int8_t aux_unit_modifier;
+			0x00, // uint8_t auxrate_unit;
+			0x00, // uint8_t rel;
+			0x00, // uint8_t aux_oem_unit_handle;
+			0x00, // uint8_t is_linear;
+			0x4, // uint8_t sensor_data_size;
+			1, // real32_t resolution;
+			0, // real32_t offset;
+			0x0000, // uint16_t accuracy;
+			0x00, // uint8_t plus_tolerance;
+			0x00, // uint8_t minus_tolerance;
+			0x00000000, // uint32_t hysteresis;
+			0x00, // uint8_t supported_thresholds; // Need to check
+			0x00, // uint8_t threshold_and_hysteresis_volatility;
+			0, // real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, // real32_t update_interval;
+			0x00000000, // uint32_t max_readable; // Need to check
+			0x00000000, // uint32_t min_readable;
+			0x04, // uint8_t range_field_format;
+			0x00, // uint8_t range_field_support; // Need to check
+			0x00000000, // uint32_t nominal_value;
+			0x00000000, // uint32_t normal_max;
+			0x00000000, // uint32_t normal_min;
+			0x00000000, // uint32_t warning_high; // Need to check
+			0x00000000, // uint32_t warning_low; // Need to check
+			0x00000000, // uint32_t critical_high; // Need to check
+			0x00000000, // uint32_t critical_low; // Need to check
+			0x00000000, // uint32_t fatal_high; // Need to check
+			0x00000000, // uint32_t fatal_low; // Need to check
+		},
+		.update_time = 0,
+		{
+			.num = ADC_P1V8_PEX_SCALED,
+			.type = sensor_dev_ads7830,
+			.port = I2C_BUS1,
+			.target_addr = ADS7830_I2C_ADDR,
+			.offset = ADC_CH5,
+			.access_checker = is_adc_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+			.init_args = &(ads7830_init_args){
+				.reference_voltage = 12.0f,
+				.resistor1 = 2.87f,
+				.resistor2 = 1.8f,
+				.is_init = false
+			},
+		},
+    },
 };
 
 pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
@@ -10424,6 +10872,11 @@ bool get_plat_sensor_ubc_polling_enable_flag()
 	return plat_sensor_ubc_polling_enable_flag;
 }
 
+bool get_plat_sensor_adc_polling_enable_flag()
+{
+	return plat_sensor_adc_polling_enable_flag;
+}
+
 bool get_plat_sensor_temp_polling_enable_flag()
 {
 	return plat_sensor_temp_polling_enable_flag;
@@ -10437,6 +10890,12 @@ bool get_plat_sensor_vr_polling_enable_flag()
 bool is_ubc_access(uint8_t sensor_num)
 {
 	return (is_dc_access(sensor_num) && get_plat_sensor_ubc_polling_enable_flag() &&
+		get_plat_sensor_polling_enable_flag());
+}
+
+bool is_adc_access(uint8_t sensor_num)
+{
+	return (is_dc_access(sensor_num) && get_plat_sensor_adc_polling_enable_flag() &&
 		get_plat_sensor_polling_enable_flag());
 }
 
