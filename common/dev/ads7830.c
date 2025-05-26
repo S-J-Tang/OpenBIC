@@ -63,11 +63,17 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 		return SENSOR_FAIL_TO_ACCESS;
 	}
 
-	*reading = msg.data[0];
+	uint8_t raw_adc = msg.data[0];
+	*reading = raw_adc;
+
+    // trun raw data to voltage
+	const float VREF = 3.3f;
+	const float resolution = 255.0f;
+	float voltage = (raw_adc / resolution) * VREF;
 
 	sensor_val *sval = (sensor_val *)reading;
-	sval->integer = msg.data[0];
-	sval->fraction = 0;
+	sval->integer = (int)voltage;
+	sval->fraction = (voltage - sval->integer) * 1000;
 
 	return SENSOR_READ_SUCCESS;
 }
