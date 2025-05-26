@@ -165,6 +165,7 @@ static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = 
 	{ UBC_SENSOR_THREAD_ID, "UBC_PLDM_SENSOR_THREAD" },
 	{ VR_SENSOR_THREAD_ID, "VR_PLDM_SENSOR_THREAD" },
 	{ TEMP_SENSOR_THREAD_ID, "TEMP_SENSOR_THREAD" },
+	{ ADC_SENSOR_THREAD_ID, "ADC_SENSOR_THREAD" },
 };
 
 pldm_sensor_info plat_pldm_sensor_adc_table[] = {
@@ -10494,6 +10495,10 @@ pldm_sensor_info *plat_pldm_sensor_load(int thread_id)
 		plat_pldm_sensor_change_temp_dev();
 		plat_pldm_sensor_change_temp_addr();
 		return plat_pldm_sensor_temp_table;
+	// case ADC_SENSOR_THREAD_ID:
+	// 	plat_pldm_sensor_change_adc_dev();
+	// 	plat_pldm_sensor_change_adc_addr();
+	// 	return plat_pldm_sensor_adc_table;
 	default:
 		LOG_ERR("Unknow pldm sensor thread id %d", thread_id);
 		return NULL;
@@ -10513,6 +10518,9 @@ int plat_pldm_sensor_get_sensor_count(int thread_id)
 		break;
 	case TEMP_SENSOR_THREAD_ID:
 		count = ARRAY_SIZE(plat_pldm_sensor_temp_table);
+		break;
+	case ADC_SENSOR_THREAD_ID:
+		count = ARRAY_SIZE(plat_pldm_sensor_adc_table);
 		break;
 	default:
 		count = -1;
@@ -10540,6 +10548,11 @@ void plat_pldm_sensor_get_pdr_numeric_sensor(int thread_id, int sensor_num,
 	case TEMP_SENSOR_THREAD_ID:
 		memcpy(numeric_sensor_table,
 		       &plat_pldm_sensor_temp_table[sensor_num].pdr_numeric_sensor,
+		       sizeof(PDR_numeric_sensor));
+		break;
+	case ADC_SENSOR_THREAD_ID:
+		memcpy(numeric_sensor_table,
+		       &plat_pldm_sensor_adc_table[sensor_num].pdr_numeric_sensor,
 		       sizeof(PDR_numeric_sensor));
 		break;
 	default:
@@ -10957,6 +10970,18 @@ bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *v
 				return true;
 			}
 		}
+	} else if (sensor_id >= ADC_P12V_SCALED &&
+		   sensor_id <= ADC_P1V8_PEX_SCALED) {
+		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(ADC_SENSOR_THREAD_ID);
+		for (int index = 0; index < pldm_sensor_count; index++) {
+			if (plat_pldm_sensor_adc_table[index].pldm_sensor_cfg.num == sensor_id) {
+				*vr_addr =
+					plat_pldm_sensor_adc_table[index].pldm_sensor_cfg.target_addr;
+				*vr_bus = plat_pldm_sensor_adc_table[index].pldm_sensor_cfg.port;
+				*sensor_dev = plat_pldm_sensor_adc_table[index].pldm_sensor_cfg.type;
+				return true;
+			}
+		}
 	}
 
 	return false;
@@ -10989,7 +11014,16 @@ sensor_cfg *get_sensor_cfg_by_sensor_id(uint8_t sensor_id)
 				return &plat_pldm_sensor_vr_table[index].pldm_sensor_cfg;
 			}
 		}
+	} else if (sensor_id >= ADC_P12V_SCALED &&
+		   sensor_id <= ADC_P1V8_PEX_SCALED) {
+		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(ADC_SENSOR_THREAD_ID);
+		for (int index = 0; index < pldm_sensor_count; index++) {
+			if (plat_pldm_sensor_adc_table[index].pldm_sensor_cfg.num == sensor_id) {
+				return &plat_pldm_sensor_adc_table[index].pldm_sensor_cfg;
+			}
+		}
 	}
+	
 
 	return NULL;
 }
