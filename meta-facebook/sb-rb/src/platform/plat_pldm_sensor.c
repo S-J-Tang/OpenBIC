@@ -8416,6 +8416,142 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 		},
 	},
+	{
+		{
+			// SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C
+			/*** PDR common header***/
+			{
+				0x00000000, //uint32_t record_handle
+				0x01, //uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, //uint8_t PDR_type
+				0x0000, //uint16_t record_change_number
+				0x0000, //uint16_t data_length
+			},
+
+			/***numeric sensor format***/
+			0x0000, //uint16_t PLDM_terminus_handle;
+			SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C, //uint16_t sensor_id;
+			0x0000, //uint16_t entity_type; //Need to check
+			0x0001, //uint16_t entity_instance_number;
+			0x0000, //uint16_t container_id;
+			0x00, //uint8_t sensor_init; //Need to check
+			0x01, //uint8_t sensor_auxiliary_names_pdr;
+			0x02, //uint8_t base_unit;  //unit
+			-3, //int8_t unit_modifier; //Need to check
+			0x00, //uint8_t rate_unit;
+			0x00, //uint8_t base_oem_unit_handle;
+			0x00, //uint8_t aux_unit;
+			0x00, //int8_t aux_unit_modifier;
+			0x00, //uint8_t auxrate_unit;
+			0x00, //uint8_t rel;
+			0x00, //uint8_t aux_oem_unit_handle;
+			0x00, //uint8_t is_linear;
+			0x4, //uint8_t sensor_data_size;
+			1, //real32_t resolution;
+			0, //real32_t offset;
+			0x0000, //uint16_t accuracy;
+			0x00, //uint8_t plus_tolerance;
+			0x00, //uint8_t minus_tolerance;
+			0x00000000, //uint32_t hysteresis;
+			UP_THRESHOLD_CRIT | LOW_THRESHOLD_CRIT, //uint8_t supported_thresholds;
+			0x00, //uint8_t threshold_and_hysteresis_volatility;
+			0, //real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, //real32_t update_interval;
+			0x00000000, //uint32_t max_readable; //Need to check
+			0x00000000, //uint32_t min_readable;
+			0x04, //uint8_t range_field_format;
+			0x00, //uint8_t range_field_support; //Need to check
+			0x00000000, //uint32_t nominal_value;
+			0x00000000, //uint32_t normal_max;
+			0x00000000, //uint32_t normal_min;
+			0, //uint32_t warning_high;
+			0, //uint32_t warning_low;
+			60000, //uint32_t critical_high;
+			5000, //uint32_t critical_low;
+			0, //uint32_t fatal_high;
+			0, //uint32_t fatal_low;
+		},
+		.update_time = 0,
+		{
+			.num = SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C,
+			.type = sensor_dev_tmp75,
+			.port = I2C_BUS1,
+			.target_addr = THERMAL_SENSOR_1_ADDR,
+			.offset = TMP75_TEMP_OFFSET,
+			.access_checker = is_temp_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+		},
+	},
+	{
+		{
+			// THERMAL_SENSOR_2_TEMP_C
+			/*** PDR common header***/
+			{
+				0x00000000, //uint32_t record_handle
+				0x01, //uint8_t PDR_header_version
+				PLDM_NUMERIC_SENSOR_PDR, //uint8_t PDR_type
+				0x0000, //uint16_t record_change_number
+				0x0000, //uint16_t data_length
+			},
+
+			/***numeric sensor format***/
+			0x0000, //uint16_t PLDM_terminus_handle;
+			SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C, //uint16_t sensor_id;
+			0x0000, //uint16_t entity_type; //Need to check
+			0x0002, //uint16_t entity_instance_number;
+			0x0000, //uint16_t container_id;
+			0x00, //uint8_t sensor_init; //Need to check
+			0x01, //uint8_t sensor_auxiliary_names_pdr;
+			0x02, //uint8_t base_unit;  //unit
+			-3, //int8_t unit_modifier; //Need to check
+			0x00, //uint8_t rate_unit;
+			0x00, //uint8_t base_oem_unit_handle;
+			0x00, //uint8_t aux_unit;
+			0x00, //int8_t aux_unit_modifier;
+			0x00, //uint8_t auxrate_unit;
+			0x00, //uint8_t rel;
+			0x00, //uint8_t aux_oem_unit_handle;
+			0x00, //uint8_t is_linear;
+			0x4, //uint8_t sensor_data_size;
+			1, //real32_t resolution;
+			0, //real32_t offset;
+			0x0000, //uint16_t accuracy;
+			0x00, //uint8_t plus_tolerance;
+			0x00, //uint8_t minus_tolerance;
+			0x00000000, //uint32_t hysteresis;
+			UP_THRESHOLD_CRIT | LOW_THRESHOLD_CRIT, //uint8_t supported_thresholds;
+			0x00, //uint8_t threshold_and_hysteresis_volatility;
+			0, //real32_t state_transition_interval;
+			UPDATE_INTERVAL_1S, //real32_t update_interval;
+			0x00000000, //uint32_t max_readable; //Need to check
+			0x00000000, //uint32_t min_readable;
+			0x04, //uint8_t range_field_format;
+			0x00, //uint8_t range_field_support; //Need to check
+			0x00000000, //uint32_t nominal_value;
+			0x00000000, //uint32_t normal_max;
+			0x00000000, //uint32_t normal_min;
+			0, //uint32_t warning_high;
+			0, //uint32_t warning_low;
+			80000, //uint32_t critical_high;
+			5000, //uint32_t critical_low;
+			0, //uint32_t fatal_high;
+			0, //uint32_t fatal_low;
+		},
+		.update_time = 0,
+		{
+			.num = SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C,
+			.type = sensor_dev_tmp75,
+			.port = I2C_BUS1,
+			.target_addr = THERMAL_SENSOR_2_ADDR,
+			.offset = TMP75_TEMP_OFFSET,
+			.access_checker = is_temp_access,
+			.sample_count = SAMPLE_COUNT_DEFAULT,
+			.cache = 0,
+			.cache_status = PLDM_SENSOR_INITIALIZING,
+		},
+	}
 };
 
 PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
@@ -8709,7 +8845,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 	},
 	{
 
-		// THERMAL_SENSOR_1_TEMP_C
+		// SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C
 		/*** PDR common header***/
 		{
 			.record_handle = 0x00000000,
@@ -8719,7 +8855,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = THERMAL_SENSOR_1_TEMP_C,
+		.sensor_id = SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -8727,7 +8863,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 	},
 	{
 
-		// THERMAL_SENSOR_2_TEMP_C
+		// SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C
 		/*** PDR common header***/
 		{
 			.record_handle = 0x00000000,
@@ -8737,7 +8873,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = THERMAL_SENSOR_2_TEMP_C,
+		.sensor_id = SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10123,7 +10259,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V895_PEX_TEMP_C,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V895_PEX_TEMP_C,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10141,7 +10277,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V895_PEX_VOLT_V,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V895_PEX_VOLT_V,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10159,7 +10295,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V895_PEX_CURR_A,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V895_PEX_CURR_A,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10177,7 +10313,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V895_PEX_PWR_W,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V895_PEX_PWR_W,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10195,7 +10331,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A0_TEMP_C,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A0_TEMP_C,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10213,7 +10349,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A0_VOLT_V,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A0_VOLT_V,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10231,7 +10367,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A0_CURR_A,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A0_CURR_A,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10249,7 +10385,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A0_PWR_W,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A0_PWR_W,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10267,7 +10403,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A1_TEMP_C,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A1_TEMP_C,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10285,7 +10421,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A1_VOLT_V,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A1_VOLT_V,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10303,7 +10439,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A1_CURR_A,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A1_CURR_A,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10321,7 +10457,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A1_PWR_W,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A1_PWR_W,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10339,7 +10475,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A2_TEMP_C,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A2_TEMP_C,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10357,7 +10493,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A2_VOLT_V,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A2_VOLT_V,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10375,7 +10511,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A2_CURR_A,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A2_CURR_A,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10393,7 +10529,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V825_A2_PWR_W,
+		.sensor_id = SENSOR_NUM_VR_ASIC_P0V825_A2_PWR_W,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10411,7 +10547,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = ADC_P12V_SCALED,
+		.sensor_id = SENSOR_NUM_ADC_P12V_SCALED,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10429,7 +10565,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = ADC_P5V_STBY_SCALED,
+		.sensor_id = SENSOR_NUM_ADC_P5V_STBY_SCALED,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10447,7 +10583,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = ADC_P3V3_AUX_SCALED,
+		.sensor_id = SENSOR_NUM_ADC_P3V3_AUX_SCALED,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10465,7 +10601,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = ADC_P1V5_PEX_SCALED,
+		.sensor_id = SENSOR_NUM_ADC_P1V5_PEX_SCALED,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10483,7 +10619,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = ADC_P1V2_PEX_SCALED,
+		.sensor_id = SENSOR_NUM_ADC_P1V2_PEX_SCALED,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10501,7 +10637,7 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = ADC_P1V8_PEX_SCALED,
+		.sensor_id = SENSOR_NUM_ADC_P1V8_PEX_SCALED,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
@@ -10557,16 +10693,16 @@ pldm_sensor_info *plat_pldm_sensor_load(int thread_id)
 {
 	switch (thread_id) {
 	case UBC_SENSOR_THREAD_ID:
-		plat_pldm_sensor_change_ubc_dev();
-		plat_pldm_sensor_change_ubc_addr();
+		// plat_pldm_sensor_change_ubc_dev();
+		// plat_pldm_sensor_change_ubc_addr();
 		return plat_pldm_sensor_ubc_table;
 	case VR_SENSOR_THREAD_ID:
 		plat_pldm_sensor_change_vr_dev();
 		plat_pldm_sensor_change_vr_addr();
 		return plat_pldm_sensor_vr_table;
 	case TEMP_SENSOR_THREAD_ID:
-		plat_pldm_sensor_change_temp_dev();
-		plat_pldm_sensor_change_temp_addr();
+		// plat_pldm_sensor_change_temp_dev();
+		// plat_pldm_sensor_change_temp_addr();
 		return plat_pldm_sensor_temp_table;
 	// case ADC_SENSOR_THREAD_ID:
 	// 	plat_pldm_sensor_change_adc_dev();
@@ -11019,7 +11155,7 @@ bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *v
 			}
 		}
 	} else if (sensor_id >= SENSOR_NUM_TOP_INLET_TEMP_C &&
-		   sensor_id <= THERMAL_SENSOR_1_TEMP_C) {
+		   sensor_id <= SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(TEMP_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
 			if (plat_pldm_sensor_temp_table[index].pldm_sensor_cfg.num == sensor_id) {
@@ -11032,7 +11168,7 @@ bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *v
 			}
 		}
 	} else if (sensor_id >= SENSOR_NUM_MEDHA0_VDD_TEMP_C &&
-		   sensor_id <= VR_ASIC_P0V825_A2_PWR_W) {
+		   sensor_id <= SENSOR_NUM_VR_ASIC_P0V825_A2_PWR_W) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(VR_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
 			if (plat_pldm_sensor_vr_table[index].pldm_sensor_cfg.num == sensor_id) {
@@ -11043,8 +11179,8 @@ bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *v
 				return true;
 			}
 		}
-	} else if (sensor_id >= ADC_P12V_SCALED &&
-		   sensor_id <= ADC_P1V8_PEX_SCALED) {
+	} else if (sensor_id >= SENSOR_NUM_ADC_P12V_SCALED &&
+		   sensor_id <= SENSOR_NUM_ADC_P1V8_PEX_SCALED) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(ADC_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
 			if (plat_pldm_sensor_adc_table[index].pldm_sensor_cfg.num == sensor_id) {
@@ -11072,7 +11208,7 @@ sensor_cfg *get_sensor_cfg_by_sensor_id(uint8_t sensor_id)
 			}
 		}
 	} else if (sensor_id >= SENSOR_NUM_TOP_INLET_TEMP_C &&
-		   sensor_id <= THERMAL_SENSOR_1_TEMP_C) {
+		   sensor_id <= SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(TEMP_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
 			if (plat_pldm_sensor_temp_table[index].pldm_sensor_cfg.num == sensor_id) {
@@ -11080,15 +11216,15 @@ sensor_cfg *get_sensor_cfg_by_sensor_id(uint8_t sensor_id)
 			}
 		}
 	} else if (sensor_id >= SENSOR_NUM_MEDHA0_VDD_TEMP_C &&
-		   sensor_id <= VR_ASIC_P0V825_A2_PWR_W) {
+		   sensor_id <= SENSOR_NUM_VR_ASIC_P0V825_A2_PWR_W) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(VR_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
 			if (plat_pldm_sensor_vr_table[index].pldm_sensor_cfg.num == sensor_id) {
 				return &plat_pldm_sensor_vr_table[index].pldm_sensor_cfg;
 			}
 		}
-	} else if (sensor_id >= ADC_P12V_SCALED &&
-		   sensor_id <= ADC_P1V8_PEX_SCALED) {
+	} else if (sensor_id >= SENSOR_NUM_ADC_P12V_SCALED &&
+		   sensor_id <= SENSOR_NUM_ADC_P1V8_PEX_SCALED) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(ADC_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
 			if (plat_pldm_sensor_adc_table[index].pldm_sensor_cfg.num == sensor_id) {
