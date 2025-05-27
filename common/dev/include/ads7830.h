@@ -4,12 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "sensor.h"
-typedef struct {
-    float reference_voltage;
-    float resistor1;
-    float resistor2;
-    bool is_init;
-} ads7830_init_args;
 
 #define ADC_CH0 0x84
 #define ADC_CH1 0xC4

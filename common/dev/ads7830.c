@@ -52,7 +52,7 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 		return SENSOR_FAIL_TO_ACCESS;
 	}
 
-	k_msleep(2); // Wait for ADC conversion
+	k_msleep(15);
 
 	// Step 2: Read 1 byte ADC result
 	msg.tx_len = 0;
@@ -66,18 +66,17 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 	uint8_t raw_adc = msg.data[0];
 	*reading = raw_adc;
 
-	// Fetch reference voltage and resistors from init_args
-	ads7830_init_args *init_args = (ads7830_init_args *)cfg->init_args;
-	float reference_voltage = init_args->reference_voltage;
-	float resistor1 = init_args->resistor1;
-	float resistor2 = init_args->resistor2;
+	// Get reference voltage and resistors from cfg->arg0 (R1), cfg->arg1 (R2)
+	float ads7830_reference_voltage = 3.3f;
+	float resistor1 = (float)cfg->arg0;
+	float resistor2 = (float)cfg->arg1;
 
-	// Calculate the voltage based on ADC value, resistors, and reference voltage
-	float voltage = ((raw_adc / 255.0f) * reference_voltage) * (resistor2 / (resistor1 + resistor2));
+	float vin = (raw_adc / 255.0f) * ads7830_reference_voltage;
+	float v_high = vin * (1.0f + resistor1 / resistor2);
 
 	sensor_val *sval = (sensor_val *)reading;
-	sval->integer = (int)voltage;
-	sval->fraction = (voltage - sval->integer) * 1000;
+	sval->integer = (int)v_high;
+	sval->fraction = (v_high - sval->integer) * 1000;
 
 	return SENSOR_READ_SUCCESS;
 }

@@ -256,12 +256,8 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.init_args = &(ads7830_init_args){
-				.reference_voltage = 12.0f,
-				.resistor1 = 15.8f,
-				.resistor2 = 1.8f,
-				.is_init = false
-			},
+			.arg0 = 15.8, // R1 = 15.8kΩ
+			.arg1 = 1.8,  // R2 = 1.8kΩ
 			.read = ads7830_read,
 		},
     },
@@ -331,12 +327,9 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.init_args = &(ads7830_init_args){
-				.reference_voltage = 12.0f,
-				.resistor1 = 5.36f,
-				.resistor2 = 1.8f,
-				.is_init = false
-			},
+			.arg0 = 5.36,
+			.arg1 = 1.8,
+			// .is_init = false,
 			.read = ads7830_read,
 		},
     },
@@ -406,12 +399,9 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.init_args = &(ads7830_init_args){
-				.reference_voltage = 12.0f,
-				.resistor1 = 2.87f,
-				.resistor2 = 1.8f,
-				.is_init = false
-			},
+			.arg0 = 2.87,
+			.arg1 = 1.8,
+			// .is_init = false,
 			.read = ads7830_read,
 		},
     },
@@ -481,12 +471,9 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.init_args = &(ads7830_init_args){
-				.reference_voltage = 12.0f,
-				.resistor1 = 2.87f,
-				.resistor2 = 1.8f,
-				.is_init = false
-			},
+			.arg0 = 1,
+			.arg1 = 1,
+			// .is_init = false,
 			.read = ads7830_read,
 		},
     },
@@ -556,12 +543,9 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.init_args = &(ads7830_init_args){
-				.reference_voltage = 12.0f,
-				.resistor1 = 2.87f,
-				.resistor2 = 1.8f,
-				.is_init = false
-			},
+			.arg0 = 1,
+			.arg1 = 1,
+			// .is_init = false,
 			.read = ads7830_read,
 		},
     },
@@ -631,12 +615,9 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.init_args = &(ads7830_init_args){
-				.reference_voltage = 12.0f,
-				.resistor1 = 2.87f,
-				.resistor2 = 1.8f,
-				.is_init = false
-			},
+			.arg0 = 1,
+			.arg1 = 1,
+			// .is_init = false,
 			.read = ads7830_read,
 		},
     },
@@ -11144,9 +11125,27 @@ bool is_ubc_access(uint8_t sensor_num)
 
 bool is_adc_access(uint8_t sensor_num)
 {
-	return (is_dc_access(sensor_num) && get_plat_sensor_adc_polling_enable_flag() &&
-		get_plat_sensor_polling_enable_flag());
+    const uint8_t adc7830_i2c_addr = ADS7830_I2C_ADDR;
+    const uint8_t adc7830_i2c_bus = I2C_BUS1;
+    I2C_MSG msg = {0};
+    uint8_t retry = 3;
+
+    msg.bus = adc7830_i2c_bus;
+    msg.target_addr = adc7830_i2c_addr;
+    msg.tx_len = 1;
+    msg.rx_len = 1;
+    msg.data[0] = 0x00;
+
+    int ret = i2c_master_read(&msg, retry);
+    if (ret == 0) {
+        return true;
+    } else {
+        LOG_DBG("ADS7830_ADC device access failed at addr 0x%x, bus %d, ret=%d (sensor_num=0x%x)",
+                ADS7830_I2C_ADDR, adc7830_i2c_bus, ret, sensor_num);
+        return false;
+    }
 }
+
 
 bool is_temp_access(uint8_t cfg_idx)
 {

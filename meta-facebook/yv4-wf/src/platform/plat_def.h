@@ -27,6 +27,7 @@
 #define ENABLE_CCI
 #define ENABLE_VISTARA
 #define ENABLE_EVENT_TO_BMC
+#define ENABLE_ADS7830
 
 #define ENABLE_RTQ6056
 
