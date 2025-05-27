@@ -3,6 +3,7 @@
         "plat_hook.h": "c",
         "plat_i2c.h": "c",
         "emc1413.h": "c",
-        "plat_pldm_sensor.h": "c"
+        "plat_pldm_sensor.h": "c",
+        "ads7830.h": "c"
     }
 }
