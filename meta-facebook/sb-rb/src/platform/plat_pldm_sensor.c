@@ -262,6 +262,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 				.resistor2 = 1.8f,
 				.is_init = false
 			},
+			.read = ads7830_read,
 		},
     },
 	{
@@ -336,6 +337,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 				.resistor2 = 1.8f,
 				.is_init = false
 			},
+			.read = ads7830_read,
 		},
     },
 	{
@@ -410,6 +412,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 				.resistor2 = 1.8f,
 				.is_init = false
 			},
+			.read = ads7830_read,
 		},
     },
 	{
@@ -484,6 +487,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 				.resistor2 = 1.8f,
 				.is_init = false
 			},
+			.read = ads7830_read,
 		},
     },
 	{
@@ -558,6 +562,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 				.resistor2 = 1.8f,
 				.is_init = false
 			},
+			.read = ads7830_read,
 		},
     },
 	{
@@ -632,6 +637,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 				.resistor2 = 1.8f,
 				.is_init = false
 			},
+			.read = ads7830_read,
 		},
     },
 };
