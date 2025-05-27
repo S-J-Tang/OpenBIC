@@ -35,7 +35,7 @@
 #include "plat_hook.h"
 #include <logging/log.h>
 #include "plat_event.h"
-#include "plat_log.h"
+// #include "plat_log.h"
 
 LOG_MODULE_REGISTER(plat_init);
 
@@ -68,8 +68,8 @@ void pal_post_init()
 {
 	plat_mctp_init();
 	user_settings_init();
-	pldm_load_state_effecter_table(MAX_STATE_EFFECTER_IDX);
-	pldm_assign_gpio_effecter_id(PLAT_EFFECTER_ID_GPIO_HIGH_BYTE);
+	// pldm_load_state_effecter_table(MAX_STATE_EFFECTER_IDX);
+	// pldm_assign_gpio_effecter_id(PLAT_EFFECTER_ID_GPIO_HIGH_BYTE);
 	//init_load_eeprom_log();
 	//init_cpld_polling();
 }

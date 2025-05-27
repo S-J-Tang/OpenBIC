@@ -19,48 +19,20 @@
 
 #include "sensor.h"
 
-#define VR_MAX_NUM 13
+#define VR_MAX_NUM 2
 #define VR_MUTEX_LOCK_TIMEOUT_MS 1000
 
 #include "plat_pldm_sensor.h"
 
 enum VR_INDEX_E {
-	VR_INDEX_E_MEDHA0_VDD = 0,
-	VR_INDEX_E_MEDHA1_VDD,
-	VR_INDEX_E_P075_OWL_VDD,
-	VR_INDEX_E_VDDQC_HBM1_HBM3_HBM5_HBM7,
-	VR_INDEX_E_VDDPHY_HBM1_HBM3_HBM5_HBM7,
-	VR_INDEX_E_P0V75_TRVDD,
-	VR_INDEX_E_HAMSA_VDD,
-	VR_INDEX_E_VPP_HBM0_HBM2_HBM4_HBM6,
-	VR_INDEX_E_P0V85_VDDA_PCIE,
-	VR_INDEX_E_VDDQC_HBM0_HBM2_HBM4_HBM6,
-	VR_INDEX_E_VDDPHY_HBM0_HBM2_HBM4_HBM6,
 	VR_INDEX_E_P0V895,
 	VR_INDEX_E_P0V825,
 	VR_INDEX_MAX,
 };
 
 enum VR_RAIL_E {
-	VR_RAIL_E_MEDHA0_VDD = 0,
-	VR_RAIL_E_MEDHA1_VDD,
-	VR_RAIL_E_P075_OWL_VDD,
-	VR_RAIL_E_MAX_S_VDD,
-	VR_RAIL_E_VDDQC_HBM1_HBM3_HBM5_HBM7,
-	VR_RAIL_E_VDDQL_HBM1_HBM3_HBM5_HBM7,
-	VR_RAIL_E_VDDPHY_HBM1_HBM3_HBM5_HBM7,
-	VR_RAIL_E_MAX_M_VDD,
-	VR_RAIL_E_P0V75_TRVDD,
-	VR_RAIL_E_VPP_HBM1_HBM3_HBM5_HBM7,
-	VR_RAIL_E_HAMSA_VDD,
-	VR_RAIL_E_MAX_N_VDD,
-	VR_RAIL_E_VPP_HBM0_HBM2_HBM4_HBM6,
-	VR_RAIL_E_VDDQL_HBM0_HBM2_HBM4_HBM6,
-	VR_RAIL_E_P0V85_VDDA_PCIE,
-	VR_RAIL_E_P1V5_VDDHTX_PCIE,
-	VR_RAIL_E_VDDQC_HBM0_HBM2_HBM4_HBM6,
-	VR_RAIL_E_P0V9_TRVDD,
-	VR_RAIL_E_VDDPHY_HBM0_HBM2_HBM4_HBM6,
+	VR_RAIL_E_P0V895 = 0,
+	VR_RAIL_E_P0V825,
 	VR_RAIL_E_MAX,
 };
 
@@ -183,7 +155,7 @@ void vr_mutex_init(void);
 bool vr_rail_name_get(uint8_t rail, uint8_t **name);
 bool vr_rail_enum_get(uint8_t *name, uint8_t *num);
 int power_level_send_event(bool is_assert, int ubc1_current, int ubc2_current);
-bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading);
+// bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading);
 void set_uart_power_event_is_enable(bool is_enable);
 void pwr_level_mutex_init(void);
 void set_alert_level_to_default_or_user_setting(bool is_default, int32_t user_setting);

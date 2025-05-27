@@ -237,8 +237,8 @@ void init_vr_vendor_type(void)
 	// read page from 0x60
 	I2C_MSG i2c_msg = { 0 };
 	uint8_t retry = 3;
-	i2c_msg.bus = I2C_BUS2;
-	i2c_msg.target_addr = P075_OWL_VDD_ISL69260_ADDR;
+	i2c_msg.bus = I2C_BUS1;
+	i2c_msg.target_addr = VR_ASIC_P0V895_PEX_MP2971_ADDR;
 	i2c_msg.tx_len = 1;
 	i2c_msg.rx_len = 1;
 	i2c_msg.data[0] = 0x00;
@@ -257,7 +257,7 @@ void init_tmp_type()
 	I2C_MSG i2c_msg = { 0 };
 	uint8_t retry = 5;
 	i2c_msg.bus = I2C_BUS_TMP;
-	i2c_msg.target_addr = ON_DIE_1_TEMP_TMP432_ADDR;
+	i2c_msg.target_addr = THERMAL_SENSOR_1_ADDR;
 	i2c_msg.tx_len = 1;
 	i2c_msg.rx_len = 1;
 	i2c_msg.data[0] = 0xFE; //MFG ID REG

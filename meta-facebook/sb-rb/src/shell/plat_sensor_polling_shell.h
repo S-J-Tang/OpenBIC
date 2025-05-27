@@ -20,11 +20,13 @@
 #include <shell/shell.h>
 
 void cmd_set_plat_sensor_polling_all(const struct shell *shell, size_t argc, char **argv);
-void cmd_set_plat_sensor_polling_ubc(const struct shell *shell, size_t argc, char **argv);
+void cmd_set_plat_sensor_polling_adc(const struct shell *shell, size_t argc, char **argv);
+// void cmd_set_plat_sensor_polling_ubc(const struct shell *shell, size_t argc, char **argv);
 void cmd_set_plat_sensor_polling_vr(const struct shell *shell, size_t argc, char **argv);
 void cmd_set_plat_sensor_polling_temp(const struct shell *shell, size_t argc, char **argv);
 void cmd_get_plat_sensor_polling_all(const struct shell *shell, size_t argc, char **argv);
-void cmd_get_plat_sensor_polling_ubc(const struct shell *shell, size_t argc, char **argv);
+void cmd_get_plat_sensor_polling_adc(const struct shell *shell, size_t argc, char **argv);
+// void cmd_get_plat_sensor_polling_ubc(const struct shell *shell, size_t argc, char **argv);
 void cmd_get_plat_sensor_polling_vr(const struct shell *shell, size_t argc, char **argv);
 void cmd_get_plat_sensor_polling_temp(const struct shell *shell, size_t argc, char **argv);
 
@@ -32,7 +34,7 @@ void cmd_get_plat_sensor_polling_temp(const struct shell *shell, size_t argc, ch
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cmd_set_plat_sensor_polling,
 	SHELL_CMD(all, NULL, "set platform sensor polling all", cmd_set_plat_sensor_polling_all),
-	SHELL_CMD(ubc, NULL, "set platform sensor polling ubc", cmd_set_plat_sensor_polling_ubc),
+	SHELL_CMD(adc, NULL, "set platform sensor polling adc", cmd_set_plat_sensor_polling_adc),
 	SHELL_CMD(vr, NULL, "set platform sensor polling vr", cmd_set_plat_sensor_polling_vr),
 	SHELL_CMD(temp, NULL, "set platform sensor polling temp", cmd_set_plat_sensor_polling_temp),
 	SHELL_SUBCMD_SET_END);
