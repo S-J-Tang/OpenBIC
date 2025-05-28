@@ -31,10 +31,10 @@
 
 LOG_MODULE_REGISTER(plat_pldm_sensor);
 
-static bool plat_sensor_polling_enable_flag = false;
+static bool plat_sensor_polling_enable_flag = true;
 static bool plat_sensor_adc_polling_enable_flag = true;
-static bool plat_sensor_temp_polling_enable_flag = false;
-static bool plat_sensor_vr_polling_enable_flag = false;
+static bool plat_sensor_temp_polling_enable_flag = true;
+static bool plat_sensor_vr_polling_enable_flag = true;
 
 void plat_pldm_sensor_change_vr_dev();
 void plat_pldm_sensor_change_vr_addr();
@@ -2680,8 +2680,6 @@ bool is_adc_access(uint8_t sensor_num)
         return false;
     }
 }
-
-
 
 bool is_temp_access(uint8_t cfg_idx)
 {

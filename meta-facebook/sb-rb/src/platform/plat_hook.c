@@ -242,6 +242,8 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 		}
 	}
 
+	LOG_INF("hihihihihihihihiihihihiihhih");
+
 	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)args;
 
 	/* mutex unlock */
@@ -318,10 +320,10 @@ void vr_mutex_init(void)
 
 /* the order is following enum VR_RAIL_E */
 vr_mapping_sensor vr_rail_table[] = {
-	{ VR_RAIL_E_P0V895, SENSOR_NUM_VR_ASIC_P0V895_PEX_VOLT_V, "RB_P0V895_PEX", 0xffffffff },
-	{ VR_RAIL_E_P0V825, SENSOR_NUM_VR_ASIC_P0V825_A0_VOLT_V, "RB_P0V825_A0", 0xffffffff },
-	{ VR_RAIL_E_P0V825, SENSOR_NUM_VR_ASIC_P0V825_A0_VOLT_V, "RB_P0V825_A0", 0xffffffff },
-	{ VR_RAIL_E_P0V825, SENSOR_NUM_VR_ASIC_P0V825_A0_VOLT_V, "RB_P0V825_A0", 0xffffffff },
+	{ VR_RAIL_E_P0V895_PEX, SENSOR_NUM_VR_ASIC_P0V895_PEX_VOLT_V, "RB_P0V895_PEX", 0xffffffff },
+	{ VR_RAIL_E_P0V825_A0, SENSOR_NUM_VR_ASIC_P0V825_A0_VOLT_V, "RB_P0V825_A0", 0xffffffff },
+	{ VR_RAIL_E_P0V825_A1, SENSOR_NUM_VR_ASIC_P0V825_A1_VOLT_V, "RB_P0V825_A1", 0xffffffff },
+	{ VR_RAIL_E_P0V825_A2, SENSOR_NUM_VR_ASIC_P0V825_A2_VOLT_V, "RB_P0V825_A2", 0xffffffff },
 };
 
 vr_mapping_status vr_status_table[] = {
@@ -338,14 +340,14 @@ bool vr_rail_name_get(uint8_t rail, uint8_t **name)
 {
 	CHECK_NULL_ARG_WITH_RETURN(name, false);
 
-	LOG_INF("vr_rail_name_get not use now");
+	// LOG_INF("vr_rail_name_get not use now");
 
-	// if (rail >= VR_RAIL_E_MAX) {
-	// 	*name = NULL;
-	// 	return false;
-	// }
+	if (rail >= VR_RAIL_E_MAX) {
+		*name = NULL;
+		return false;
+	}
 
-	// *name = (uint8_t *)vr_rail_table[rail].sensor_name;
+	*name = (uint8_t *)vr_rail_table[rail].sensor_name;
 	return true;
 }
 
@@ -373,16 +375,16 @@ bool vr_rail_enum_get(uint8_t *name, uint8_t *num)
 	CHECK_NULL_ARG_WITH_RETURN(name, false);
 	CHECK_NULL_ARG_WITH_RETURN(num, false);
 
-	LOG_INF("vr_rail_enum_get not use now");
+	// LOG_INF("vr_rail_enum_get not use now");
 
-	// for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-	// 	if (strcmp(name, vr_rail_table[i].sensor_name) == 0) {
-	// 		*num = i;
-	// 		return true;
-	// 	}
-	// }
+	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+		if (strcmp(name, vr_rail_table[i].sensor_name) == 0) {
+			*num = i;
+			return true;
+		}
+	}
 
-	// LOG_ERR("invalid rail name %s", name);
+	LOG_ERR("invalid rail name %s", name);
 	return false;
 }
 
@@ -527,20 +529,20 @@ static bool vr_vout_user_settings_init(void)
 		return false;
 	}
 
-	LOG_INF("vr_vout_user_settings_init not use now");
+	// LOG_INF("vr_vout_user_settings_init not use now");
 
-	// for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-	// 	if (user_settings.vout[i] != 0xffff) {
-	// 		/* write vout */
-	// 		uint16_t millivolt = user_settings.vout[i];
-	// 		if (!plat_set_vout_command(i, &millivolt, false, false)) {
-	// 			LOG_ERR("Can't set vout[%d]=%x by user settings", i, millivolt);
-	// 			return false;
-	// 		}
-	// 		LOG_INF("set [%x]%s: %dmV", i, vr_rail_table[i].sensor_name,
-	// 			user_settings.vout[i]);
-	// 	}
-	// }
+	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+		if (user_settings.vout[i] != 0xffff) {
+			/* write vout */
+			uint16_t millivolt = user_settings.vout[i];
+			if (!plat_set_vout_command(i, &millivolt, false, false)) {
+				LOG_ERR("Can't set vout[%d]=%x by user settings", i, millivolt);
+				return false;
+			}
+			LOG_INF("set [%x]%s: %dmV", i, vr_rail_table[i].sensor_name,
+				user_settings.vout[i]);
+		}
+	}
 
 	return true;
 }
@@ -753,14 +755,14 @@ bool vr_rail_voltage_peak_get(uint8_t *name, int *peak_value)
 	CHECK_NULL_ARG_WITH_RETURN(name, false);
 	CHECK_NULL_ARG_WITH_RETURN(peak_value, false);
 
-	LOG_INF("vr_rail_voltage_peak_get not use now");
+	// LOG_INF("vr_rail_voltage_peak_get not use now");
 
-	// for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-	// 	if (strcmp(name, vr_rail_table[i].sensor_name) == 0) {
-	// 		*peak_value = vr_rail_table[i].peak_value;
-	// 		return true;
-	// 	}
-	// }
+	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+		if (strcmp(name, vr_rail_table[i].sensor_name) == 0) {
+			*peak_value = vr_rail_table[i].peak_value;
+			return true;
+		}
+	}
 
 	return false;
 }
@@ -944,60 +946,60 @@ bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt)
 
 	LOG_INF("plat_get_vout_command not use now");
 
-	// uint8_t sensor_id = vr_rail_table[rail].sensor_id;
-	// sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
-	// if (cfg == NULL) {
-	// 	LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
-	// 	return false;
-	// }
+	if (cfg == NULL) {
+		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+		return false;
+	}
 
-	// vr_pre_proc_arg *pre_proc_args = vr_pre_read_args + rail;
+	vr_pre_proc_arg *pre_proc_args = vr_pre_read_args + rail;
 
-	// if (cfg->pre_sensor_read_hook) {
-	// 	if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
-	// 		LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
-	// 		goto err;
-	// 	}
-	// }
+	if (cfg->pre_sensor_read_hook) {
+		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
+			LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
+			goto err;
+		}
+	}
 
-	// switch (cfg->type) {
-	// case sensor_dev_isl69259:
-	// 	if (!isl69260_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-	// 		LOG_ERR("The VR ISL69260 vout reading failed");
-	// 		goto err;
-	// 	}
-	// 	break;
-	// case sensor_dev_mp2971:
-	// 	if (!mp2971_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-	// 		LOG_ERR("The VR MPS2971 vout reading failed");
-	// 		goto err;
-	// 	}
-	// 	break;
-	// case sensor_dev_mp29816a:
-	// 	if (!mp29816a_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-	// 		LOG_ERR("The VR MPS29816a vout reading failed");
-	// 		goto err;
-	// 	}
-	// 	break;
-	// case sensor_dev_raa228249:
-	// 	if (!raa228249_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
-	// 		LOG_ERR("The VR RAA228249 vout reading failed");
-	// 		goto err;
-	// 	}
-	// 	break;
-	// default:
-	// 	LOG_ERR("Unsupport VR type(%x)", cfg->type);
-	// 	goto err;
-	// }
+	switch (cfg->type) {
+	case sensor_dev_isl69259:
+		if (!isl69260_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+			LOG_ERR("The VR ISL69260 vout reading failed");
+			goto err;
+		}
+		break;
+	case sensor_dev_mp2971:
+		if (!mp2971_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+			LOG_ERR("The VR MPS2971 vout reading failed");
+			goto err;
+		}
+		break;
+	case sensor_dev_mp29816a:
+		if (!mp29816a_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+			LOG_ERR("The VR MPS29816a vout reading failed");
+			goto err;
+		}
+		break;
+	case sensor_dev_raa228249:
+		if (!raa228249_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
+			LOG_ERR("The VR RAA228249 vout reading failed");
+			goto err;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupport VR type(%x)", cfg->type);
+		goto err;
+	}
 
-// 	ret = true;
-// err:
-	// if (cfg->post_sensor_read_hook) {
-	// 	if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
-	// 		LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
-	// 	}
-	// }
+	ret = true;
+err:
+	if (cfg->post_sensor_read_hook) {
+		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
+			LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
+		}
+	}
 	return ret;
 }
 
