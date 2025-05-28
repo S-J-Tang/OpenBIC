@@ -19,90 +19,65 @@
 
 #include "sensor.h"
 
-#define VR_MAX_NUM 8
+#define VR_MAX_NUM 2
 #define VR_MUTEX_LOCK_TIMEOUT_MS 1000
 
 #include "plat_pldm_sensor.h"
 
 enum VR_INDEX_E {
-	VR_INDEX_E_P3V3 = 0,
-	VR_INDEX_E_P0V85,
-	VR_INDEX_E_P0V75_CH_N,
-	VR_INDEX_E_P0V75_CH_S,
-	VR_INDEX_E_P0V75_TRVDD_ZONEA,
-	VR_INDEX_E_P0V75_TRVDD_ZONEB,
-	VR_INDEX_E_P1V1_VDDC_HBM0_HBM2_HBM4,
-	VR_INDEX_E_P0V9_TRVDD_ZONEA,
-	VR_INDEX_E_P0V9_TRVDD_ZONEB,
-	VR_INDEX_E_P1V1_VDDC_HBM1_HBM3_HBM5,
-	VR_INDEX_E_P0V8_VDDA_PCIE,
+	VR_INDEX_E_P0V895 = 0,
+	VR_INDEX_E_P0V825,
 	VR_INDEX_MAX,
 };
 
 enum VR_RAIL_E {
-	VR_RAIL_E_P3V3 = 0,
-	VR_RAIL_E_P0V85_PVDD,
-	VR_RAIL_E_P0V75_PVDD_CH_N,
-	VR_RAIL_E_P0V75_MAX_PHY_N,
-	VR_RAIL_E_P0V75_PVDD_CH_S,
-	VR_RAIL_E_P0V75_MAX_PHY_S,
-	VR_RAIL_E_P0V75_TRVDD_ZONEA,
-	VR_RAIL_E_P1V8_VPP_HBM0_HBM2_HBM4,
-	VR_RAIL_E_P0V75_TRVDD_ZONEB,
-	VR_RAIL_E_P0V4_VDDQL_HBM0_HBM2_HBM4,
-	VR_RAIL_E_P1V1_VDDC_HBM0_HBM2_HBM4,
-	VR_RAIL_E_P0V75_VDDPHY_HBM0_HBM2_HBM4,
-	VR_RAIL_E_P0V9_TRVDD_ZONEA,
-	VR_RAIL_E_P1V8_VPP_HBM1_HBM3_HBM5,
-	VR_RAIL_E_P0V9_TRVDD_ZONEB,
-	VR_RAIL_E_P0V4_VDDQL_HBM1_HBM3_HBM5,
-	VR_RAIL_E_P1V1_VDDC_HBM1_HBM3_HBM5,
-	VR_RAIL_E_P0V75_VDDPHY_HBM1_HBM3_HBM5,
-	VR_RAIL_E_P0V8_VDDA_PCIE,
-	VR_RAIL_E_P1V2_VDDHTX_PCIE,
+	VR_RAIL_E_P0V895_PEX = 0,
+	VR_RAIL_E_P0V825_A0,
+	VR_RAIL_E_P0V825_A1,
+	VR_RAIL_E_P0V825_A2,
 	VR_RAIL_E_MAX,
 };
 
 enum VR_STAUS_E {
-	VR_STAUS_E_STATUS_BYTE = 0,
-	VR_STAUS_E_STATUS_WORD,
-	VR_STAUS_E_STATUS_VOUT,
-	VR_STAUS_E_STATUS_IOUT,
-	VR_STAUS_E_STATUS_INPUT,
-	VR_STAUS_E_STATUS_TEMPERATURE,
-	VR_STAUS_E_STATUS_CML,
+	// VR_STAUS_E_STATUS_BYTE = 0,
+	// VR_STAUS_E_STATUS_WORD,
+	// VR_STAUS_E_STATUS_VOUT,
+	// VR_STAUS_E_STATUS_IOUT,
+	// VR_STAUS_E_STATUS_INPUT,
+	// VR_STAUS_E_STATUS_TEMPERATURE,
+	// VR_STAUS_E_STATUS_CML,
 	VR_STAUS_E_MAX,
 };
 
 enum PLAT_TEMP_INDEX_E {
-	TEMP_INDEX_ON_DIE_ATH_0_N_OWL,
-	TEMP_INDEX_ON_DIE_ATH_1_S_OWL,
-	TEMP_INDEX_TOP_INLET,
-	TEMP_INDEX_TOP_OUTLET,
-	TEMP_INDEX_BOT_INLET,
-	TEMP_INDEX_BOT_OUTLET,
+	// TEMP_INDEX_ON_DIE_ATH_0_N_OWL,
+	// TEMP_INDEX_ON_DIE_ATH_1_S_OWL,
+	// TEMP_INDEX_TOP_INLET,
+	// TEMP_INDEX_TOP_OUTLET,
+	// TEMP_INDEX_BOT_INLET,
+	// TEMP_INDEX_BOT_OUTLET,
 	TEMP_INDEX_MAX,
 };
 
 enum PLAT_TEMP_INDEX_THRESHOLD_TYPE_E {
-	DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT,
-	DIE_ATH_0_N_OWL_REMOTE_1_LOW_LIMIT,
-	DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT,
-	DIE_ATH_1_S_OWL_REMOTE_1_LOW_LIMIT,
+	// DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT,
+	// DIE_ATH_0_N_OWL_REMOTE_1_LOW_LIMIT,
+	// DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT,
+	// DIE_ATH_1_S_OWL_REMOTE_1_LOW_LIMIT,
 
-	DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT,
-	DIE_ATH_0_N_OWL_REMOTE_2_LOW_LIMIT,
-	DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT,
-	DIE_ATH_1_S_OWL_REMOTE_2_LOW_LIMIT,
+	// DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT,
+	// DIE_ATH_0_N_OWL_REMOTE_2_LOW_LIMIT,
+	// DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT,
+	// DIE_ATH_1_S_OWL_REMOTE_2_LOW_LIMIT,
 
-	TOP_INLET_LOW_LIMIT,
-	TOP_INLET_HIGH_LIMIT,
-	TOP_OUTLET_LOW_LIMIT,
-	TOP_OUTLET_HIGH_LIMIT,
-	BOT_INLET_LOW_LIMIT,
-	BOT_INLET_HIGH_LIMIT,
-	BOT_OUTLET_LOW_LIMIT,
-	BOT_OUTLET_HIGH_LIMIT,
+	// TOP_INLET_LOW_LIMIT,
+	// TOP_INLET_HIGH_LIMIT,
+	// TOP_OUTLET_LOW_LIMIT,
+	// TOP_OUTLET_HIGH_LIMIT,
+	// BOT_INLET_LOW_LIMIT,
+	// BOT_INLET_HIGH_LIMIT,
+	// BOT_OUTLET_LOW_LIMIT,
+	// BOT_OUTLET_HIGH_LIMIT,
 	PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX,
 };
 
@@ -245,7 +220,7 @@ void vr_mutex_init(void);
 bool vr_rail_name_get(uint8_t rail, uint8_t **name);
 bool vr_rail_enum_get(uint8_t *name, uint8_t *num);
 int power_level_send_event(bool is_assert, int ubc1_current, int ubc2_current);
-bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading);
+// bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading);
 bool post_all_sensor_read(sensor_cfg *cfg, void *args, int *reading);
 void set_uart_power_event_is_enable(bool is_enable);
 void pwr_level_mutex_init(void);
@@ -266,7 +241,7 @@ bool plat_set_temp_threshold(uint8_t temp_index_threshold_type, uint32_t *millid
 			     bool is_default, bool is_perm);
 bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt);
 bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_default, bool is_perm);
-bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_status);
+// bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_status);
 bool plat_clear_vr_status(uint8_t rail);
 bool vr_status_name_get(uint8_t rail, uint8_t **name);
 bool vr_status_enum_get(uint8_t *name, uint8_t *num);

@@ -43,13 +43,13 @@ LOG_MODULE_REGISTER(plat_init);
 void pal_pre_init()
 {
 	/* init i2c target */
-	// for (int index = 0; index < MAX_TARGET_NUM; index++) {
-	// 	if (I2C_TARGET_ENABLE_TABLE[index])
-	// 		i2c_target_control(
-	// 			index, (struct _i2c_target_config *)&I2C_TARGET_CONFIG_TABLE[index],
-	// 			1);
-	// }
-	// init_platform_config();
+	for (int index = 0; index < MAX_TARGET_NUM; index++) {
+		if (I2C_TARGET_ENABLE_TABLE[index])
+			i2c_target_control(
+				index, (struct _i2c_target_config *)&I2C_TARGET_CONFIG_TABLE[index],
+				1);
+	}
+	init_platform_config();
 	plat_led_init();
 	vr_mutex_init();
 	pwr_level_mutex_init();

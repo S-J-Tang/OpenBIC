@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(plat_fwupdate);
 
 static uint8_t pldm_pre_vr_update(void *fw_update_param);
 static uint8_t pldm_post_vr_update(void *fw_update_param);
-static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
+// static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
 
 typedef struct aegis_compnt_mapping_sensor {
 	uint8_t firmware_comp_id;
@@ -73,186 +73,186 @@ aegis_compnt_mapping_sensor aegis_vr_compnt_mapping_sensor_table[] = {
 
 /* PLDM FW update table */
 pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_BIC,
-		.comp_classification_index = 0x00,
-		.pre_update_func = NULL,
-		.update_func = pldm_bic_update,
-		.pos_update_func = NULL,
-		.inf = COMP_UPDATE_VIA_SPI,
-		.activate_method = COMP_ACT_SELF,
-		.self_act_func = pldm_bic_activate,
-		.get_fw_version_fn = NULL,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P3V3,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V85_PVDD,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V75_PVDD_CH_N,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V75_PVDD_CH_S,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V75_TRVDD_ZONEA,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V75_TRVDD_ZONEB,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P1V1_VDDC_HBM0_HBM2_HBM4,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V9_TRVDD_ZONEA,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V9_TRVDD_ZONEB,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P1V1_VDDC_HBM1_HBM3_HBM5,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
-	{
-		.enable = true,
-		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-		.comp_identifier = AG_COMPNT_P0V8_VDDA_PCIE,
-		.comp_classification_index = 0x00,
-		.pre_update_func = pldm_pre_vr_update,
-		.update_func = pldm_vr_update,
-		.pos_update_func = pldm_post_vr_update,
-		.inf = COMP_UPDATE_VIA_I2C,
-		.activate_method = COMP_ACT_AC_PWR_CYCLE,
-		.self_act_func = NULL,
-		.get_fw_version_fn = get_vr_fw_version,
-		.self_apply_work_func = NULL,
-		.comp_version_str = NULL,
-	},
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_BIC,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = NULL,
+	// 	.update_func = pldm_bic_update,
+	// 	.pos_update_func = NULL,
+	// 	.inf = COMP_UPDATE_VIA_SPI,
+	// 	.activate_method = COMP_ACT_SELF,
+	// 	.self_act_func = pldm_bic_activate,
+	// 	.get_fw_version_fn = NULL,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P3V3,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V85_PVDD,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V75_PVDD_CH_N,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V75_PVDD_CH_S,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V75_TRVDD_ZONEA,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V75_TRVDD_ZONEB,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P1V1_VDDC_HBM0_HBM2_HBM4,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V9_TRVDD_ZONEA,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V9_TRVDD_ZONEB,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P1V1_VDDC_HBM1_HBM3_HBM5,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
+	// {
+	// 	.enable = true,
+	// 	.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+	// 	.comp_identifier = AG_COMPNT_P0V8_VDDA_PCIE,
+	// 	.comp_classification_index = 0x00,
+	// 	.pre_update_func = pldm_pre_vr_update,
+	// 	.update_func = pldm_vr_update,
+	// 	.pos_update_func = pldm_post_vr_update,
+	// 	.inf = COMP_UPDATE_VIA_I2C,
+	// 	.activate_method = COMP_ACT_AC_PWR_CYCLE,
+	// 	.self_act_func = NULL,
+	// 	.get_fw_version_fn = get_vr_fw_version,
+	// 	.self_apply_work_func = NULL,
+	// 	.comp_version_str = NULL,
+	// },
 };
 
 uint8_t plat_pldm_query_device_identifiers(const uint8_t *buf, uint16_t len, uint8_t *resp,
@@ -406,39 +406,39 @@ static struct k_mutex *get_vr_mutex_by_comp_id(uint8_t comp_id)
 	uint8_t vr_mutex_id = VR_INDEX_MAX;
 
 	switch (comp_id) {
-	case AG_COMPNT_P3V3:
-		vr_mutex_id = VR_INDEX_E_P3V3;
-		break;
-	case AG_COMPNT_P0V85_PVDD:
-		vr_mutex_id = VR_INDEX_E_P0V85;
-		break;
-	case AG_COMPNT_P0V75_PVDD_CH_N:
-		vr_mutex_id = VR_INDEX_E_P0V75_CH_N;
-		break;
-	case AG_COMPNT_P0V75_PVDD_CH_S:
-		vr_mutex_id = VR_INDEX_E_P0V75_CH_S;
-		break;
-	case AG_COMPNT_P0V75_TRVDD_ZONEA:
-		vr_mutex_id = VR_INDEX_E_P0V75_TRVDD_ZONEA;
-		break;
-	case AG_COMPNT_P0V75_TRVDD_ZONEB:
-		vr_mutex_id = VR_INDEX_E_P0V75_TRVDD_ZONEB;
-		break;
-	case AG_COMPNT_P1V1_VDDC_HBM0_HBM2_HBM4:
-		vr_mutex_id = VR_INDEX_E_P1V1_VDDC_HBM0_HBM2_HBM4;
-		break;
-	case AG_COMPNT_P0V9_TRVDD_ZONEA:
-		vr_mutex_id = VR_INDEX_E_P0V9_TRVDD_ZONEA;
-		break;
-	case AG_COMPNT_P0V9_TRVDD_ZONEB:
-		vr_mutex_id = VR_INDEX_E_P0V9_TRVDD_ZONEB;
-		break;
-	case AG_COMPNT_P1V1_VDDC_HBM1_HBM3_HBM5:
-		vr_mutex_id = VR_INDEX_E_P1V1_VDDC_HBM1_HBM3_HBM5;
-		break;
-	case AG_COMPNT_P0V8_VDDA_PCIE:
-		vr_mutex_id = VR_INDEX_E_P0V8_VDDA_PCIE;
-		break;
+	// case AG_COMPNT_P3V3:
+	// 	vr_mutex_id = VR_INDEX_E_P3V3;
+	// 	break;
+	// case AG_COMPNT_P0V85_PVDD:
+	// 	vr_mutex_id = VR_INDEX_E_P0V85;
+	// 	break;
+	// case AG_COMPNT_P0V75_PVDD_CH_N:
+	// 	vr_mutex_id = VR_INDEX_E_P0V75_CH_N;
+	// 	break;
+	// case AG_COMPNT_P0V75_PVDD_CH_S:
+	// 	vr_mutex_id = VR_INDEX_E_P0V75_CH_S;
+	// 	break;
+	// case AG_COMPNT_P0V75_TRVDD_ZONEA:
+	// 	vr_mutex_id = VR_INDEX_E_P0V75_TRVDD_ZONEA;
+	// 	break;
+	// case AG_COMPNT_P0V75_TRVDD_ZONEB:
+	// 	vr_mutex_id = VR_INDEX_E_P0V75_TRVDD_ZONEB;
+	// 	break;
+	// case AG_COMPNT_P1V1_VDDC_HBM0_HBM2_HBM4:
+	// 	vr_mutex_id = VR_INDEX_E_P1V1_VDDC_HBM0_HBM2_HBM4;
+	// 	break;
+	// case AG_COMPNT_P0V9_TRVDD_ZONEA:
+	// 	vr_mutex_id = VR_INDEX_E_P0V9_TRVDD_ZONEA;
+	// 	break;
+	// case AG_COMPNT_P0V9_TRVDD_ZONEB:
+	// 	vr_mutex_id = VR_INDEX_E_P0V9_TRVDD_ZONEB;
+	// 	break;
+	// case AG_COMPNT_P1V1_VDDC_HBM1_HBM3_HBM5:
+	// 	vr_mutex_id = VR_INDEX_E_P1V1_VDDC_HBM1_HBM3_HBM5;
+	// 	break;
+	// case AG_COMPNT_P0V8_VDDA_PCIE:
+	// 	vr_mutex_id = VR_INDEX_E_P0V8_VDDA_PCIE;
+	// 	break;
 	default:
 		LOG_ERR("Invalid component id(%d)", comp_id);
 		break;
@@ -447,175 +447,175 @@ static struct k_mutex *get_vr_mutex_by_comp_id(uint8_t comp_id)
 	return vr_mutex_get(vr_mutex_id);
 }
 
-static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
-{
-	CHECK_NULL_ARG_WITH_RETURN(info_p, false);
-	CHECK_NULL_ARG_WITH_RETURN(buf, false);
-	CHECK_NULL_ARG_WITH_RETURN(len, false);
+// static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
+// {
+// 	CHECK_NULL_ARG_WITH_RETURN(info_p, false);
+// 	CHECK_NULL_ARG_WITH_RETURN(buf, false);
+// 	CHECK_NULL_ARG_WITH_RETURN(len, false);
 
-	pldm_fw_update_info_t *p = (pldm_fw_update_info_t *)info_p;
+// 	pldm_fw_update_info_t *p = (pldm_fw_update_info_t *)info_p;
 
-	bool ret = false;
-	uint8_t bus = 0;
-	uint8_t addr = 0;
-	uint8_t sensor_id = 0;
-	uint8_t sensor_dev = 0;
-	char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
+// 	bool ret = false;
+// 	uint8_t bus = 0;
+// 	uint8_t addr = 0;
+// 	uint8_t sensor_id = 0;
+// 	uint8_t sensor_dev = 0;
+// 	char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
 
-	/* is_ubc_enabled_delayed_enabled() is to wait for all VR to be enabled when UBC is enabled  */
-	/* (gpio_get(FM_PLD_UBC_EN_R) == GPIO_LOW) is to stop VR FW accessing immediately when UBC is disabled */
-	/* is_mb_dc_on() is to start VR FW accessing when all VRs are enabled PW GD */
-	if (is_mb_dc_on() == false) {
-		if ((gpio_get(FM_PLD_UBC_EN_R) == GPIO_LOW) || !is_ubc_enabled_delayed_enabled()) {
-			LOG_INF("Comp id %d FW version request failed due to UBC is not enabled",
-				p->comp_identifier);
-			return ret;
-		}
-	}
+// 	/* is_ubc_enabled_delayed_enabled() is to wait for all VR to be enabled when UBC is enabled  */
+// 	/* (gpio_get(FM_PLD_UBC_EN_R) == GPIO_LOW) is to stop VR FW accessing immediately when UBC is disabled */
+// 	/* is_mb_dc_on() is to start VR FW accessing when all VRs are enabled PW GD */
+// 	if (is_mb_dc_on() == false) {
+// 		if ((gpio_get(FM_PLD_UBC_EN_R) == GPIO_LOW) || !is_ubc_enabled_delayed_enabled()) {
+// 			LOG_INF("Comp id %d FW version request failed due to UBC is not enabled",
+// 				p->comp_identifier);
+// 			return ret;
+// 		}
+// 	}
 
-	if (!find_sensor_id_and_name_by_firmware_comp_id(p->comp_identifier, &sensor_id,
-							 sensor_name)) {
-		LOG_ERR("Can't find sensor id and name by comp id: 0x%x", p->comp_identifier);
-		return ret;
-	}
+// 	if (!find_sensor_id_and_name_by_firmware_comp_id(p->comp_identifier, &sensor_id,
+// 							 sensor_name)) {
+// 		LOG_ERR("Can't find sensor id and name by comp id: 0x%x", p->comp_identifier);
+// 		return ret;
+// 	}
 
-	if (!get_sensor_info_by_sensor_id(sensor_id, &bus, &addr, &sensor_dev)) {
-		LOG_ERR("Can't find vr addr and bus by sensor id: 0x%x", sensor_id);
-		return ret;
-	}
+// 	if (!get_sensor_info_by_sensor_id(sensor_id, &bus, &addr, &sensor_dev)) {
+// 		LOG_ERR("Can't find vr addr and bus by sensor id: 0x%x", sensor_id);
+// 		return ret;
+// 	}
 
-	struct k_mutex *p_mutex = get_vr_mutex_by_comp_id(p->comp_identifier);
+// 	struct k_mutex *p_mutex = get_vr_mutex_by_comp_id(p->comp_identifier);
 
-	if (!p_mutex) {
-		LOG_ERR("vr comp id %d, mutex is NULL", p->comp_identifier);
-		return ret;
-	}
+// 	if (!p_mutex) {
+// 		LOG_ERR("vr comp id %d, mutex is NULL", p->comp_identifier);
+// 		return ret;
+// 	}
 
-	if (k_mutex_lock(p_mutex, K_MSEC(VR_MUTEX_LOCK_TIMEOUT_MS))) {
-		LOG_ERR("vr comp id %d, mutex %p lock fail", p->comp_identifier, p_mutex);
-		return ret;
-	}
-	LOG_DBG("vr comp id %d, mutex %p lock", p->comp_identifier, p_mutex);
+// 	if (k_mutex_lock(p_mutex, K_MSEC(VR_MUTEX_LOCK_TIMEOUT_MS))) {
+// 		LOG_ERR("vr comp id %d, mutex %p lock fail", p->comp_identifier, p_mutex);
+// 		return ret;
+// 	}
+// 	LOG_DBG("vr comp id %d, mutex %p lock", p->comp_identifier, p_mutex);
 
-	uint8_t type = get_vr_type();
-	uint32_t version = 0;
-	uint16_t remain = 0xFFFF;
-	switch (sensor_dev) {
-	case sensor_dev_isl69259:
-		if (!raa229621_get_crc(bus, addr, &version)) {
-			LOG_ERR("The VR ISL69260 version reading failed");
-			goto err;
-		}
-		if (raa229621_get_remaining_wr(bus, addr, (uint8_t *)&remain) < 0) {
-			LOG_ERR("The VR ISL69260 remaining reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_raa228238:
-		if (!raa229621_get_crc(bus, addr, &version)) {
-			LOG_ERR("The VR RAA228238 version reading failed");
-			goto err;
-		}
-		if (raa229621_get_remaining_wr(bus, addr, (uint8_t *)&remain) < 0) {
-			LOG_ERR("The VR RAA228238 remaining reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_mp2971:
-		if (!mp2971_get_checksum(bus, addr, &version)) {
-			LOG_ERR("The VR MPS2971 version reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_mp2891:
-		if (!mp2891_get_fw_version(bus, addr, &version)) {
-			LOG_ERR("The VR MPS2891 version reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_mp29816a:
-		if (!mp29816a_get_fw_version(bus, addr, &version)) {
-			LOG_ERR("The VR MPS29816a version reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_raa228249:
-		if (!raa228249_get_crc(bus, addr, &version)) {
-			LOG_ERR("The VR RAA228249 version reading failed");
-			goto err;
-		}
-		if (raa228249_get_remaining_wr(bus, addr, (uint8_t *)&remain) < 0) {
-			LOG_ERR("The VR RAA228249 remaining reading failed");
-			goto err;
-		}
-		break;
-	default:
-		LOG_ERR("Unsupport VR type(%d)", type);
-		goto err;
-	}
+// 	uint8_t type = get_vr_type();
+// 	uint32_t version = 0;
+// 	uint16_t remain = 0xFFFF;
+// 	switch (sensor_dev) {
+// 	case sensor_dev_isl69259:
+// 		if (!raa229621_get_crc(bus, addr, &version)) {
+// 			LOG_ERR("The VR ISL69260 version reading failed");
+// 			goto err;
+// 		}
+// 		if (raa229621_get_remaining_wr(bus, addr, (uint8_t *)&remain) < 0) {
+// 			LOG_ERR("The VR ISL69260 remaining reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_raa228238:
+// 		if (!raa229621_get_crc(bus, addr, &version)) {
+// 			LOG_ERR("The VR RAA228238 version reading failed");
+// 			goto err;
+// 		}
+// 		if (raa229621_get_remaining_wr(bus, addr, (uint8_t *)&remain) < 0) {
+// 			LOG_ERR("The VR RAA228238 remaining reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_mp2971:
+// 		if (!mp2971_get_checksum(bus, addr, &version)) {
+// 			LOG_ERR("The VR MPS2971 version reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_mp2891:
+// 		if (!mp2891_get_fw_version(bus, addr, &version)) {
+// 			LOG_ERR("The VR MPS2891 version reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_mp29816a:
+// 		if (!mp29816a_get_fw_version(bus, addr, &version)) {
+// 			LOG_ERR("The VR MPS29816a version reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_raa228249:
+// 		if (!raa228249_get_crc(bus, addr, &version)) {
+// 			LOG_ERR("The VR RAA228249 version reading failed");
+// 			goto err;
+// 		}
+// 		if (raa228249_get_remaining_wr(bus, addr, (uint8_t *)&remain) < 0) {
+// 			LOG_ERR("The VR RAA228249 remaining reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	default:
+// 		LOG_ERR("Unsupport VR type(%d)", type);
+// 		goto err;
+// 	}
 
-	if (sensor_dev == sensor_dev_mp2891 || sensor_dev == sensor_dev_mp29816a)
-		version = sys_cpu_to_be16(version);
-	else if (sensor_dev == sensor_dev_isl69259 || sensor_dev == sensor_dev_raa228238 ||
-		 sensor_dev == sensor_dev_raa228249 || sensor_dev == sensor_dev_mp2971)
-		version = sys_cpu_to_be32(version);
-	else
-		LOG_ERR("Unsupport VR type(%d)", type);
+// 	if (sensor_dev == sensor_dev_mp2891 || sensor_dev == sensor_dev_mp29816a)
+// 		version = sys_cpu_to_be16(version);
+// 	else if (sensor_dev == sensor_dev_isl69259 || sensor_dev == sensor_dev_raa228238 ||
+// 		 sensor_dev == sensor_dev_raa228249 || sensor_dev == sensor_dev_mp2971)
+// 		version = sys_cpu_to_be32(version);
+// 	else
+// 		LOG_ERR("Unsupport VR type(%d)", type);
 
-	const char *vr_name[] = {
-		[VR_RNS_ISL69260_RAA228238] = "RNS ",
-		[VR_MPS_MP2971_MP2891] = "MPS ",
-		[VR_RNS_ISL69260_RAA228249] = "RNS ",
-		[VR_MPS_MP2971_MP29816A] = "MPS ",
-		[VR_UNKNOWN] = NULL,
-	};
+// 	const char *vr_name[] = {
+// 		[VR_RNS_ISL69260_RAA228238] = "RNS ",
+// 		[VR_MPS_MP2971_MP2891] = "MPS ",
+// 		[VR_RNS_ISL69260_RAA228249] = "RNS ",
+// 		[VR_MPS_MP2971_MP29816A] = "MPS ",
+// 		[VR_UNKNOWN] = NULL,
+// 	};
 
-	const char *remain_str_p = ", Remaining Write: ";
-	uint8_t *buf_p = buf;
-	const uint8_t *vr_name_p = vr_name[type];
-	*len = 0;
+// 	const char *remain_str_p = ", Remaining Write: ";
+// 	uint8_t *buf_p = buf;
+// 	const uint8_t *vr_name_p = vr_name[type];
+// 	*len = 0;
 
-	if (!vr_name_p) {
-		LOG_ERR("The pointer of VR string name is NULL");
-		goto err;
-	}
+// 	if (!vr_name_p) {
+// 		LOG_ERR("The pointer of VR string name is NULL");
+// 		goto err;
+// 	}
 
-	memcpy(buf_p, vr_name_p, strlen(vr_name_p));
-	buf_p += strlen(vr_name_p);
-	*len += strlen(vr_name_p);
+// 	memcpy(buf_p, vr_name_p, strlen(vr_name_p));
+// 	buf_p += strlen(vr_name_p);
+// 	*len += strlen(vr_name_p);
 
-	if (sensor_dev == sensor_dev_mp2891 || sensor_dev == sensor_dev_mp29816a) {
-		*len += bin2hex((uint8_t *)&version, 2, buf_p, 4);
-		buf_p += 4;
-	} else if (sensor_dev == sensor_dev_isl69259 || sensor_dev == sensor_dev_raa228238 ||
-		   sensor_dev == sensor_dev_raa228249 || sensor_dev == sensor_dev_mp2971) {
-		*len += bin2hex((uint8_t *)&version, 4, buf_p, 8);
-		buf_p += 8;
-	} else
-		LOG_ERR("Unsupport VR type(%d)", type);
+// 	if (sensor_dev == sensor_dev_mp2891 || sensor_dev == sensor_dev_mp29816a) {
+// 		*len += bin2hex((uint8_t *)&version, 2, buf_p, 4);
+// 		buf_p += 4;
+// 	} else if (sensor_dev == sensor_dev_isl69259 || sensor_dev == sensor_dev_raa228238 ||
+// 		   sensor_dev == sensor_dev_raa228249 || sensor_dev == sensor_dev_mp2971) {
+// 		*len += bin2hex((uint8_t *)&version, 4, buf_p, 8);
+// 		buf_p += 8;
+// 	} else
+// 		LOG_ERR("Unsupport VR type(%d)", type);
 
-	memcpy(buf_p, remain_str_p, strlen(remain_str_p));
-	buf_p += strlen(remain_str_p);
-	*len += strlen(remain_str_p);
+// 	memcpy(buf_p, remain_str_p, strlen(remain_str_p));
+// 	buf_p += strlen(remain_str_p);
+// 	*len += strlen(remain_str_p);
 
-	if (remain != 0xFFFF) {
-		uint8_t packed_remain = (uint8_t)((remain % 10) | (remain / 10 << 4));
-		*len += bin2hex(&packed_remain, 1, buf_p, 2);
-		buf_p += 2;
-	} else {
-		*len += bin2hex((uint8_t *)&remain, 2, buf_p, 4);
-		buf_p += 4;
-	}
+// 	if (remain != 0xFFFF) {
+// 		uint8_t packed_remain = (uint8_t)((remain % 10) | (remain / 10 << 4));
+// 		*len += bin2hex(&packed_remain, 1, buf_p, 2);
+// 		buf_p += 2;
+// 	} else {
+// 		*len += bin2hex((uint8_t *)&remain, 2, buf_p, 4);
+// 		buf_p += 4;
+// 	}
 
-	ret = true;
+// 	ret = true;
 
-err:
-	LOG_DBG("vr comp id %d, mutex %p unlock", p->comp_identifier, p_mutex);
-	if (k_mutex_unlock(p_mutex))
-		LOG_ERR("vr comp id %d, mutex %p unlock fail", p->comp_identifier, p_mutex);
+// err:
+// 	LOG_DBG("vr comp id %d, mutex %p unlock", p->comp_identifier, p_mutex);
+// 	if (k_mutex_unlock(p_mutex))
+// 		LOG_ERR("vr comp id %d, mutex %p unlock fail", p->comp_identifier, p_mutex);
 
-	return ret;
-}
+// 	return ret;
+// }
 
 void clear_pending_version(uint8_t activate_method)
 {

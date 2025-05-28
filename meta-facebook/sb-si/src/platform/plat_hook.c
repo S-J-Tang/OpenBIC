@@ -102,83 +102,83 @@ bool post_all_sensor_read(sensor_cfg *cfg, void *args, int *reading)
 	return true;
 }
 
-bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading)
-{
-	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	ARG_UNUSED(args);
+// bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading)
+// {
+// 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+// 	ARG_UNUSED(args);
 
-	const sensor_val *reading_val = (sensor_val *)reading;
+// 	const sensor_val *reading_val = (sensor_val *)reading;
 
-	int sensor_reading = 0;
-	static int ubc1_current_mA;
+// 	int sensor_reading = 0;
+// 	static int ubc1_current_mA;
 
-	if (cfg->num == UBC1_P12V_CURR_A) {
-		if (reading != NULL) {
-			if (reading_val->integer >= 0) {
-				sensor_reading =
-					reading_val->integer * 1000 + reading_val->fraction;
-			} else {
-				sensor_reading =
-					reading_val->integer * 1000 - reading_val->fraction;
-			}
+// 	if (cfg->num == UBC1_P12V_CURR_A) {
+// 		if (reading != NULL) {
+// 			if (reading_val->integer >= 0) {
+// 				sensor_reading =
+// 					reading_val->integer * 1000 + reading_val->fraction;
+// 			} else {
+// 				sensor_reading =
+// 					reading_val->integer * 1000 - reading_val->fraction;
+// 			}
 
-			ubc1_current_mA = sensor_reading;
-		} else {
-			ubc1_current_mA = 0;
-		}
-	}
+// 			ubc1_current_mA = sensor_reading;
+// 		} else {
+// 			ubc1_current_mA = 0;
+// 		}
+// 	}
 
-	if (cfg->num == UBC2_P12V_CURR_A) {
-		if (reading != NULL) {
-			if (reading_val->integer >= 0) {
-				sensor_reading =
-					reading_val->integer * 1000 + reading_val->fraction;
-			} else {
-				sensor_reading =
-					reading_val->integer * 1000 - reading_val->fraction;
-			}
-		} else {
-			sensor_reading = 0;
-		}
+// 	if (cfg->num == UBC2_P12V_CURR_A) {
+// 		if (reading != NULL) {
+// 			if (reading_val->integer >= 0) {
+// 				sensor_reading =
+// 					reading_val->integer * 1000 + reading_val->fraction;
+// 			} else {
+// 				sensor_reading =
+// 					reading_val->integer * 1000 - reading_val->fraction;
+// 			}
+// 		} else {
+// 			sensor_reading = 0;
+// 		}
 
-		k_mutex_lock(&pwrlevel_mutex, K_MSEC(1000));
+// 		k_mutex_lock(&pwrlevel_mutex, K_MSEC(1000));
 
-		if ((ubc1_current_mA + sensor_reading) > alert_level_mA_user_setting) {
-			if (alert_level_is_assert == false) {
-				alert_level_is_assert = true;
-				power_level_send_event(alert_level_is_assert, ubc1_current_mA,
-						       sensor_reading);
-			}
-		} else {
-			if (alert_level_is_assert == true) {
-				alert_level_is_assert = false;
-				power_level_send_event(alert_level_is_assert, ubc1_current_mA,
-						       sensor_reading);
-			}
-		}
+// 		if ((ubc1_current_mA + sensor_reading) > alert_level_mA_user_setting) {
+// 			if (alert_level_is_assert == false) {
+// 				alert_level_is_assert = true;
+// 				power_level_send_event(alert_level_is_assert, ubc1_current_mA,
+// 						       sensor_reading);
+// 			}
+// 		} else {
+// 			if (alert_level_is_assert == true) {
+// 				alert_level_is_assert = false;
+// 				power_level_send_event(alert_level_is_assert, ubc1_current_mA,
+// 						       sensor_reading);
+// 			}
+// 		}
 
-		k_mutex_unlock(&pwrlevel_mutex);
-	}
+// 		k_mutex_unlock(&pwrlevel_mutex);
+// 	}
 
-	/* set reading val to 0 if reading val is negative */
-	sensor_val tmp_reading;
-	if (reading != NULL) {
-		tmp_reading.integer = (int16_t)(*reading & 0xFFFF);
-		tmp_reading.fraction = (int16_t)((*reading >> 16) & 0xFFFF);
+// 	/* set reading val to 0 if reading val is negative */
+// 	sensor_val tmp_reading;
+// 	if (reading != NULL) {
+// 		tmp_reading.integer = (int16_t)(*reading & 0xFFFF);
+// 		tmp_reading.fraction = (int16_t)((*reading >> 16) & 0xFFFF);
 
-		/* sensor_value = 1000 times of true value */
-		int32_t sensor_value = tmp_reading.integer * 1000 + tmp_reading.fraction;
+// 		/* sensor_value = 1000 times of true value */
+// 		int32_t sensor_value = tmp_reading.integer * 1000 + tmp_reading.fraction;
 
-		if (sensor_value < 0) {
-			LOG_DBG("Original sensor reading: integer = %d, fraction = %d (combined value * 1000: %d)",
-				tmp_reading.integer, tmp_reading.fraction, sensor_value);
-			*reading = 0;
-			LOG_DBG("Negative sensor reading detected. Set reading to 0x%x", *reading);
-		}
-	}
+// 		if (sensor_value < 0) {
+// 			LOG_DBG("Original sensor reading: integer = %d, fraction = %d (combined value * 1000: %d)",
+// 				tmp_reading.integer, tmp_reading.fraction, sensor_value);
+// 			*reading = 0;
+// 			LOG_DBG("Negative sensor reading detected. Set reading to 0x%x", *reading);
+// 		}
+// 	}
 
-	return true;
-}
+// 	return true;
+// }
 
 #define EEPROM_MAX_WRITE_TIME 5 // the BR24G512 eeprom max write time is 3.5 ms
 #define AEGIS_CPLD_ADDR (0x4C >> 1)
@@ -190,13 +190,7 @@ bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading)
 
 vr_pre_proc_arg vr_pre_read_args[] = {
 	{ .mutex = vr_mutex + 0, .vr_page = 0x0 },  { .mutex = vr_mutex + 0, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 1, .vr_page = 0x0 },  { .mutex = vr_mutex + 1, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 2, .vr_page = 0x0 },  { .mutex = vr_mutex + 2, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 3, .vr_page = 0x0 },  { .mutex = vr_mutex + 3, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 4, .vr_page = 0x0 },  { .mutex = vr_mutex + 4, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 5, .vr_page = 0x0 },  { .mutex = vr_mutex + 5, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 6, .vr_page = 0x0 },  { .mutex = vr_mutex + 6, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 7, .vr_page = 0x0 },  { .mutex = vr_mutex + 7, .vr_page = 0x1 }
+	{ .mutex = vr_mutex + 1, .vr_page = 0x0 },  { .mutex = vr_mutex + 1, .vr_page = 0x1 }
 };
 
 mp2971_init_arg mp2971_init_args[] = {
@@ -213,14 +207,14 @@ mpc12109_init_arg mpc12109_init_args[] = {
 };
 
 temp_mapping_sensor temp_index_table[] = {
-	{ TEMP_INDEX_ON_DIE_ATH_0_N_OWL, ASIC_DIE_ATH_SENSOR_0_TEMP_C,
-	  "CB_ASIC_DIE_ATH_SENSOR_0_TEMP" },
-	{ TEMP_INDEX_ON_DIE_ATH_1_S_OWL, ASIC_DIE_ATH_SENSOR_1_TEMP_C,
-	  "CB_ASIC_DIE_ATH_SENSOR_1_TEMP" },
-	{ TEMP_INDEX_TOP_INLET, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP" },
-	{ TEMP_INDEX_BOT_INLET, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP" },
-	{ TEMP_INDEX_TOP_OUTLET, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP" },
-	{ TEMP_INDEX_BOT_OUTLET, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP" },
+	// { TEMP_INDEX_ON_DIE_ATH_0_N_OWL, ASIC_DIE_ATH_SENSOR_0_TEMP_C,
+	//   "CB_ASIC_DIE_ATH_SENSOR_0_TEMP" },
+	// { TEMP_INDEX_ON_DIE_ATH_1_S_OWL, ASIC_DIE_ATH_SENSOR_1_TEMP_C,
+	//   "CB_ASIC_DIE_ATH_SENSOR_1_TEMP" },
+	// { TEMP_INDEX_TOP_INLET, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP" },
+	// { TEMP_INDEX_BOT_INLET, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP" },
+	// { TEMP_INDEX_TOP_OUTLET, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP" },
+	// { TEMP_INDEX_BOT_OUTLET, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP" },
 };
 
 power_sequence power_sequence_on_table[] = {
@@ -520,27 +514,27 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 
 // clang-format off
 temp_threshold_mapping_sensor temp_index_threshold_type_table[] = {
-	{ DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_0_TEMP_HIGH_LIM" },
-	{ DIE_ATH_0_N_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_0_TEMP_LOW_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_1_TEMP_HIGH_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_1_TEMP_LOW_LIM" },
+	// { DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_0_TEMP_HIGH_LIM" },
+	// { DIE_ATH_0_N_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_0_TEMP_LOW_LIM" },
+	// { DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_1_TEMP_HIGH_LIM" },
+	// { DIE_ATH_1_S_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_1_TEMP_LOW_LIM" },
 
-	{ DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "CB_ASIC_DIE_N_OWL_TEMP_HIGH_LIM" },
-	{ DIE_ATH_0_N_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "CB_ASIC_DIE_N_OWL_TEMP_LOW_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "CB_ASIC_DIE_S_OWL_TEMP_HIGH_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "CB_ASIC_DIE_S_OWL_TEMP_LOW_LIM" },
+	// { DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "CB_ASIC_DIE_N_OWL_TEMP_HIGH_LIM" },
+	// { DIE_ATH_0_N_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "CB_ASIC_DIE_N_OWL_TEMP_LOW_LIM" },
+	// { DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "CB_ASIC_DIE_S_OWL_TEMP_HIGH_LIM" },
+	// { DIE_ATH_1_S_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "CB_ASIC_DIE_S_OWL_TEMP_LOW_LIM" },
 	
-	{ TOP_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP_LOW_LIM" },
-	{ TOP_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP_HIGH_LIM" },
+	// { TOP_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP_LOW_LIM" },
+	// { TOP_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP_HIGH_LIM" },
 
-	{ TOP_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP_LOW_LIM" },
-	{ TOP_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP_HIGH_LIM" },
+	// { TOP_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP_LOW_LIM" },
+	// { TOP_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP_HIGH_LIM" },
 
-	{ BOT_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP_LOW_LIM" },
-	{ BOT_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP_HIGH_LIM" },
+	// { BOT_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP_LOW_LIM" },
+	// { BOT_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP_HIGH_LIM" },
 
-	{ BOT_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP_LOW_LIM" },
-	{ BOT_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP_HIGH_LIM" },
+	// { BOT_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP_LOW_LIM" },
+	// { BOT_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP_HIGH_LIM" },
 };
 // clang-format on
 
@@ -572,54 +566,54 @@ void vr_mutex_init(void)
 
 /* the order is following enum VR_RAIL_E */
 vr_mapping_sensor vr_rail_table[] = {
-	{ VR_RAIL_E_P3V3, VR_P3V3_VOLT_V, "CB_VR_ASIC_P3V3", 0xffffffff },
-	{ VR_RAIL_E_P0V85_PVDD, VR_ASIC_P0V85_PVDD_VOLT_V, "CB_VR_ASIC_P0V85_PVDD", 0xffffffff },
-	{ VR_RAIL_E_P0V75_PVDD_CH_N, VR_ASIC_P0V75_PVDD_CH_N_VOLT_V, "CB_VR_ASIC_P0V75_PVDD_CH_N",
+	{ VR_RAIL_E_P0V895_PEX, VR_ASIC_P0V895_PEX_VOLT_V, "CB_VR_ASIC_P3V3", 0xffffffff },
+	{ VR_RAIL_E_P0V825_A0, VR_ASIC_P0V825_A0_VOLT_V, "CB_VR_ASIC_P0V85_PVDD", 0xffffffff },
+	{ VR_RAIL_E_P0V825_A1, VR_ASIC_P0V825_A1_VOLT_V, "CB_VR_ASIC_P0V75_PVDD_CH_N",
 	  0xffffffff },
-	{ VR_RAIL_E_P0V75_MAX_PHY_N, VR_ASIC_P0V75_MAX_PHY_N_VOLT_V, "CB_VR_ASIC_P0V75_MAX_PHY_N",
+	{ VR_RAIL_E_P0V825_A2, VR_ASIC_P0V825_A2_VOLT_V, "CB_VR_ASIC_P0V75_MAX_PHY_N",
 	  0xffffffff },
-	{ VR_RAIL_E_P0V75_PVDD_CH_S, VR_ASIC_P0V75_PVDD_CH_S_VOLT_V, "CB_VR_ASIC_P0V75_PVDD_CH_S",
-	  0xffffffff },
-	{ VR_RAIL_E_P0V75_MAX_PHY_S, VR_ASIC_P0V75_MAX_PHY_S_VOLT_V, "CB_VR_ASIC_P0V75_MAX_PHY_S",
-	  0xffffffff },
-	{ VR_RAIL_E_P0V75_TRVDD_ZONEA, VR_ASIC_P0V75_TRVDD_ZONEA_VOLT_V,
-	  "CB_VR_ASIC_P0V75_TRVDD_ZONEA", 0xffffffff },
-	{ VR_RAIL_E_P1V8_VPP_HBM0_HBM2_HBM4, VR_ASIC_P1V8_VPP_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P1V8_VPP_HBM0_HBM2_HBM4", 0xffffffff },
-	{ VR_RAIL_E_P0V75_TRVDD_ZONEB, VR_ASIC_P0V75_TRVDD_ZONEB_VOLT_V,
-	  "CB_VR_ASIC_P0V75_TRVDD_ZONEB", 0xffffffff },
-	{ VR_RAIL_E_P0V4_VDDQL_HBM0_HBM2_HBM4, VR_ASIC_P0V4_VDDQL_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P0V4_VDDQL_HBM0_HBM2_HBM4", 0xffffffff },
-	{ VR_RAIL_E_P1V1_VDDC_HBM0_HBM2_HBM4, VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4", 0xffffffff },
-	{ VR_RAIL_E_P0V75_VDDPHY_HBM0_HBM2_HBM4, VR_ASIC_P0V75_VDDPHY_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P0V75_VDDPHY_HBM0_HBM2_HBM4", 0xffffffff },
-	{ VR_RAIL_E_P0V9_TRVDD_ZONEA, VR_ASIC_P0V9_TRVDD_ZONEA_VOLT_V,
-	  "CB_VR_ASIC_P0V9_TRVDD_ZONEA", 0xffffffff },
-	{ VR_RAIL_E_P1V8_VPP_HBM1_HBM3_HBM5, VR_ASIC_P1V8_VPP_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P1V8_VPP_HBM1_HBM3_HBM5", 0xffffffff },
-	{ VR_RAIL_E_P0V9_TRVDD_ZONEB, VR_ASIC_P0V9_TRVDD_ZONEB_VOLT_V,
-	  "CB_VR_ASIC_P0V9_TRVDD_ZONEB", 0xffffffff },
-	{ VR_RAIL_E_P0V4_VDDQL_HBM1_HBM3_HBM5, VR_ASIC_P0V4_VDDQL_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P0V4_VDDQL_HBM1_HBM3_HBM5", 0xffffffff },
-	{ VR_RAIL_E_P1V1_VDDC_HBM1_HBM3_HBM5, VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5", 0xffffffff },
-	{ VR_RAIL_E_P0V75_VDDPHY_HBM1_HBM3_HBM5, VR_ASIC_P0V75_VDDPHY_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P0V75_VDDPHY_HBM1_HBM3_HBM5", 0xffffffff },
-	{ VR_RAIL_E_P0V8_VDDA_PCIE, VR_ASIC_P0V8_VDDA_PCIE_VOLT_V, "CB_VR_ASIC_P0V8_VDDA_PCIE",
-	  0xffffffff },
-	{ VR_RAIL_E_P1V2_VDDHTX_PCIE, VR_ASIC_P1V2_VDDHTX_PCIE_VOLT_V,
-	  "CB_VR_ASIC_P1V2_VDDHTX_PCIE", 0xffffffff },
+	// { VR_RAIL_E_P0V75_PVDD_CH_S, VR_ASIC_P0V75_PVDD_CH_S_VOLT_V, "CB_VR_ASIC_P0V75_PVDD_CH_S",
+	//   0xffffffff },
+	// { VR_RAIL_E_P0V75_MAX_PHY_S, VR_ASIC_P0V75_MAX_PHY_S_VOLT_V, "CB_VR_ASIC_P0V75_MAX_PHY_S",
+	//   0xffffffff },
+	// { VR_RAIL_E_P0V75_TRVDD_ZONEA, VR_ASIC_P0V75_TRVDD_ZONEA_VOLT_V,
+	//   "CB_VR_ASIC_P0V75_TRVDD_ZONEA", 0xffffffff },
+	// { VR_RAIL_E_P1V8_VPP_HBM0_HBM2_HBM4, VR_ASIC_P1V8_VPP_HBM0_HBM2_HBM4_VOLT_V,
+	//   "CB_VR_ASIC_P1V8_VPP_HBM0_HBM2_HBM4", 0xffffffff },
+	// { VR_RAIL_E_P0V75_TRVDD_ZONEB, VR_ASIC_P0V75_TRVDD_ZONEB_VOLT_V,
+	//   "CB_VR_ASIC_P0V75_TRVDD_ZONEB", 0xffffffff },
+	// { VR_RAIL_E_P0V4_VDDQL_HBM0_HBM2_HBM4, VR_ASIC_P0V4_VDDQL_HBM0_HBM2_HBM4_VOLT_V,
+	//   "CB_VR_ASIC_P0V4_VDDQL_HBM0_HBM2_HBM4", 0xffffffff },
+	// { VR_RAIL_E_P1V1_VDDC_HBM0_HBM2_HBM4, VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4_VOLT_V,
+	//   "CB_VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4", 0xffffffff },
+	// { VR_RAIL_E_P0V75_VDDPHY_HBM0_HBM2_HBM4, VR_ASIC_P0V75_VDDPHY_HBM0_HBM2_HBM4_VOLT_V,
+	//   "CB_VR_ASIC_P0V75_VDDPHY_HBM0_HBM2_HBM4", 0xffffffff },
+	// { VR_RAIL_E_P0V9_TRVDD_ZONEA, VR_ASIC_P0V9_TRVDD_ZONEA_VOLT_V,
+	//   "CB_VR_ASIC_P0V9_TRVDD_ZONEA", 0xffffffff },
+	// { VR_RAIL_E_P1V8_VPP_HBM1_HBM3_HBM5, VR_ASIC_P1V8_VPP_HBM1_HBM3_HBM5_VOLT_V,
+	//   "CB_VR_ASIC_P1V8_VPP_HBM1_HBM3_HBM5", 0xffffffff },
+	// { VR_RAIL_E_P0V9_TRVDD_ZONEB, VR_ASIC_P0V9_TRVDD_ZONEB_VOLT_V,
+	//   "CB_VR_ASIC_P0V9_TRVDD_ZONEB", 0xffffffff },
+	// { VR_RAIL_E_P0V4_VDDQL_HBM1_HBM3_HBM5, VR_ASIC_P0V4_VDDQL_HBM1_HBM3_HBM5_VOLT_V,
+	//   "CB_VR_ASIC_P0V4_VDDQL_HBM1_HBM3_HBM5", 0xffffffff },
+	// { VR_RAIL_E_P1V1_VDDC_HBM1_HBM3_HBM5, VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5_VOLT_V,
+	//   "CB_VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5", 0xffffffff },
+	// { VR_RAIL_E_P0V75_VDDPHY_HBM1_HBM3_HBM5, VR_ASIC_P0V75_VDDPHY_HBM1_HBM3_HBM5_VOLT_V,
+	//   "CB_VR_ASIC_P0V75_VDDPHY_HBM1_HBM3_HBM5", 0xffffffff },
+	// { VR_RAIL_E_P0V8_VDDA_PCIE, VR_ASIC_P0V8_VDDA_PCIE_VOLT_V, "CB_VR_ASIC_P0V8_VDDA_PCIE",
+	//   0xffffffff },
+	// { VR_RAIL_E_P1V2_VDDHTX_PCIE, VR_ASIC_P1V2_VDDHTX_PCIE_VOLT_V,
+	//   "CB_VR_ASIC_P1V2_VDDHTX_PCIE", 0xffffffff },
 };
 
 vr_mapping_status vr_status_table[] = {
-	{ VR_STAUS_E_STATUS_BYTE, PMBUS_STATUS_BYTE, "STATUS_BYTE" },
-	{ VR_STAUS_E_STATUS_WORD, PMBUS_STATUS_WORD, "STATUS_WORD" },
-	{ VR_STAUS_E_STATUS_VOUT, PMBUS_STATUS_VOUT, "STATUS_VOUT" },
-	{ VR_STAUS_E_STATUS_IOUT, PMBUS_STATUS_IOUT, "STATUS_IOUT" },
-	{ VR_STAUS_E_STATUS_INPUT, PMBUS_STATUS_INPUT, "STATUS_INPUT" },
-	{ VR_STAUS_E_STATUS_TEMPERATURE, PMBUS_STATUS_TEMPERATURE, "STATUS_TEMPERATURE" },
-	{ VR_STAUS_E_STATUS_CML, PMBUS_STATUS_CML, "STATUS_CML_PMBUS" },
+	// { VR_STAUS_E_STATUS_BYTE, PMBUS_STATUS_BYTE, "STATUS_BYTE" },
+	// { VR_STAUS_E_STATUS_WORD, PMBUS_STATUS_WORD, "STATUS_WORD" },
+	// { VR_STAUS_E_STATUS_VOUT, PMBUS_STATUS_VOUT, "STATUS_VOUT" },
+	// { VR_STAUS_E_STATUS_IOUT, PMBUS_STATUS_IOUT, "STATUS_IOUT" },
+	// { VR_STAUS_E_STATUS_INPUT, PMBUS_STATUS_INPUT, "STATUS_INPUT" },
+	// { VR_STAUS_E_STATUS_TEMPERATURE, PMBUS_STATUS_TEMPERATURE, "STATUS_TEMPERATURE" },
+	// { VR_STAUS_E_STATUS_CML, PMBUS_STATUS_CML, "STATUS_CML_PMBUS" },
 };
 
 bool vr_rail_name_get(uint8_t rail, uint8_t **name)
@@ -1529,70 +1523,70 @@ bool vr_rail_voltage_peak_clear(uint8_t rail_index)
 	return true;
 }
 
-bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_status)
-{
-	CHECK_NULL_ARG_WITH_RETURN(vr_status, false);
+// bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_status)
+// {
+// 	CHECK_NULL_ARG_WITH_RETURN(vr_status, false);
 
-	bool ret = false;
-	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
-	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+// 	bool ret = false;
+// 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+// 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
-	if (cfg == NULL) {
-		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
-		return false;
-	}
+// 	if (cfg == NULL) {
+// 		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+// 		return false;
+// 	}
 
-	vr_pre_proc_arg *pre_proc_args = vr_pre_read_args + rail;
+// 	vr_pre_proc_arg *pre_proc_args = vr_pre_read_args + rail;
 
-	if (cfg->pre_sensor_read_hook) {
-		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
-			LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
-			goto err;
-		}
-	}
+// 	if (cfg->pre_sensor_read_hook) {
+// 		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
+// 			LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
+// 			goto err;
+// 		}
+// 	}
 
-	uint16_t pmbus_reg_id = vr_status_table[vr_status_rail].pmbus_reg;
+// 	uint16_t pmbus_reg_id = vr_status_table[vr_status_rail].pmbus_reg;
 
-	switch (cfg->type) {
-	case sensor_dev_isl69259:
-		if (!isl69260_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id, vr_status)) {
-			LOG_ERR("The VR ISL69260 vr status reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_mp2971:
-		if (!mp2971_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id, vr_status)) {
-			LOG_ERR("The VR MPS2971 vr status reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_mp29816a:
-		if (!mp29816a_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id, vr_status)) {
-			LOG_ERR("The VR MPS29816a vr status reading failed");
-			goto err;
-		}
-		break;
-	case sensor_dev_raa228249:
-		if (!raa228249_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id,
-					     vr_status)) {
-			LOG_ERR("The VR RAA228249 vr status reading failed");
-			goto err;
-		}
-		break;
-	default:
-		LOG_ERR("Unsupport VR type(%x)", cfg->type);
-		goto err;
-	}
+// 	switch (cfg->type) {
+// 	case sensor_dev_isl69259:
+// 		if (!isl69260_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id, vr_status)) {
+// 			LOG_ERR("The VR ISL69260 vr status reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_mp2971:
+// 		if (!mp2971_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id, vr_status)) {
+// 			LOG_ERR("The VR MPS2971 vr status reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_mp29816a:
+// 		if (!mp29816a_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id, vr_status)) {
+// 			LOG_ERR("The VR MPS29816a vr status reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	case sensor_dev_raa228249:
+// 		if (!raa228249_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id,
+// 					     vr_status)) {
+// 			LOG_ERR("The VR RAA228249 vr status reading failed");
+// 			goto err;
+// 		}
+// 		break;
+// 	default:
+// 		LOG_ERR("Unsupport VR type(%x)", cfg->type);
+// 		goto err;
+// 	}
 
-	ret = true;
-err:
-	if (cfg->post_sensor_read_hook) {
-		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
-			LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
-		}
-	}
-	return ret;
-}
+// 	ret = true;
+// err:
+// 	if (cfg->post_sensor_read_hook) {
+// 		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
+// 			LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
+// 		}
+// 	}
+// 	return ret;
+// }
 
 bool plat_clear_vr_status(uint8_t rail)
 {
@@ -1849,6 +1843,10 @@ bool plat_get_temp_status(uint8_t rail, uint8_t *temp_status)
 	CHECK_NULL_ARG_WITH_RETURN(temp_status, false);
 
 	bool ret = false;
+
+	LOG_ERR("temp_index_table not set yet");
+	return false;
+
 	uint8_t sensor_id = temp_index_table[rail].sensor_id;
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
@@ -1866,18 +1864,18 @@ bool plat_get_temp_status(uint8_t rail, uint8_t *temp_status)
 		}
 
 		switch (rail) {
-		case TEMP_INDEX_TOP_INLET:
-			*temp_status = (data[0] & BIT(2)) >> 2;
-			break;
-		case TEMP_INDEX_BOT_INLET:
-			*temp_status = (data[0] & BIT(3)) >> 3;
-			break;
-		case TEMP_INDEX_BOT_OUTLET:
-			*temp_status = (data[0] & BIT(4)) >> 4;
-			break;
-		case TEMP_INDEX_TOP_OUTLET:
-			*temp_status = (data[0] & BIT(5)) >> 5;
-			break;
+		// case TEMP_INDEX_TOP_INLET:
+		// 	*temp_status = (data[0] & BIT(2)) >> 2;
+		// 	break;
+		// case TEMP_INDEX_BOT_INLET:
+		// 	*temp_status = (data[0] & BIT(3)) >> 3;
+		// 	break;
+		// case TEMP_INDEX_BOT_OUTLET:
+		// 	*temp_status = (data[0] & BIT(4)) >> 4;
+		// 	break;
+		// case TEMP_INDEX_TOP_OUTLET:
+		// 	*temp_status = (data[0] & BIT(5)) >> 5;
+		// 	break;
 		default:
 			LOG_ERR("Unsupport TEMP TMP75 alert pin");
 			goto err;
@@ -1908,6 +1906,8 @@ err:
 bool plat_clear_temp_status(uint8_t rail)
 {
 	bool ret = false;
+	LOG_ERR("temp_index_table not set yet");
+	return false;
 	uint8_t sensor_id = temp_index_table[rail].sensor_id;
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
