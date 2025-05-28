@@ -242,8 +242,6 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 		}
 	}
 
-	LOG_INF("hihihihihihihihiihihihiihhih");
-
 	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)args;
 
 	/* mutex unlock */
