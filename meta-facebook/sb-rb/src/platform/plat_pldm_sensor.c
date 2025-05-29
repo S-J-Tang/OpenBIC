@@ -1455,7 +1455,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.arg0 = 15.8, // R1 = 15.8kΩ
 			.arg1 = 1.8,  // R2 = 1.8kΩ
-			.read = ads7830_read,
+			// .read = ads7830_read,
 		},
     },
 	{
@@ -1527,7 +1527,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.arg0 = 5.36,
 			.arg1 = 1.8,
 			// .is_init = false,
-			.read = ads7830_read,
+			// .read = ads7830_read,
 		},
     },
 	{
@@ -1599,7 +1599,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.arg0 = 2.87,
 			.arg1 = 1.8,
 			// .is_init = false,
-			.read = ads7830_read,
+			// .read = ads7830_read,
 		},
     },
 	{
@@ -1671,7 +1671,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.arg0 = 1,
 			.arg1 = 1,
 			// .is_init = false,
-			.read = ads7830_read,
+			// .read = ads7830_read,
 		},
     },
 	{
@@ -1743,7 +1743,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.arg0 = 1,
 			.arg1 = 1,
 			// .is_init = false,
-			.read = ads7830_read,
+			// .read = ads7830_read,
 		},
     },
 	{
@@ -1815,7 +1815,7 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.arg0 = 1,
 			.arg1 = 1,
 			// .is_init = false,
-			.read = ads7830_read,
+			// .read = ads7830_read,
 		},
     },
 };
@@ -2303,8 +2303,8 @@ pldm_sensor_info *plat_pldm_sensor_load(int thread_id)
 {
 	switch (thread_id) {
 	case VR_SENSOR_THREAD_ID:
-		plat_pldm_sensor_change_vr_dev();
-		plat_pldm_sensor_change_vr_addr();
+		// plat_pldm_sensor_change_vr_dev();
+		// plat_pldm_sensor_change_vr_addr();
 		return plat_pldm_sensor_vr_table;
 	case TEMP_SENSOR_THREAD_ID:
 		// plat_pldm_sensor_change_temp_dev();
@@ -2679,6 +2679,7 @@ bool is_adc_access(uint8_t sensor_num)
                 ADS7830_I2C_ADDR, adc7830_i2c_bus, ret, sensor_num);
         return false;
     }
+	// return true;
 }
 
 bool is_temp_access(uint8_t cfg_idx)
@@ -2689,8 +2690,9 @@ bool is_temp_access(uint8_t cfg_idx)
 
 bool is_vr_access(uint8_t sensor_num)
 {
-	return (is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
-		get_plat_sensor_polling_enable_flag());
+	// return (is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
+	// 	get_plat_sensor_polling_enable_flag());
+	return (get_plat_sensor_vr_polling_enable_flag() && get_plat_sensor_polling_enable_flag());
 }
 
 bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *vr_addr,
