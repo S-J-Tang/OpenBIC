@@ -140,13 +140,11 @@ vr_pre_proc_arg vr_pre_read_args[] = {
 	{ .mutex = vr_mutex + 1, .vr_page = 0x0 },  { .mutex = vr_mutex + 1, .vr_page = 0x1 }
 };
 
-// temp_mapping_sensor temp_index_table[] = {
-// 	{ TEMP_INDEX_ON_DIE_1_2, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP" },
-// 	{ TEMP_INDEX_ON_DIE_3_4, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP" },
-// 	{ TEMP_INDEX_TOP_INLET, SENSOR_NUM_TOP_INLET_TEMP_C, "TOP_INLET_TEMP" },
-// 	{ TEMP_INDEX_BOT_INLET, SENSOR_NUM_BOT_INLET_TEMP_C, "BOT_INLET_TEMP" },
-// 	{ TEMP_INDEX_BOT_OUTLET, SENSOR_NUM_BOT_OUTLET_TEMP_C, "BOT_OUTLET_TEMP" },
-// };
+temp_mapping_sensor temp_index_table[] = {
+	{ TEMP_INDEX_THERMAL_SENSOR_1_TEMP_C, SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C, "THERMAL_SENSOR_1_TEMP_C" },
+	{ TEMP_INDEX_THERMAL_SENSOR_2_TEMP_C, SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C, "THERMAL_SENSOR_2_TEMP_C" },
+
+};
 
 bool temp_sensor_rail_name_get(uint8_t rail, uint8_t **name)
 {
@@ -157,7 +155,7 @@ bool temp_sensor_rail_name_get(uint8_t rail, uint8_t **name)
 		return false;
 	}
 	LOG_INF("temp_sensor_rail_name_get not use now");
-	// *name = (uint8_t *)temp_index_table[rail].sensor_name;
+	*name = (uint8_t *)temp_index_table[rail].sensor_name;
 	return true;
 }
 
@@ -167,12 +165,12 @@ bool temp_sensor_rail_enum_get(uint8_t *name, uint8_t *num)
 	CHECK_NULL_ARG_WITH_RETURN(num, false);
 
 	LOG_INF("temp_sensor_rail_enum_get");
-	// for (int i = 0; i < TEMP_INDEX_MAX; i++) {
-	// 	if (strcmp(name, temp_index_table[i].sensor_name) == 0) {
-	// 		*num = i;
-	// 		return true;
-	// 	}
-	// }
+	for (int i = 0; i < TEMP_INDEX_MAX; i++) {
+		if (strcmp(name, temp_index_table[i].sensor_name) == 0) {
+			*num = i;
+			return true;
+		}
+	}
 
 	LOG_ERR("invalid rail name %s", name);
 	return false;
@@ -257,37 +255,13 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 }
 
 // clang-format off
-// temp_threshold_mapping_sensor temp_index_threshold_type_table[] = {
-// 	{ ON_DIE_1_2_LOCAL_HIGH_LIMIT, LOCAL_HIGH_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_LOCAL_HIGH_LIM" },
-// 	{ ON_DIE_1_2_LOCAL_LOW_LIMIT, LOCAL_LOW_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_LOCAL_LOW_LIM" },
-// 	{ ON_DIE_1_2_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_REMOTE1_HIGH_LIM" },
-// 	{ ON_DIE_1_2_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_REMOTE1_LOW_LIM" },
-// 	{ ON_DIE_1_2_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_REMOTE2_HIGH_LIM" },
-// 	{ ON_DIE_1_2_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_REMOTE2_LOW_LIM" },
-// 	{ ON_DIE_1_2_LOCAL_THERM_LIMIT, LOCAL_THERM_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_LOCAL_LIM" },
-// 	{ ON_DIE_1_2_REMOTE_1_THERM_LIMIT, REMOTE_1_THERM_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_REMOTE1_LIM" },
-// 	{ ON_DIE_1_2_REMOTE_2_THERM_LIMIT, REMOTE_2_THERM_LIMIT, SENSOR_NUM_ON_DIE_1_TEMP_C, "ON_DIE_1_TEMP_REMOTE2_LIM" },
+temp_threshold_mapping_sensor temp_index_threshold_type_table[] = {
+	{ THERMAL_SENSOR_1_TEMP_C_LOW_LIMIT, LOCAL_LOW_LIMIT, SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C, "THERMAL_SENSOR_1_LOW_LIM" },
+	{ THERMAL_SENSOR_1_TEMP_C_HIGH_LIMIT, LOCAL_HIGH_LIMIT, SENSOR_NUM_THERMAL_SENSOR_1_TEMP_C, "THERMAL_SENSOR_1_HIGH_LIM" },
 
-
-// 	{ ON_DIE_3_4_LOCAL_HIGH_LIMIT, LOCAL_HIGH_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_LOCAL_HIGH_LIM" },
-// 	{ ON_DIE_3_4_LOCAL_LOW_LIMIT, LOCAL_LOW_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_LOCAL_LOW_LIM" },
-// 	{ ON_DIE_3_4_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_REMOTE1_HIGH_LIM" },
-// 	{ ON_DIE_3_4_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_REMOTE1_LOW_LIM" },
-// 	{ ON_DIE_3_4_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_REMOTE2_HIGH_LIM" },
-// 	{ ON_DIE_3_4_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_REMOTE2_LOW_LIM" },
-// 	{ ON_DIE_3_4_LOCAL_THERM_LIMIT, LOCAL_THERM_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_LOCAL_LIM" },
-// 	{ ON_DIE_3_4_REMOTE_1_THERM_LIMIT, REMOTE_1_THERM_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_REMOTE1_LIM" },
-// 	{ ON_DIE_3_4_REMOTE_2_THERM_LIMIT, REMOTE_2_THERM_LIMIT, SENSOR_NUM_ON_DIE_3_TEMP_C, "ON_DIE_2_TEMP_REMOTE2_LIM" },
-	
-// 	{ TOP_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, SENSOR_NUM_TOP_INLET_TEMP_C, "TOP_INLET_TEMP_LOW_LIM" },
-// 	{ TOP_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, SENSOR_NUM_TOP_INLET_TEMP_C, "TOP_INLET_TEMP_HIGH_LIM" },
-
-// 	{ BOT_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, SENSOR_NUM_BOT_OUTLET_TEMP_C, "BOT_INLET_TEMP_LOW_LIM" },
-// 	{ BOT_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, SENSOR_NUM_BOT_INLET_TEMP_C, "BOT_INLET_TEMP_HIGH_LIM" },
-
-// 	{ BOT_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, SENSOR_NUM_BOT_OUTLET_TEMP_C, "BOT_OUTLET_TEMP_LOW_LIM" },
-// 	{ BOT_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, SENSOR_NUM_BOT_OUTLET_TEMP_C, "BOT_OUTLET_TEMP_HIGH_LIM" },
-// };
+	{ THERMAL_SENSOR_2_TEMP_C_LOW_LIMIT, LOCAL_LOW_LIMIT, SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C, "THERMAL_SENSOR_2_LOW_LIM" },
+	{ THERMAL_SENSOR_2_TEMP_C_HIGH_LIMIT, LOCAL_HIGH_LIMIT, SENSOR_NUM_THERMAL_SENSOR_2_TEMP_C, "THERMAL_SENSOR_2_HIGH_LIM" },
+};
 // clang-format on
 
 temp_threshold_user_settings_struct temp_threshold_user_settings = { 0 };
@@ -565,12 +539,12 @@ bool temp_index_threshold_type_name_get(uint8_t type, uint8_t **name)
 
 	LOG_INF("temp_index_threshold_type_name_get not use now");
 
-	// if (type >= PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX) {
-	// 	*name = NULL;
-	// 	return false;
-	// }
+	if (type >= PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX) {
+		*name = NULL;
+		return false;
+	}
 
-	// *name = (uint8_t *)temp_index_threshold_type_table[type].temp_threshold_name;
+	*name = (uint8_t *)temp_index_threshold_type_table[type].temp_threshold_name;
 	return true;
 }
 
@@ -581,14 +555,14 @@ bool temp_threshold_type_enum_get(uint8_t *name, uint8_t *num)
 
 	LOG_INF("temp_threshold_type_enum_get not use now");
 
-	// for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
-	// 	if (strcmp(name, temp_index_threshold_type_table[i].temp_threshold_name) == 0) {
-	// 		*num = i;
-	// 		return true;
-	// 	}
-	// }
+	for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
+		if (strcmp(name, temp_index_threshold_type_table[i].temp_threshold_name) == 0) {
+			*num = i;
+			return true;
+		}
+	}
 
-	// LOG_ERR("invalid tmp threshold type name %s", name);
+	LOG_ERR("invalid tmp threshold type name %s", name);
 	return false;
 }
 
@@ -651,39 +625,36 @@ static bool temp_threshold_user_settings_init(void)
 		return false;
 	}
 
-	LOG_INF("temp_threshold_user_settings_init not use now");
 
-	// for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
-	// 	if (temp_threshold_user_settings.temperature_reg_val[i] != 0xffffffff) {
-	// 		/* TODO: write temp_threshold */
-	// 		uint32_t temp_threshold =
-	// 			temp_threshold_user_settings.temperature_reg_val[i];
-	// 		if (!plat_set_temp_threshold(i, &temp_threshold, false, false)) {
-	// 			LOG_ERR("Can't set temp_threshold[%x]=%x by temp_threshold user settings",
-	// 				i, temp_threshold);
-	// 			return false;
-	// 		}
-	// 		LOG_INF("set [%x]%s: %d", i,
-	// 			temp_index_threshold_type_table[i].temp_threshold_name,
-	// 			temp_threshold_user_settings.temperature_reg_val[i]);
-	// 	}
-	// }
+	for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
+		if (temp_threshold_user_settings.temperature_reg_val[i] != 0xffffffff) {
+			/* TODO: write temp_threshold */
+			uint32_t temp_threshold =
+				temp_threshold_user_settings.temperature_reg_val[i];
+			if (!plat_set_temp_threshold(i, &temp_threshold, false, false)) {
+				LOG_ERR("Can't set temp_threshold[%x]=%x by temp_threshold user settings",
+					i, temp_threshold);
+				return false;
+			}
+			LOG_INF("set [%x]%s: %d", i,
+				temp_index_threshold_type_table[i].temp_threshold_name,
+				temp_threshold_user_settings.temperature_reg_val[i]);
+		}
+	}
 
 	return true;
 }
 
 static bool temp_threshold_default_settings_init(void)
 {
-	LOG_INF("temp_threshold_default_settings_init not use now");
-
-	// for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
-	// 	uint32_t temp_threshold = 0;
-	// 	if (!plat_get_temp_threshold(i, &temp_threshold)) {
-	// 		LOG_ERR("Can't find temp_threshold default by type index: %x", i);
-	// 		return false;
-	// 	}
-	// 	temp_threshold_default_settings.temperature_reg_val[i] = temp_threshold;
-	// }
+	for (int i = 0; i < PLAT_TEMP_INDEX_THRESHOLD_TYPE_MAX; i++) {
+		uint32_t temp_threshold = 0;
+		if (!plat_get_temp_threshold(i, &temp_threshold)) {
+			LOG_ERR("Can't find temp_threshold default by type index: %x", i);
+			return false;
+		}
+		temp_threshold_default_settings.temperature_reg_val[i] = temp_threshold;
+	}
 
 	return true;
 }
@@ -942,7 +913,6 @@ bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt)
 
 	bool ret = false;
 
-	LOG_INF("plat_get_vout_command not use now");
 
 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
@@ -1288,43 +1258,42 @@ bool plat_get_temp_threshold(uint8_t temp_index_threshold_type, uint32_t *millid
 		return false;
 	}
 
-	LOG_INF("plat_get_temp_threshold not use now");
 
-	// uint8_t temp_threshold_type_tmp =
-	// 	temp_index_threshold_type_table[temp_index_threshold_type].temp_threshold_type;
+	uint8_t temp_threshold_type_tmp =
+		temp_index_threshold_type_table[temp_index_threshold_type].temp_threshold_type;
 
-	// uint8_t sensor_id = temp_index_threshold_type_table[temp_index_threshold_type].sensor_id;
-	// sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+	uint8_t sensor_id = temp_index_threshold_type_table[temp_index_threshold_type].sensor_id;
+	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
-	// if (cfg == NULL) {
-	// 	LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
-	// 	return false;
-	// }
+	if (cfg == NULL) {
+		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+		return false;
+	}
 
-	// switch (cfg->type) {
-	// case sensor_dev_tmp431:
-	// 	if (!tmp432_get_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
-	// 		LOG_ERR("The TMP431 temp threshold reading failed");
-	// 		return false;
-	// 	}
-	// 	break;
-	// case sensor_dev_emc1413:
-	// 	if (!emc1413_get_temp_threshold(cfg, temp_threshold_type_tmp,
-	// 					millidegree_celsius)) {
-	// 		LOG_ERR("The EMC1413 temp threshold reading failed");
-	// 		return false;
-	// 	}
-	// 	break;
-	// case sensor_dev_tmp75:
-	// 	if (!tmp75_get_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
-	// 		LOG_ERR("The TMP75 temp threshold reading failed");
-	// 		return false;
-	// 	}
-	// 	break;
-	// default:
-	// 	LOG_ERR("Unsupport temp type(%x)", cfg->type);
-	// 	return false;
-	// }
+	switch (cfg->type) {
+	case sensor_dev_tmp431:
+		if (!tmp432_get_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
+			LOG_ERR("The TMP431 temp threshold reading failed");
+			return false;
+		}
+		break;
+	case sensor_dev_emc1413:
+		if (!emc1413_get_temp_threshold(cfg, temp_threshold_type_tmp,
+						millidegree_celsius)) {
+			LOG_ERR("The EMC1413 temp threshold reading failed");
+			return false;
+		}
+		break;
+	case sensor_dev_tmp75:
+		if (!tmp75_get_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
+			LOG_ERR("The TMP75 temp threshold reading failed");
+			return false;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupport temp type(%x)", cfg->type);
+		return false;
+	}
 
 	return true;
 }
@@ -1339,58 +1308,57 @@ bool plat_set_temp_threshold(uint8_t temp_index_threshold_type, uint32_t *millid
 		return false;
 	}
 
-	LOG_INF("plat_set_temp_threshold not use now");
 
-	// uint8_t temp_threshold_type_tmp =
-	// 	temp_index_threshold_type_table[temp_index_threshold_type].temp_threshold_type;
+	uint8_t temp_threshold_type_tmp =
+		temp_index_threshold_type_table[temp_index_threshold_type].temp_threshold_type;
 
-	// uint8_t sensor_id = temp_index_threshold_type_table[temp_index_threshold_type].sensor_id;
-	// sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
-	// uint32_t setting_millidegree_celsius = *millidegree_celsius;
+	uint8_t sensor_id = temp_index_threshold_type_table[temp_index_threshold_type].sensor_id;
+	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+	uint32_t setting_millidegree_celsius = *millidegree_celsius;
 
-	// if (cfg == NULL) {
-	// 	LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
-	// 	return false;
-	// }
+	if (cfg == NULL) {
+		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+		return false;
+	}
 
-	// if (is_default) {
-	// 	*millidegree_celsius = temp_threshold_default_settings
-	// 				       .temperature_reg_val[temp_index_threshold_type];
-	// 	setting_millidegree_celsius =
-	// 		temp_threshold_default_settings
-	// 			.temperature_reg_val[temp_index_threshold_type];
-	// }
+	if (is_default) {
+		*millidegree_celsius = temp_threshold_default_settings
+					       .temperature_reg_val[temp_index_threshold_type];
+		setting_millidegree_celsius =
+			temp_threshold_default_settings
+				.temperature_reg_val[temp_index_threshold_type];
+	}
 
-	// switch (cfg->type) {
-	// case sensor_dev_tmp431:
-	// 	if (!tmp432_set_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
-	// 		LOG_ERR("The TMP431 temp threshold reading failed");
-	// 		return false;
-	// 	}
-	// 	break;
-	// case sensor_dev_emc1413:
-	// 	if (!emc1413_set_temp_threshold(cfg, temp_threshold_type_tmp,
-	// 					millidegree_celsius)) {
-	// 		LOG_ERR("The EMC1413 temp threshold reading failed");
-	// 		return false;
-	// 	}
-	// 	break;
-	// case sensor_dev_tmp75:
-	// 	if (!tmp75_set_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
-	// 		LOG_ERR("The TMP75 temp threshold reading failed");
-	// 		return false;
-	// 	}
-	// 	break;
-	// default:
-	// 	LOG_ERR("Unsupport temp type(%x)", cfg->type);
-	// 	return false;
-	// }
+	switch (cfg->type) {
+	case sensor_dev_tmp431:
+		if (!tmp432_set_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
+			LOG_ERR("The TMP431 temp threshold reading failed");
+			return false;
+		}
+		break;
+	case sensor_dev_emc1413:
+		if (!emc1413_set_temp_threshold(cfg, temp_threshold_type_tmp,
+						millidegree_celsius)) {
+			LOG_ERR("The EMC1413 temp threshold reading failed");
+			return false;
+		}
+		break;
+	case sensor_dev_tmp75:
+		if (!tmp75_set_temp_threshold(cfg, temp_threshold_type_tmp, millidegree_celsius)) {
+			LOG_ERR("The TMP75 temp threshold reading failed");
+			return false;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupport temp type(%x)", cfg->type);
+		return false;
+	}
 
-	// if (is_perm) {
-	// 	temp_threshold_user_settings.temperature_reg_val[temp_index_threshold_type] =
-	// 		setting_millidegree_celsius;
-	// 	temp_threshold_user_settings_set(&temp_threshold_user_settings);
-	// }
+	if (is_perm) {
+		temp_threshold_user_settings.temperature_reg_val[temp_index_threshold_type] =
+			setting_millidegree_celsius;
+		temp_threshold_user_settings_set(&temp_threshold_user_settings);
+	}
 
 	return true;
 }
