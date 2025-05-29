@@ -33,14 +33,13 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_UNSPECIFIED_ERROR);
 	CHECK_NULL_ARG_WITH_RETURN(reading, SENSOR_UNSPECIFIED_ERROR);
 
-	if (cfg->num > SENSOR_NUM_MAX || cfg->offset > 7) {
+	if (cfg->num > SENSOR_NUM_MAX) {
+		LOG_ERR("sensor num: 0x%x is invalid", cfg->num);
 		return SENSOR_UNSPECIFIED_ERROR;
 	}
 
 	I2C_MSG msg;
 	uint8_t retry = 3;
-
-	LOG_INF("here");
 
 	// Step 1: Write Command Byte to select channel
 	msg.bus = cfg->port;
@@ -90,7 +89,6 @@ uint8_t ads7830_init(sensor_cfg *cfg)
 	if (cfg->num > SENSOR_NUM_MAX) {
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
-	LOG_INF("ads7830_init start");
 
 	cfg->read = ads7830_read;
 	return SENSOR_INIT_SUCCESS;

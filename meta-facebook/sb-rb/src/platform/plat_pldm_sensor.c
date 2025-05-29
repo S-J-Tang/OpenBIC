@@ -33,8 +33,8 @@ LOG_MODULE_REGISTER(plat_pldm_sensor);
 
 static bool plat_sensor_polling_enable_flag = true;
 static bool plat_sensor_adc_polling_enable_flag = true;
-static bool plat_sensor_temp_polling_enable_flag = false;
-static bool plat_sensor_vr_polling_enable_flag = false;
+static bool plat_sensor_temp_polling_enable_flag = true;
+static bool plat_sensor_vr_polling_enable_flag = true;
 
 void plat_pldm_sensor_change_vr_dev();
 void plat_pldm_sensor_change_vr_addr();
@@ -2660,38 +2660,38 @@ bool is_adc_access(uint8_t sensor_num)
         return false;
     }
 
-    // const uint8_t adc7830_i2c_addr = ADS7830_I2C_ADDR;
-    // const uint8_t adc7830_i2c_bus = I2C_BUS1;
-    // I2C_MSG msg = {0};
-    // uint8_t retry = 3;
+    const uint8_t adc7830_i2c_addr = ADS7830_I2C_ADDR;
+    const uint8_t adc7830_i2c_bus = I2C_BUS1;
+    I2C_MSG msg = {0};
+    uint8_t retry = 3;
 
-    // // Step 1: Write command byte to select CH0
-    // msg.bus = adc7830_i2c_bus;
-    // msg.target_addr = adc7830_i2c_addr;
-    // msg.tx_len = 1;
-    // msg.rx_len = 0;
-    // msg.data[0] = 0x84; // Command byte for CH0 (single-ended, with power-down between conversions)
+    // Step 1: Write command byte to select CH0
+    msg.bus = adc7830_i2c_bus;
+    msg.target_addr = adc7830_i2c_addr;
+    msg.tx_len = 1;
+    msg.rx_len = 0;
+    msg.data[0] = 0x84; // Command byte for CH0 (single-ended, with power-down between conversions)
 
-    // if (i2c_master_write(&msg, retry) != 0) {
-    //     LOG_DBG("ADS7830 write failed at addr 0x%x, bus %d (sensor_num=0x%x)",
-    //             adc7830_i2c_addr, adc7830_i2c_bus, sensor_num);
-    //     return false;
-    // }
+    if (i2c_master_write(&msg, retry) != 0) {
+        LOG_ERR("ADS7830 write failed at addr 0x%x, bus %d (sensor_num=0x%x)",
+                adc7830_i2c_addr, adc7830_i2c_bus, sensor_num);
+        return false;
+    }
 
-    // k_msleep(300); // wait for conversion to complete
+    k_msleep(300); // wait for conversion to complete
 
-    // // Step 2: Read ADC data (1 byte)
-    // msg.tx_len = 0;
-    // msg.rx_len = 1;
+    // Step 2: Read ADC data (1 byte)
+    msg.tx_len = 0;
+    msg.rx_len = 1;
 
-    // if (i2c_master_read(&msg, retry) != 0) {
-    //     LOG_DBG("ADS7830 read failed at addr 0x%x, bus %d (sensor_num=0x%x)",
-    //             adc7830_i2c_addr, adc7830_i2c_bus, sensor_num);
-    //     return false;
-    // }
+    if (i2c_master_read(&msg, retry) != 0) {
+        LOG_ERR("ADS7830 read failed at addr 0x%x, bus %d (sensor_num=0x%x)",
+                adc7830_i2c_addr, adc7830_i2c_bus, sensor_num);
+        return false;
+    }
 
-    // // You can log the value if needed:
-    // LOG_DBG("ADS7830 read CH0 success: value = %d (sensor_num=0x%x)", msg.data[0], sensor_num);
+    // You can log the value if needed:
+    LOG_DBG("ADS7830 read CH0 success: value = %d (sensor_num=0x%x)", msg.data[0], sensor_num);
 
     return true;
 }
