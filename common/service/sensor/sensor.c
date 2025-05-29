@@ -152,6 +152,8 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(emc1413)
 	sensor_name_to_num(bcm85658)
 	sensor_name_to_num(tmp421)
+	sensor_name_to_num(bmr316)
+	sensor_name_to_num(lx6301)
 };
 // clang-format on
 
@@ -372,6 +374,12 @@ SENSOR_DRIVE_INIT_DECLARE(bcm85658);
 #endif
 #ifdef ENABLE_TMP421
 SENSOR_DRIVE_INIT_DECLARE(tmp421);
+#endif
+#ifdef ENABLE_BMR316
+SENSOR_DRIVE_INIT_DECLARE(bmr316);
+#endif
+#ifdef ENABLE_LX6301
+SENSOR_DRIVE_INIT_DECLARE(lx6301);
 #endif
 
 // The sequence needs to same with SENSOR_DEV ID
@@ -744,6 +752,16 @@ sensor_drive_api sensor_drive_tbl[] = {
 	SENSOR_DRIVE_TYPE_INIT_MAP(tmp421),
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(tmp421),
+#endif
+#ifdef ENABLE_BMR316
+	SENSOR_DRIVE_TYPE_INIT_MAP(bmr316),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(bmr316),
+#endif
+#ifdef ENABLE_LX6301
+	SENSOR_DRIVE_TYPE_INIT_MAP(lx6301),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(lx6301),
 #endif
 };
 
@@ -1157,6 +1175,9 @@ bool me_access(uint8_t sensor_num)
 	if (get_me_mode() == ME_NORMAL_MODE) {
 		return get_post_status();
 	} else {
+		if (get_post_status()) {
+			init_me_firmware();
+		}
 		return false;
 	}
 }
