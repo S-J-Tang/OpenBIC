@@ -40,6 +40,8 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 	I2C_MSG msg;
 	uint8_t retry = 3;
 
+	LOG_INF("here");
+
 	// Step 1: Write Command Byte to select channel
 	msg.bus = cfg->port;
 	msg.target_addr = cfg->target_addr;
@@ -52,7 +54,7 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 		return SENSOR_FAIL_TO_ACCESS;
 	}
 
-	k_msleep(15);
+	k_msleep(30);
 
 	// Step 2: Read 1 byte ADC result
 	msg.tx_len = 0;
@@ -88,6 +90,7 @@ uint8_t ads7830_init(sensor_cfg *cfg)
 	if (cfg->num > SENSOR_NUM_MAX) {
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
+	LOG_INF("ads7830_init start");
 
 	cfg->read = ads7830_read;
 	return SENSOR_INIT_SUCCESS;
