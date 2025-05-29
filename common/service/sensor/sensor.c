@@ -750,11 +750,10 @@ sensor_drive_api sensor_drive_tbl[] = {
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(tmp421),
 #endif
-#ifndef ENABLE_ADS7830
+#ifdef ENABLE_ADS7830
 	SENSOR_DRIVE_TYPE_INIT_MAP(ads7830),
 #else
-	SENSOR_DRIVE_TYPE_INIT_MAP(ads7830),
-	// SENSOR_DRIVE_TYPE_UNUSE(ads7830),
+	SENSOR_DRIVE_TYPE_UNUSE(ads7830),
 #endif
 };
 
