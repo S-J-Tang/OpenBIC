@@ -1453,9 +1453,8 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.arg0 = 15.8, // R1 = 15.8kΩ
-			.arg1 = 1.8,  // R2 = 1.8kΩ
-			// .read = ads7830_read,
+			.arg0 = 158, // R1 = 15.8kΩ
+			.arg1 = 18,  // R2 = 1.8kΩ
 		},
     },
 	{
@@ -1524,10 +1523,8 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.arg0 = 5.36,
-			.arg1 = 1.8,
-			// .is_init = false,
-			// .read = ads7830_read,
+			.arg0 = 536,
+			.arg1 = 180,
 		},
     },
 	{
@@ -1596,10 +1593,8 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.arg0 = 2.87,
-			.arg1 = 1.8,
-			// .is_init = false,
-			// .read = ads7830_read,
+			.arg0 = 287,
+			.arg1 = 180,
 		},
     },
 	{
@@ -1668,10 +1663,8 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.arg0 = 1,
+			.arg0 = 0,
 			.arg1 = 1,
-			// .is_init = false,
-			// .read = ads7830_read,
 		},
     },
 	{
@@ -1740,10 +1733,8 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.arg0 = 1,
+			.arg0 = 0,
 			.arg1 = 1,
-			// .is_init = false,
-			// .read = ads7830_read,
 		},
     },
 	{
@@ -1807,15 +1798,13 @@ pldm_sensor_info plat_pldm_sensor_adc_table[] = {
 			.type = sensor_dev_ads7830,
 			.port = I2C_BUS1,
 			.target_addr = ADS7830_I2C_ADDR,
-			.offset = ADC_CH5,
+			.offset = ADC_CH6,
 			.access_checker = is_adc_access,
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
-			.arg0 = 1,
+			.arg0 = 0,
 			.arg1 = 1,
-			// .is_init = false,
-			// .read = ads7830_read,
 		},
     },
 };
@@ -2660,33 +2649,20 @@ bool is_adc_access(uint8_t sensor_num)
         return false;
     }
 
-    const uint8_t adc7830_i2c_addr = ADS7830_I2C_ADDR;
-    const uint8_t adc7830_i2c_bus = I2C_BUS1;
     I2C_MSG msg = {0};
     uint8_t retry = 3;
 
     // Step 1: Write command byte to select CH0
-    msg.bus = adc7830_i2c_bus;
-    msg.target_addr = adc7830_i2c_addr;
+    msg.bus = I2C_BUS1;
+    msg.target_addr = ADS7830_I2C_ADDR;
     msg.tx_len = 1;
-    msg.rx_len = 0;
-    msg.data[0] = 0x84; // Command byte for CH0 (single-ended, with power-down between conversions)
-
-    if (i2c_master_write(&msg, retry) != 0) {
-        LOG_ERR("ADS7830 write failed at addr 0x%x, bus %d (sensor_num=0x%x)",
-                adc7830_i2c_addr, adc7830_i2c_bus, sensor_num);
-        return false;
-    }
-
-    k_msleep(300); // wait for conversion to complete
+    msg.rx_len = 1;
+    msg.data[0] = 0x8C; // Command byte for CH0 (single-ended, with power-down between conversions)
 
     // Step 2: Read ADC data (1 byte)
-    msg.tx_len = 0;
-    msg.rx_len = 1;
-
     if (i2c_master_read(&msg, retry) != 0) {
         LOG_ERR("ADS7830 read failed at addr 0x%x, bus %d (sensor_num=0x%x)",
-                adc7830_i2c_addr, adc7830_i2c_bus, sensor_num);
+                ADS7830_I2C_ADDR, I2C_BUS1, sensor_num);
         return false;
     }
 

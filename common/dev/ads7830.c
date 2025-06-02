@@ -23,11 +23,6 @@
 
 LOG_MODULE_REGISTER(dev_ads7830);
 
-static const uint8_t ads7830_cmd_table[8] = {
-	ADC_CH0, ADC_CH1, ADC_CH2, ADC_CH3,
-	ADC_CH4, ADC_CH5, ADC_CH6, ADC_CH7
-};
-
 uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_UNSPECIFIED_ERROR);
@@ -45,19 +40,8 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 	msg.bus = cfg->port;
 	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 1;
-	msg.rx_len = 0;
-	msg.data[0] = ads7830_cmd_table[cfg->offset];
-
-	if (i2c_master_write(&msg, retry)) {
-		LOG_ERR("ADS7830 write failed");
-		return SENSOR_FAIL_TO_ACCESS;
-	}
-
-	k_msleep(30);
-
-	// Step 2: Read 1 byte ADC result
-	msg.tx_len = 0;
 	msg.rx_len = 1;
+	msg.data[0] = cfg->offset;
 
 	if (i2c_master_read(&msg, retry)) {
 		LOG_ERR("ADS7830 read failed");
@@ -65,15 +49,14 @@ uint8_t ads7830_read(sensor_cfg *cfg, int *reading)
 	}
 
 	uint8_t raw_adc = msg.data[0];
-	*reading = raw_adc;
 
 	// Get reference voltage and resistors from cfg->arg0 (R1), cfg->arg1 (R2)
-	float ads7830_reference_voltage = 3.3f;
+	float ads7830_reference_voltage = 2.5f;
 	float resistor1 = (float)cfg->arg0;
 	float resistor2 = (float)cfg->arg1;
 
 	float vin = (raw_adc / 255.0f) * ads7830_reference_voltage;
-	float v_high = vin * (1.0f + resistor1 / resistor2);
+	float v_high = vin * (resistor2 + resistor1) / resistor2;
 
 	sensor_val *sval = (sensor_val *)reading;
 	sval->integer = (int)v_high;

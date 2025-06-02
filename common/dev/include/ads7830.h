@@ -5,14 +5,15 @@
 #include <stdbool.h>
 #include "sensor.h"
 
-#define ADC_CH0 0x84
-#define ADC_CH1 0xC4
-#define ADC_CH2 0x94
-#define ADC_CH3 0xD4
-#define ADC_CH4 0xA4
-#define ADC_CH5 0xE4
-#define ADC_CH6 0xB4
-#define ADC_CH7 0xF4
+#define ADC_CH0 0x8C // CH0: SD=1, C2=0, C1=0, C0=0, PD=11
+#define ADC_CH1 0xCC
+#define ADC_CH2 0x9C
+#define ADC_CH3 0xDC
+#define ADC_CH4 0xAC
+#define ADC_CH5 0xEC
+#define ADC_CH6 0xBC
+#define ADC_CH7 0xFC
+
 
 uint8_t ads7830_init(sensor_cfg *cfg);
 uint8_t ads7830_read(sensor_cfg *cfg, int *reading);
