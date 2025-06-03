@@ -717,6 +717,125 @@ void user_settings_init(void)
 	temp_threshold_default_settings_init();
 }
 
+#include <drivers/adc.h>
+#include <kernel.h>
+#include <sys/printk.h>
+
+#include <stdlib.h>
+
+#define BUFFER_SIZE 1
+#define ADC_STACK_SIZE 1024
+
+#define SLIDING_WINDOW_SIZE 9
+#define ADC_CHANNEL_ID 5
+#define MAX_READS 300
+
+#define VREF 2048 
+
+K_THREAD_STACK_DEFINE(adc_thread_stack, ADC_STACK_SIZE);
+struct k_thread adc_thread_data;
+
+static uint32_t adc_read_times[SLIDING_WINDOW_SIZE]; 
+static uint32_t adc_voltages[SLIDING_WINDOW_SIZE]; 
+static int adc_read_index = 0;
+static uint32_t total_time = 0; 
+static uint32_t total_voltage = 0;
+static int adc_read_count = 0; 
+static int adc_read_log_count = 0; 
+
+static void adc_poll_init(void)
+{
+    uint16_t m_sample_buffer[BUFFER_SIZE];
+    const struct device *adc_dev;
+    int32_t val;
+    int retval;
+
+    adc_dev = device_get_binding("ADC_0");
+    if (adc_dev == NULL) {
+        LOG_INF("ADC device not found\n");
+        return;
+    }
+
+    const struct adc_sequence sequence = {
+        .channels    = BIT(ADC_CHANNEL_ID),
+        .buffer      = m_sample_buffer,
+        .buffer_size = sizeof(m_sample_buffer),
+        .resolution  = 10,
+        .calibrate   = 1,
+    };
+
+    uint32_t start_time = k_uptime_get();
+    retval = adc_read(adc_dev, &sequence);
+    uint32_t end_time = k_uptime_get(); 
+    uint32_t adc_read_time = end_time - start_time;
+
+    if (retval >= 0) {
+        val = m_sample_buffer[0];
+        // LOG_INF("ADC Value: %d\n", val);
+        // LOG_INF("ADC read time: %u ms\n", adc_read_time);
+
+		uint32_t voltage = val; 
+
+        // LOG_INF("ADC Voltage: %u mV\n", voltage);
+
+        if (adc_read_count < SLIDING_WINDOW_SIZE) {
+            
+            adc_read_times[adc_read_index] = adc_read_time;
+            adc_voltages[adc_read_index] = voltage;
+            total_time += adc_read_time;
+            total_voltage += voltage;
+
+            adc_read_index = (adc_read_index + 1) % SLIDING_WINDOW_SIZE;
+            adc_read_count++;
+
+            // LOG_INF("Sliding window not full yet. Read count: %d\n", adc_read_count);
+        } else {
+            total_time -= adc_read_times[adc_read_index];
+            total_voltage -= adc_voltages[adc_read_index];
+
+            adc_read_times[adc_read_index] = adc_read_time;
+            adc_voltages[adc_read_index] = voltage;
+
+            total_time += adc_read_time;
+            total_voltage += voltage;
+
+            adc_read_index = (adc_read_index + 1) % SLIDING_WINDOW_SIZE;
+
+            // uint32_t avg_time = total_time / SLIDING_WINDOW_SIZE;
+            // uint32_t avg_voltage = total_voltage / SLIDING_WINDOW_SIZE;
+			
+            // LOG_INF("Sliding window average read time: %u ms\n", avg_time);
+            // LOG_INF("Sliding window average voltage: %u raw\n", avg_voltage);
+        }
+
+    } else {
+        LOG_INF("ADC read failed: %d\n", retval);
+    }
+}
+
+void adc_polling_handler(void *p1, void *p2, void *p3) {
+    while (1) {
+        // LOG_INF("ADC Read #%d", adc_read_log_count + 1);
+        adc_poll_init();  
+        adc_read_log_count++;
+		// k_msleep(500);
+
+    }
+	// adc_read_log_count < MAX_READS
+    LOG_INF("ADC read completed %d times.\n", MAX_READS);
+}
+
+void init_adc_polling(void) 
+{
+    k_thread_create(&adc_thread_data, adc_thread_stack, ADC_STACK_SIZE,
+                    adc_polling_handler, NULL, NULL, NULL,
+                    CONFIG_MAIN_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+    k_thread_name_set(&adc_thread_data, "test_adc_average");
+
+    LOG_INF("ADC polling thread started...\n");
+}
+
 void set_uart_power_event_is_enable(bool is_enable)
 {
 	if (is_enable == true) {

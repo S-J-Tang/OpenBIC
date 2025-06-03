@@ -192,6 +192,7 @@ bool vr_rail_voltage_peak_get(uint8_t *name, int *peak_value);
 bool vr_rail_voltage_peak_clear(uint8_t rail_index);
 bool vr_vout_user_settings_get(void *user_settings);
 void user_settings_init(void);
+void init_adc_polling(void);
 bool temp_index_threshold_type_name_get(uint8_t type, uint8_t **name);
 bool temp_threshold_type_enum_get(uint8_t *name, uint8_t *num);
 bool plat_get_temp_threshold(uint8_t temp_index_threshold_type, uint32_t *millidegree_celsius);
