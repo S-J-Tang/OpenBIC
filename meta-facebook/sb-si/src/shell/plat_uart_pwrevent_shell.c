@@ -44,8 +44,8 @@ void cmd_enable_or_disable_uart_pwrevent(const struct shell *shell, size_t argc,
 
 	return;
 }
-
-/* Sub-command Level 1 of command uart-pwrevent */
+/*
+// Sub-command Level 1 of command uart-pwrevent 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_uart_pwrevent_cmds,
 			       SHELL_CMD(enable, NULL, "enable_uart_pwrevent",
 					 cmd_enable_or_disable_uart_pwrevent),
@@ -53,5 +53,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_uart_pwrevent_cmds,
 					 cmd_enable_or_disable_uart_pwrevent),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command uart-pwrevent */
+// Root of command uart-pwrevent 
 SHELL_CMD_REGISTER(uart_pwrevent, &sub_uart_pwrevent_cmds, "uart-pwrevent commands for AG", NULL);
+*/

@@ -28,15 +28,15 @@ void gpio_int_default();
 // Default name: Reserve_GPIOH0
 #define name_gpio0	\
 	gpio_name_to_num(FM_ASIC_0_THERMTRIP_R_N) \
-	gpio_name_to_num(RST_ATH_PWR_ON_PLD_R1_N) \
-	gpio_name_to_num(ATH_CURRENT_SENSE_0_NPCM_R) \
-	gpio_name_to_num(ATH_CURRENT_SENSE_1_NPCM_R) \
-	gpio_name_to_num(FM_ATH_HBM3_CATTRIP_ALARM_LV33_R) \
+	gpio_name_to_num(RST_HAMSA_PWR_ON_R_PLD_N) \
+	gpio_name_to_num(Reserve_GPIO02) \
+	gpio_name_to_num(Reserve_GPIO03) \
+	gpio_name_to_num(Reserve_GPIO04) \
 	gpio_name_to_num(ALL_VR_PM_ALERT_R_N) \
-	gpio_name_to_num(ATH_SMB_ALERT_NPCM_LVC33_R_N) \
+	gpio_name_to_num(SMBUS_HAMSA_PSOC_LVC33_ALERT_N) \
 	gpio_name_to_num(FM_PLD_UBC_EN_R)
 #define name_gpio1	\
-	gpio_name_to_num(RSVD_GPIO_2_R) \
+	gpio_name_to_num(Reserve_GPIO10) \
 	gpio_name_to_num(Reserve_GPIO11) \
 	gpio_name_to_num(Reserve_GPIO12) \
 	gpio_name_to_num(Reserve_GPIO13) \
@@ -52,7 +52,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO24) \
 	gpio_name_to_num(Reserve_GPIO25) \
 	gpio_name_to_num(Reserve_GPIO26) \
-	gpio_name_to_num(Reserve_GPIO27)
+	gpio_name_to_num(MEDHA0_HBM_CATTRIP_PSOC_LVC33_ALARM)
 #define name_gpio3	\
 	gpio_name_to_num(Reserve_GPIO30) \
 	gpio_name_to_num(Reserve_GPIO31) \
@@ -79,7 +79,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO54) \
 	gpio_name_to_num(Reserve_GPIO55) \
 	gpio_name_to_num(Reserve_GPIO56) \
-	gpio_name_to_num(Reserve_GPIO57)
+	gpio_name_to_num(MEDHA1_HBM_CATTRIP_PSOC_LVC33_ALARM)
 #define name_gpio6	\
 	gpio_name_to_num(Reserve_GPIO60) \
 	gpio_name_to_num(Reserve_GPIO61) \
@@ -94,13 +94,13 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO71) \
 	gpio_name_to_num(Reserve_GPIO72) \
 	gpio_name_to_num(Reserve_GPIO73) \
-	gpio_name_to_num(GPIO74_Strap_DSW_EN) \
-	gpio_name_to_num(GPIO75_Strap_JEN_N) \
+	gpio_name_to_num(Reserve_GPIO74) \
+	gpio_name_to_num(Reserve_GPIO75) \
 	gpio_name_to_num(Reserve_GPIO76) \
 	gpio_name_to_num(Reserve_GPIO77)
 #define name_gpio8	\
 	gpio_name_to_num(Reserve_GPIO80) \
-	gpio_name_to_num(Reserve_GPIO81) \
+	gpio_name_to_num(SMB_RAINBOW_ALERT_N) \
 	gpio_name_to_num(LED_NPCM_HEARTBEAT_R) \
 	gpio_name_to_num(Reserve_GPIO83) \
 	gpio_name_to_num(Reserve_GPIO84) \
@@ -117,16 +117,16 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO96) \
 	gpio_name_to_num(Reserve_GPIO97)
 #define name_gpioA	\
-	gpio_name_to_num(Reserve_GPIOA0) \
-	gpio_name_to_num(Reserve_GPIOA1) \
+	gpio_name_to_num(MEDHA0_CURRENT_SENSE_0_LS_LVC33) \
+	gpio_name_to_num(MEDHA0_CURRENT_SENSE_1_LS_LVC33) \
 	gpio_name_to_num(Reserve_GPIOA2) \
-	gpio_name_to_num(Reserve_GPIOA3) \
-	gpio_name_to_num(Reserve_GPIOA4) \
+	gpio_name_to_num(MEDHA1_CURRENT_SENSE_0_LS_LVC33) \
+	gpio_name_to_num(MEDHA1_CURRENT_SENSE_1_LS_LVC33) \
 	gpio_name_to_num(Reserve_GPIOA5) \
 	gpio_name_to_num(Reserve_GPIOA6) \
 	gpio_name_to_num(Reserve_GPIOA7)
 #define name_gpioB	\
-	gpio_name_to_num(RSVD_GPIO_1_R) \
+	gpio_name_to_num(RSVD_GPIO_1) \
 	gpio_name_to_num(Reserve_GPIOB1) \
 	gpio_name_to_num(Reserve_GPIOB2) \
 	gpio_name_to_num(Reserve_GPIOB3) \
@@ -164,8 +164,8 @@ void gpio_int_default();
 #define name_gpioF	\
 	gpio_name_to_num(Reserve_GPIOF0) \
 	gpio_name_to_num(Reserve_GPIOF1) \
-	gpio_name_to_num(Reserve_GPIOF2) \
-	gpio_name_to_num(Reserve_GPIOF3)
+	gpio_name_to_num(SMBUS_MEDHA0_CRM_LS_PSOC_LVC33_ALERT_N) \
+	gpio_name_to_num(SMBUS_MEDHA1_CRM_LS_PSOC_LVC33_ALERT_N)
 
 // clang-format on
 

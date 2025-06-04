@@ -18,18 +18,23 @@
 #define PLAT_ISR_H
 
 void ISR_GPIO_FM_ASIC_0_THERMTRIP_R_N();
-void ISR_GPIO_RST_ATH_PWR_ON_PLD_R1_N();
-void ISR_GPIO_ATH_CURRENT_SENSE_0_NPCM_R();
-void ISR_GPIO_ATH_CURRENT_SENSE_1_NPCM_R();
-void ISR_GPIO_FM_ATH_HBM3_CATTRIP_ALARM_LV33_R();
+void ISR_GPIO_RST_HAMSA_PWR_ON_R_PLD_N();
 void ISR_GPIO_ALL_VR_PM_ALERT_R_N();
-void ISR_GPIO_ATH_SMB_ALERT_NPCM_LVC33_R_N();
+void ISR_GPIO_SMBUS_HAMSA_PSOC_LVC33_ALERT_N();
 void ISR_GPIO_FM_PLD_UBC_EN_R();
+void ISR_GPIO_MEDHA0_HBM_CATTRIP_PSOC_LVC33_ALARM();
+void ISR_GPIO_MEDHA1_HBM_CATTRIP_PSOC_LVC33_ALARM();
+void ISR_GPIO_SMB_RAINBOW_ALERT_N();
+void ISR_GPIO_MEDHA0_CURRENT_SENSE_0_LS_LVC33();
+void ISR_GPIO_MEDHA0_CURRENT_SENSE_1_LS_LVC33();
+void ISR_GPIO_MEDHA1_CURRENT_SENSE_0_LS_LVC33();
+void ISR_GPIO_MEDHA1_CURRENT_SENSE_1_LS_LVC33();
+void ISR_GPIO_SMBUS_MEDHA0_CRM_LS_PSOC_LVC33_ALERT_N();
+void ISR_GPIO_SMBUS_MEDHA1_CRM_LS_PSOC_LVC33_ALERT_N();
 bool plat_i2c_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *data, uint8_t len);
 bool plat_i2c_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *data, uint8_t len);
 
 void plat_clock_init();
 void plat_eusb_init();
-bool plat_power_control(bool is_power_on);
 
 #endif

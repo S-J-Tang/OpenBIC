@@ -19,13 +19,10 @@
 
 #include "version.h"
 
-#define PLATFORM_NAME "Minerva"
-#define PROJECT_NAME "Aegis"
-#define PROJECT_STAGE EVT
+#define PLATFORM_NAME "Santa Barbara"
+#define PROJECT_NAME "Rainbow"
+#define PROJECT_STAGE POC
 
-/*
- * 0x01 Aegis
- */
 #define BOARD_ID 0x01
 #define DEVICE_ID 0x00
 #define DEVICE_REVISION 0x80
@@ -40,10 +37,10 @@
 
 #define BIC_FW_YEAR_MSB 0x20
 #define BIC_FW_YEAR_LSB 0x25
-#define BIC_FW_WEEK 0x18
+#define BIC_FW_WEEK 0x17
 #define BIC_FW_VER 0x01
-#define BIC_FW_platform_0 0x61 // char: a
-#define BIC_FW_platform_1 0x67 // char: g
+#define BIC_FW_platform_0 0x72 // char: r
+#define BIC_FW_platform_1 0x62 // char: b
 #define BIC_FW_platform_2 0x00 // char: '\0'
 
 #endif

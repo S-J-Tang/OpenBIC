@@ -21,8 +21,7 @@
 #include "plat_pldm_fw_version_shell.h"
 #include "mctp.h"
 #include "pldm.h"
-#include "plat_aegis_power_control_shell.h"
-
+/*
 void pldm_cmd(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc < 4) {
@@ -63,7 +62,7 @@ void pldm_cmd(const struct shell *shell, size_t argc, char **argv)
 	return;
 }
 
-/* Sub-command Level 1 of command test */
+// Sub-command Level 1 of command test 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_test_cmds,
 			       SHELL_CMD(sensor, &sub_plat_sensor_polling_cmd,
 					 "set/get platform sensor polling command", NULL),
@@ -72,9 +71,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_test_cmds,
 			       SHELL_CMD(get_fw_version, &sub_get_fw_version_cmd,
 					 "get fw version command", NULL),
 			       SHELL_CMD(pldm, NULL, "send pldm to bmc", pldm_cmd),
-			       SHELL_CMD(aegis_power, &sub_aegis_power_cmds, "aegis power commands",
-					 NULL),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command test */
+// Root of command test 
 SHELL_CMD_REGISTER(test, &sub_test_cmds, "Test commands for AG", NULL);
+*/

@@ -33,31 +33,30 @@ void cmd_set_plat_sensor_polling_all(const struct shell *shell, size_t argc, cha
 
 	set_plat_sensor_polling_enable_flag(value);
 	shell_print(shell, "set_sensor_polling all -> %d ,success!", value);
-	shell_print(shell, "Flag: all -> %d , ubc-> %d , vr-> %d , temp-> %d",
+	shell_print(shell, "Flag: all -> %d , adc-> %d , vr-> %d , temp-> %d",
 		    get_plat_sensor_polling_enable_flag(),
-		    get_plat_sensor_ubc_polling_enable_flag(),
 		    get_plat_sensor_vr_polling_enable_flag(),
 		    get_plat_sensor_temp_polling_enable_flag());
 	return;
 }
 
-void cmd_set_plat_sensor_polling_ubc(const struct shell *shell, size_t argc, char **argv)
+void cmd_set_plat_sensor_polling_adc(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc != 2) {
-		shell_warn(shell, "Help: set_sensor_polling ubc <value>");
+		shell_warn(shell, "Help: set_sensor_polling adc <value>");
 		return;
 	}
 	int value = strtol(argv[1], NULL, 10);
 	if (value != 0 && value != 1) {
-		shell_warn(shell, "Help: set_sensor_polling ubc value should only accept 0 or 1");
+		shell_warn(shell, "Help: set_sensor_polling adc value should only accept 0 or 1");
 		return;
 	}
 
-	set_plat_sensor_ubc_polling_enable_flag(value);
-	shell_print(shell, "set_sensor_polling ubc -> %d ,success!", value);
-	shell_print(shell, "Flag: all -> %d , ubc -> %d, vr -> %d, temp -> %d",
+	set_plat_sensor_adc_polling_enable_flag(value);
+	shell_print(shell, "set_sensor_polling adc -> %d ,success!", value);
+	shell_print(shell, "Flag: all -> %d , adc -> %d, vr -> %d, temp -> %d",
 		    get_plat_sensor_polling_enable_flag(),
-		    get_plat_sensor_ubc_polling_enable_flag(),
+		    get_plat_sensor_adc_polling_enable_flag(),
 		    get_plat_sensor_vr_polling_enable_flag(),
 		    get_plat_sensor_temp_polling_enable_flag());
 	return;
@@ -77,9 +76,9 @@ void cmd_set_plat_sensor_polling_vr(const struct shell *shell, size_t argc, char
 
 	set_plat_sensor_vr_polling_enable_flag(value);
 	shell_print(shell, "set_sensor_polling vr -> %d ,success!", value);
-	shell_print(shell, "Flag: all -> %d , ubc -> %d, vr -> %d, temp -> %d",
+	shell_print(shell, "Flag: all -> %d , adc -> %d, vr -> %d, temp -> %d",
 		    get_plat_sensor_polling_enable_flag(),
-		    get_plat_sensor_ubc_polling_enable_flag(),
+		    get_plat_sensor_adc_polling_enable_flag(),
 		    get_plat_sensor_vr_polling_enable_flag(),
 		    get_plat_sensor_temp_polling_enable_flag());
 	return;
@@ -99,9 +98,9 @@ void cmd_set_plat_sensor_polling_temp(const struct shell *shell, size_t argc, ch
 
 	set_plat_sensor_temp_polling_enable_flag(value);
 	shell_print(shell, "set_sensor_polling temp -> %d ,success!", value);
-	shell_print(shell, "Flag: all -> %d , ubc -> %d, vr -> %d, temp -> %d",
+	shell_print(shell, "Flag: all -> %d , adc -> %d, vr -> %d, temp -> %d",
 		    get_plat_sensor_polling_enable_flag(),
-		    get_plat_sensor_ubc_polling_enable_flag(),
+		    get_plat_sensor_adc_polling_enable_flag(),
 		    get_plat_sensor_vr_polling_enable_flag(),
 		    get_plat_sensor_temp_polling_enable_flag());
 	return;
@@ -109,9 +108,9 @@ void cmd_set_plat_sensor_polling_temp(const struct shell *shell, size_t argc, ch
 
 void cmd_get_plat_sensor_polling_all(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "get_sensor_polling all -> %d , ubc -> %d, vr -> %d, temp -> %d ",
+	shell_print(shell, "get_sensor_polling all -> %d , adc -> %d, vr -> %d, temp -> %d ",
 		    get_plat_sensor_polling_enable_flag(),
-		    get_plat_sensor_ubc_polling_enable_flag(),
+		    get_plat_sensor_adc_polling_enable_flag(),
 		    get_plat_sensor_vr_polling_enable_flag(),
 		    get_plat_sensor_temp_polling_enable_flag());
 	return;

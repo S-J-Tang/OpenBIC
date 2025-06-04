@@ -22,7 +22,7 @@
 #include "plat_class.h"
 
 LOG_MODULE_REGISTER(plat_temp_status_shell, LOG_LEVEL_DBG);
-
+/*
 static int cmd_temp_status_get(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!(argc == 2)) {
@@ -30,7 +30,7 @@ static int cmd_temp_status_get(const struct shell *shell, size_t argc, char **ar
 		return -1;
 	}
 
-	enum PLAT_TEMP_INDEX_E rail;
+	enum VR_RAIL_E rail;
 	if (temp_sensor_rail_enum_get(argv[1], &rail) == false) {
 		shell_error(shell, "Invalid rail name: %s", argv[1]);
 		return -1;
@@ -43,12 +43,7 @@ static int cmd_temp_status_get(const struct shell *shell, size_t argc, char **ar
 		return -1;
 	}
 
-	if (rail == TEMP_INDEX_ON_DIE_ATH_0_N_OWL || rail == TEMP_INDEX_ON_DIE_ATH_1_S_OWL) {
-		shell_print(shell, "%s: 0x%02x",
-			    (get_tmp_type() == TMP_EMC1413) ? "EMC1413" : "TMP432", temp_status);
-	} else {
-		shell_print(shell, "%s: 0x%02x (ALERT_N)", "TMP75", temp_status);
-	}
+	shell_print(shell, "[%-2x]%-40s %-10s:%2x", rail, argv[1], argv[2], temp_status);
 
 	return 0;
 }
@@ -77,7 +72,7 @@ static int cmd_temp_status_clear(const struct shell *shell, size_t argc, char **
 		shell_print(shell, "All Temp clear temp status finish");
 		return 0;
 	} else {
-		enum PLAT_TEMP_INDEX_E rail;
+		enum VR_RAIL_E rail;
 		if (temp_sensor_rail_enum_get(argv[1], &rail) == false) {
 			shell_error(shell, "Invalid rail name: %s", argv[1]);
 			return -1;
@@ -87,7 +82,7 @@ static int cmd_temp_status_clear(const struct shell *shell, size_t argc, char **
 			shell_error(shell, "Can't clear temp status by rail index: %x", rail);
 			return -1;
 		}
-		shell_print(shell, "[%-2x]%-50s clear temp status finish", rail, argv[1]);
+		shell_print(shell, "[%-2x]%-40s clear temp status finish", rail, argv[1]);
 		return 0;
 	}
 }
@@ -121,7 +116,7 @@ SHELL_DYNAMIC_CMD_CREATE(temp_sensor_rname_for_temp_status_get, temp_sensor_rnam
 SHELL_DYNAMIC_CMD_CREATE(temp_sensor_rname_for_temp_status_clear,
 			 temp_sensor_rname_get_for_clear_cmd);
 
-/* level 1 */
+// level 1 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_temp_status_cmds,
 			       SHELL_CMD(get, &temp_sensor_rname_for_temp_status_get,
 					 "get <sensor>", cmd_temp_status_get),
@@ -129,6 +124,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_temp_status_cmds,
 					 "clear all|<sensor>", cmd_temp_status_clear),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command test */
+// Root of command test 
 SHELL_CMD_REGISTER(temp_status, &sub_temp_status_cmds,
 		   "temperature fault status get/clear commands", NULL);
+*/

@@ -31,10 +31,12 @@ LOG_MODULE_REGISTER(clock_shell);
 #define CLK_BUF_U471_ADDR (0xCE >> 1)
 #define CLK_BUF_U519_ADDR (0xD8 >> 1)
 
+#define CLK_GEN_312M_SW_RESET_OFFSET 0x0C
+#define CLK_GEN_312M_LOSMON_0_STS_OFFSET 0x30
+#define CLK_GEN_312M_LOSMON_1_STS_OFFSET 0x40
 #define CLK_GEN_312M_LOSMON_2_STS_OFFSET 0x50
 #define CLK_GEN_312M_ACTMON_0_STS_OFFSET 0x60
 #define CLK_GEN_312M_ACTMON_1_STS_OFFSET 0x80
-#define CLK_GEN_312M_APLL_EVENT_OFFSET 0x69
 #define CLK_BUF_100M_WRITE_LOCK_CLEAR_LOS_EVENT_OFFSET 0x27
 #define CLK_GEN_312M_PAGE_REGISTER 0xFC
 #define CLK_BUF_100M_BYTE_COUNT 0x7
@@ -52,8 +54,8 @@ typedef struct _clock_default_info {
 
 clock_compnt_mapping clock_compnt_mapping_table[] = {
 	{ CLKGEN_312M, CLK_GEN_312M_ADDR, I2C_BUS1, "CLKGEN_312M" },
-	{ AEGIS_CLKBUF_100M_U471, CLK_BUF_U471_ADDR, I2C_BUS1, "AEGIS_CLKBUF_100M_U471" },
-	{ AEGIS_CLKBUF_100M_U519, CLK_BUF_U519_ADDR, I2C_BUS1, "AEGIS_CLKBUF_100M_U519" },
+	{ CLKBUF_100M_U471, CLK_BUF_U471_ADDR, I2C_BUS1, "CLKBUF_100M_U471" },
+	{ CLKBUF_100M_U519, CLK_BUF_U519_ADDR, I2C_BUS1, "CLKBUF_100M_U519" },
 	{ CLKGEN_100M, CLK_GEN_100M_ADDR, I2C_BUS1, "CLKGEN_100M" },
 };
 
@@ -172,7 +174,7 @@ void cmd_set_clock(const struct shell *shell, size_t argc, char **argv)
 		sys_snode_t *s_node;
 
 		SYS_SLIST_FOR_EACH_NODE_SAFE (&clock_register_default_list, node, s_node) {
-			const clock_default_info *p = (clock_default_info *)node;
+			clock_default_info *p = (clock_default_info *)node;
 
 			if (p->clock_index == clock_index && p->offset == offset) {
 				if (p->is_default == true) {
@@ -234,7 +236,7 @@ void cmd_set_clock(const struct shell *shell, size_t argc, char **argv)
 			bool find_default = false;
 
 			SYS_SLIST_FOR_EACH_NODE_SAFE (&clock_register_default_list, node, s_node) {
-				const clock_default_info *p = (clock_default_info *)node;
+				clock_default_info *p = (clock_default_info *)node;
 
 				if (p->clock_index == clock_index && p->offset == offset) {
 					if (p->is_default == true) {
@@ -388,6 +390,36 @@ void cmd_get_clock_status(const struct shell *shell, size_t argc, char **argv)
 		i2c_msg.target_addr = addr;
 		i2c_msg.tx_len = 1;
 		i2c_msg.rx_len = 1;
+		i2c_msg.data[0] = CLK_GEN_312M_LOSMON_0_STS_OFFSET;
+		if (i2c_master_read(&i2c_msg, retry)) {
+			shell_error(shell, "Failed to read reg, bus: %d, addr: 0x%x, reg: 0x%x",
+				    bus, addr, CLK_GEN_312M_LOSMON_0_STS_OFFSET);
+			return;
+		}
+		shell_print(shell, "LOSMON_0_STS Register = 0x%x", i2c_msg.data[0]);
+
+		memset(i2c_msg.data, 0, I2C_BUFF_SIZE);
+
+		i2c_msg.data[0] = CLK_GEN_312M_LOSMON_1_STS_OFFSET;
+		if (i2c_master_read(&i2c_msg, retry)) {
+			shell_error(shell, "Failed to read reg, bus: %d, addr: 0x%x, reg: 0x%x",
+				    bus, addr, CLK_GEN_312M_LOSMON_1_STS_OFFSET);
+			return;
+		}
+		shell_print(shell, "LOSMON_1_STS Register = 0x%x", i2c_msg.data[0]);
+
+		memset(i2c_msg.data, 0, I2C_BUFF_SIZE);
+
+		i2c_msg.data[0] = CLK_GEN_312M_LOSMON_2_STS_OFFSET;
+		if (i2c_master_read(&i2c_msg, retry)) {
+			shell_error(shell, "Failed to read reg, bus: %d, addr: 0x%x, reg: 0x%x",
+				    bus, addr, CLK_GEN_312M_LOSMON_2_STS_OFFSET);
+			return;
+		}
+		shell_print(shell, "LOSMON_2_STS Register = 0x%x", i2c_msg.data[0]);
+
+		memset(i2c_msg.data, 0, I2C_BUFF_SIZE);
+
 		i2c_msg.data[0] = CLK_GEN_312M_ACTMON_0_STS_OFFSET;
 		if (i2c_master_read(&i2c_msg, retry)) {
 			shell_error(shell, "Failed to read reg, bus: %d, addr: 0x%x, reg: 0x%x",
@@ -405,25 +437,9 @@ void cmd_get_clock_status(const struct shell *shell, size_t argc, char **argv)
 			return;
 		}
 		shell_print(shell, "ACTMON_1_STS Register = 0x%x", i2c_msg.data[0]);
-
-		//change 2 byte mode when we need to check 0x1XX offset
-		result = check_clock_offset_msb(1, addr, bus);
-		if (result != 0) {
-			shell_error(shell, "Failed to write reg, bus: %d, addr: 0x%x, reg: 0x%x",
-				    bus, addr, CLK_GEN_312M_PAGE_REGISTER);
-			return;
-		}
-
-		i2c_msg.data[0] = CLK_GEN_312M_APLL_EVENT_OFFSET;
-		if (i2c_master_read(&i2c_msg, retry)) {
-			shell_error(shell, "Failed to read reg, bus: %d, addr: 0x%x, reg: 0x%x",
-				    bus, addr, CLK_GEN_312M_APLL_EVENT_OFFSET);
-			return;
-		}
-		shell_print(shell, "APLL_EVENT Register = 0x%x", i2c_msg.data[0]);
 		break;
-	case AEGIS_CLKBUF_100M_U471:
-	case AEGIS_CLKBUF_100M_U519:
+	case CLKBUF_100M_U471:
+	case CLKBUF_100M_U519:
 		i2c_msg.bus = bus;
 		i2c_msg.target_addr = addr;
 		i2c_msg.tx_len = 1;
@@ -471,7 +487,7 @@ void cmd_clear_clock_status(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (clock_index == CLKGEN_312M) {
-		result = check_clock_offset_msb(1, addr, bus);
+		result = check_clock_offset_msb(0, addr, bus);
 		if (result != 0) {
 			shell_error(shell, "Failed to write reg, bus: %d, addr: 0x%x, reg: 0x%x",
 				    bus, addr, CLK_GEN_312M_PAGE_REGISTER);
@@ -487,19 +503,32 @@ void cmd_clear_clock_status(const struct shell *shell, size_t argc, char **argv)
 	case CLKGEN_312M:
 		i2c_msg.bus = bus;
 		i2c_msg.target_addr = addr;
-		i2c_msg.tx_len = 2;
-		i2c_msg.data[0] = CLK_GEN_312M_APLL_EVENT_OFFSET;
-		i2c_msg.data[1] = 0x1;
+		i2c_msg.tx_len = 3;
+		i2c_msg.data[0] = CLK_GEN_312M_SW_RESET_OFFSET;
+		i2c_msg.data[1] = 0x3E;
+		i2c_msg.data[2] = 0x00;
 		if (i2c_master_write(&i2c_msg, retry)) {
 			shell_error(shell, "Failed to write reg, bus: %d, addr: 0x%x, reg: 0x%x",
-				    bus, addr, CLK_GEN_312M_APLL_EVENT_OFFSET);
+				    bus, addr, CLK_GEN_312M_SW_RESET_OFFSET);
+			return;
+		}
+
+		k_sleep(K_MSEC(10));
+
+		i2c_msg.data[0] = CLK_GEN_312M_SW_RESET_OFFSET;
+		i2c_msg.data[1] = 0x00;
+		i2c_msg.data[2] = 0x00;
+
+		if (i2c_master_write(&i2c_msg, retry)) {
+			shell_error(shell, "Failed to write reg, bus: %d, addr: 0x%x, reg: 0x%x",
+				    bus, addr, CLK_GEN_312M_SW_RESET_OFFSET);
 			return;
 		}
 
 		shell_print(shell, "clock clear %s success!", argv[1]);
 		break;
-	case AEGIS_CLKBUF_100M_U471:
-	case AEGIS_CLKBUF_100M_U519:
+	case CLKBUF_100M_U471:
+	case CLKBUF_100M_U519:
 		i2c_msg.bus = bus;
 		i2c_msg.target_addr = addr;
 		i2c_msg.tx_len = 1;
@@ -549,6 +578,7 @@ bool clock_name_get(uint8_t index, uint8_t **name)
 	return true;
 }
 
+/*
 static void all_clock_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	uint8_t *name = NULL;
@@ -562,7 +592,7 @@ static void all_clock_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(clock_name, all_clock_name_get);
 
-/* Sub-command Level 1 of command clock */
+// Sub-command Level 1 of command clock 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_clock_cmds,
 			       SHELL_CMD_ARG(set, &clock_name,
 					     "set <clock> <reg-offset> <value>|default",
@@ -572,10 +602,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_clock_cmds,
 					     cmd_get_clock, 4, 0),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command clock */
+// Root of command clock 
 SHELL_CMD_REGISTER(clock, &sub_clock_cmds, "Clock commands for AG", NULL);
 
-/* Sub-command Level 1 of command clock_status */
+// Sub-command Level 1 of command clock_status 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_clock_status_cmds,
 			       SHELL_CMD_ARG(get, &clock_name, "get <clock>", cmd_get_clock_status,
 					     2, 0),
@@ -583,5 +613,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_clock_status_cmds,
 					     cmd_clear_clock_status, 2, 0),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command clock status*/
+// Root of command clock status
 SHELL_CMD_REGISTER(clock_status, &sub_clock_status_cmds, "Clock status commands for AG", NULL);
+*/

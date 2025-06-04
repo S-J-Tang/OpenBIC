@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(plat_class);
 
 #define TMP_EMC1413_SMSC_ID_DEFAULT 0x5D
 
-static uint8_t vr_vender_type = VR_VENDOR_UNKNOWN;
+//static uint8_t vr_vender_type = VR_VENDOR_UNKNOWN;
 static uint8_t vr_type = VR_UNKNOWN;
 static uint8_t ubc_type = UBC_UNKNOWN;
 static uint8_t tmp_type = TMP_TYPE_UNKNOWN;
@@ -121,6 +121,7 @@ void init_board_stage(void)
 
 void init_vr_vendor_type(void)
 {
+	/*
 	//get CPLD VR_VENDOR_TYPE
 	if (!plat_read_cpld(AEGIS_CPLD_VR_VENDOR_TYPE_REG, &vr_vender_type)) {
 		LOG_ERR("Failed to get CPLD VR_VENDOR_TYPE 0x%02X", AEGIS_CPLD_VR_VENDOR_TYPE_REG);
@@ -231,6 +232,24 @@ void init_vr_vendor_type(void)
 		LOG_WRN("vr type not supported: 0x%x", vr_type);
 		break;
 	}
+	*/
+
+	// read page from 0x60
+	I2C_MSG i2c_msg = { 0 };
+	uint8_t retry = 3;
+	i2c_msg.bus = I2C_BUS1;
+	i2c_msg.target_addr = VR_ASIC_P0V895_PEX_MP2971_ADDR;
+	i2c_msg.tx_len = 1;
+	i2c_msg.rx_len = 1;
+	i2c_msg.data[0] = 0x00;
+
+	if (i2c_master_read(&i2c_msg, retry)) {
+		vr_type = VR_MPS_MP2971_MP2891;
+	} else {
+		vr_type = VR_RNS_ISL69260_RAA228249;
+	}
+	LOG_INF("VR_TYPE(0x%02X) ", vr_type);
+
 }
 
 void init_tmp_type()
@@ -238,7 +257,7 @@ void init_tmp_type()
 	I2C_MSG i2c_msg = { 0 };
 	uint8_t retry = 5;
 	i2c_msg.bus = I2C_BUS_TMP;
-	i2c_msg.target_addr = ASIC_DIE_ATH_SENSOR_0_TEMP_TMP432_ADDR;
+	i2c_msg.target_addr = THERMAL_SENSOR_1_ADDR;
 	i2c_msg.tx_len = 1;
 	i2c_msg.rx_len = 1;
 	i2c_msg.data[0] = 0xFE; //MFG ID REG
@@ -281,58 +300,8 @@ uint8_t get_tmp_type()
 
 void init_platform_config()
 {
-	init_board_type();
-	init_board_stage();
+	//init_board_type();
+	//init_board_stage();
 	init_vr_vendor_type();
 	init_tmp_type();
-}
-
-void pal_show_board_types(const struct shell *shell)
-{
-	shell_print(shell, "* BOARD_TYPE:    (0x%02X)%s", board_type,
-		    (board_type == MINERVA_AEGIS_BD) ? "AEGIS" :
-		    (board_type == MINERVA_EVB_BD)   ? "EVB" :
-						       "not supported");
-
-	shell_print(shell, "* BOARD_STAGE:   (0x%02X)%s", board_stage,
-		    (board_stage == FAB1_EVT) ? "FAB1_EVT" :
-		    (board_stage == FAB2_DVT) ? "FAB2_DVT" :
-		    (board_stage == FAB3_PVT) ? "FAB3_PVT" :
-		    (board_stage == FAB4_MP)  ? "FAB4_MP" :
-						"not supported");
-
-	shell_print(shell, "* VR_VENDOR_TYPE:(0x%02X)%s", vr_vender_type,
-		    (vr_vender_type == DELTA_UBC_AND_MPS_VR) ? "DELTA_UBC_AND_MPS_VR" :
-		    (vr_vender_type == DELTA_UBC_AND_RNS_VR) ? "DELTA_UBC_AND_RNS_VR" :
-		    (vr_vender_type == MPS_UBC_AND_MPS_VR)   ? "MPS_UBC_AND_MPS_VR" :
-		    (vr_vender_type == MPS_UBC_AND_RNS_VR)   ? "MPS_UBC_AND_RNS_VR" :
-		    (vr_vender_type == FLEX_UBC_AND_MPS_VR)  ? "FLEX_UBC_AND_MPS_VR" :
-		    (vr_vender_type == FLEX_UBC_AND_RNS_VR)  ? "FLEX_UBC_AND_RNS_VR" :
-							       "not supported");
-	shell_print(shell, "* UBC_TYPE:      (0x%02X)%s", ubc_type,
-		    (ubc_type == UBC_DELTA_U50SU4P180PMDAFC) ? "DELTA_U50SU4P180PMDAFC" :
-		    (ubc_type == UBC_MPS_MPC12109)	     ? "MPS_MPC12109" :
-		    (ubc_type == UBC_FLEX_BMR313)	     ? "FLEX_BMR313" :
-							       "not supported");
-
-	shell_print(shell, "* VR_TYPE:       (0x%02X)%s", vr_type,
-		    (vr_type == VR_MPS_MP2971_MP2891)	   ? "MPS_MP2971_MP2891" :
-		    (vr_type == VR_MPS_MP2971_MP29816A)	   ? "MPS_MP2971_MP29816A" :
-		    (vr_type == VR_RNS_ISL69260_RAA228238) ? "RNS_ISL69260_RAA228238" :
-		    (vr_type == VR_RNS_ISL69260_RAA228249) ? "RNS_ISL69260_RAA228249" :
-							     "not supported");
-
-	shell_print(shell, "* TMP_TYPE:      (0x%02X)%s", tmp_type,
-		    (tmp_type == TMP_EMC1413) ? "TMP_EMC1413" :
-		    (tmp_type == TMP_TMP432)  ? "TMP_TMP432" :
-						"not supported");
-
-	return;
-}
-
-void pal_show_extra_info(const struct shell *shell)
-{
-	pal_show_board_types(shell);
-
-	return;
 }

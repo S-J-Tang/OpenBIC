@@ -22,7 +22,7 @@
 #include "plat_class.h"
 
 LOG_MODULE_REGISTER(plat_vr_status_shell, LOG_LEVEL_DBG);
-
+/*
 static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!(argc == 3)) {
@@ -32,9 +32,6 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 
 	if (!strcmp(argv[1], "all")) {
 		for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-			if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0))
-				continue; // skip osfp p3v3 on AEGIS BD
-
 			uint8_t *rail_name = NULL;
 			if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
 				shell_error(shell, "Can't find vr_rail_name by rail index: %x", i);
@@ -42,7 +39,7 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 			}
 
 			if (!strcmp(argv[2], "all")) {
-				shell_print(shell, "[%-2x]%-50s", i, rail_name);
+				shell_print(shell, "[%-2x]%-40s", i, rail_name);
 				for (int j = 0; j < VR_STAUS_E_MAX; j++) {
 					uint8_t *vr_status_name = NULL;
 					if (!vr_status_name_get((uint8_t)j, &vr_status_name)) {
@@ -82,7 +79,7 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 					return -1;
 				}
 
-				shell_print(shell, "[%-2x]%-50s %-10s:%2x", i, rail_name, argv[2],
+				shell_print(shell, "[%-2x]%-40s %-10s:%2x", i, rail_name, argv[2],
 					    vr_status);
 			}
 		}
@@ -92,11 +89,6 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 		if (vr_rail_enum_get(argv[1], &rail) == false) {
 			shell_error(shell, "Invalid rail name: %s", argv[1]);
 			return -1;
-		}
-
-		if ((get_board_type() == MINERVA_AEGIS_BD) && (rail == 0)) {
-			shell_print(shell, "There is no osfp p3v3 on AEGIS BD");
-			return 0;
 		}
 
 		if (!strcmp(argv[2], "all")) {
@@ -117,7 +109,7 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 					continue;
 				}
 
-				shell_print(shell, "[%-2x]%-50s %-10s:%2x", rail, argv[1],
+				shell_print(shell, "[%-2x]%-40s %-10s:%2x", rail, argv[1],
 					    vr_status_name, vr_status);
 			}
 			return 0;
@@ -136,7 +128,7 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 				return -1;
 			}
 
-			shell_print(shell, "[%-2x]%-50s %-10s:%2x", rail, argv[1], argv[2],
+			shell_print(shell, "[%-2x]%-40s %-10s:%2x", rail, argv[1], argv[2],
 				    vr_status);
 
 			return 0;
@@ -153,9 +145,6 @@ static int cmd_vr_status_clear(const struct shell *shell, size_t argc, char **ar
 
 	if (!strcmp(argv[1], "all")) {
 		for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-			if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0))
-				continue; // skip osfp p3v3 on AEGIS BD
-
 			uint8_t *rail_name = NULL;
 			if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
 				shell_error(shell, "Can't find vr_rail_name by rail index: %x", i);
@@ -176,16 +165,11 @@ static int cmd_vr_status_clear(const struct shell *shell, size_t argc, char **ar
 			return -1;
 		}
 
-		if ((get_board_type() == MINERVA_AEGIS_BD) && (rail == 0)) {
-			shell_print(shell, "There is no osfp p3v3 on AEGIS BD");
-			return 0;
-		}
-
 		if (!plat_clear_vr_status(rail)) {
 			shell_error(shell, "Can't clear vr status by rail index: %x", rail);
 			return -1;
 		}
-		shell_print(shell, "[%-2x]%-50s clear vr status finish", rail, argv[1]);
+		shell_print(shell, "[%-2x]%-40s clear vr status finish", rail, argv[1]);
 		return 0;
 	}
 }
@@ -245,7 +229,7 @@ static void voltage_rname_clear(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(vr_rname_for_vr_status, voltage_rname_get);
 SHELL_DYNAMIC_CMD_CREATE(vr_rname_for_vr_status_clear, voltage_rname_clear);
 
-/* level 1 */
+// level 1 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_vr_status_cmds,
 			       SHELL_CMD(get, &vr_rname_for_vr_status,
 					 "get all|<voltage-rail> all|<which-status>",
@@ -254,5 +238,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_vr_status_cmds,
 					 "clear all|<voltage-rail>", cmd_vr_status_clear),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command test */
+// Root of command test 
 SHELL_CMD_REGISTER(vr_status, &sub_vr_status_cmds, "vr fault status set/get commands", NULL);
+*/

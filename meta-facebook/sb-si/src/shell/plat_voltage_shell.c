@@ -20,26 +20,14 @@
 #include "sensor.h"
 #include "plat_hook.h"
 #include "plat_class.h"
-#include "plat_gpio.h"
-#include "plat_event.h"
 
 LOG_MODULE_REGISTER(plat_voltage_shell, LOG_LEVEL_DBG);
-
+/*
 static int cmd_voltage_get_all(const struct shell *shell, size_t argc, char **argv)
 {
-	/* is_ubc_enabled_delayed_enabled() is to wait for all VR to be enabled  */
-	/* (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) is to shut down polling immediately when UBC is disabled */
-	if (!((gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) && is_ubc_enabled_delayed_enabled())) {
-		shell_error(shell, "Can't get voltage command because VR has no power yet.");
-		return -1;
-	}
-
 	shell_print(shell, "  id|              sensor_name               |vout(mV) ");
-	/* list all vr sensor value */
+	// list all vr sensor value 
 	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-		if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0))
-			continue; // skip osfp p3v3 on AEGIS BD
-
 		uint16_t vout = 0;
 		uint8_t *rail_name = NULL;
 		if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
@@ -52,7 +40,7 @@ static int cmd_voltage_get_all(const struct shell *shell, size_t argc, char **ar
 			continue;
 		}
 
-		shell_print(shell, "%4d|%-50s|%4d", i, rail_name, vout);
+		shell_print(shell, "%4d|%-40s|%4d", i, rail_name, vout);
 	}
 
 	return 0;
@@ -63,13 +51,6 @@ static int cmd_voltage_set(const struct shell *shell, size_t argc, char **argv)
 	bool is_default = false;
 	bool is_perm = false;
 
-	/* is_ubc_enabled_delayed_enabled() is to wait for all VR to be enabled  */
-	/* (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) is to shut down polling immediately when UBC is disabled */
-	if (!((gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) && is_ubc_enabled_delayed_enabled())) {
-		shell_error(shell, "Can't set voltage command because VR has no power yet.");
-		return -1;
-	}
-
 	if (argc == 4) {
 		if (!strcmp(argv[3], "perm")) {
 			is_perm = true;
@@ -79,7 +60,7 @@ static int cmd_voltage_set(const struct shell *shell, size_t argc, char **argv)
 		}
 	}
 
-	/* covert rail string to enum */
+	// covert rail string to enum 
 	enum VR_RAIL_E rail;
 	if (vr_rail_enum_get(argv[1], &rail) == false) {
 		shell_error(shell, "Invalid rail name: %s", argv[1]);
@@ -92,24 +73,13 @@ static int cmd_voltage_set(const struct shell *shell, size_t argc, char **argv)
 		shell_info(shell, "Set %s(%d) to default, %svolatile\n", argv[1], rail,
 			   (argc == 4) ? "non-" : "");
 	} else {
-		uint16_t vout_max_millivolt = vout_range_user_settings.change_vout_max[rail];
-		uint16_t vout_min_millivolt = vout_range_user_settings.change_vout_min[rail];
-		if (millivolt < vout_min_millivolt || millivolt > vout_max_millivolt) {
-			shell_error(shell, "vout[%d] cannot be less than %dmV or greater than %dmV",
-				    rail, vout_min_millivolt, vout_max_millivolt);
-			return -1;
-		}
 		shell_info(shell, "Set %s(%d) to %d mV, %svolatile\n", argv[1], rail, millivolt,
 			   (argc == 4) ? "non-" : "");
 	}
 
-	/* set the vout */
-	if ((get_board_type() == MINERVA_AEGIS_BD) && (rail == 0)) {
-		shell_print(shell, "There is no osfp p3v3 on AEGIS BD");
-		return 0;
-	}
+	// set the vout 
 	if (!plat_set_vout_command(rail, &millivolt, is_default, is_perm)) {
-		shell_error(shell, "Can't set vout by rail index: %d", rail);
+		shell_print(shell, "Can't set vout by rail index: %d", rail);
 		return -1;
 	}
 
@@ -132,13 +102,13 @@ static void voltage_rname_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(voltage_rname, voltage_rname_get);
 
-/* level 2 */
+// level 2 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_voltage_get_cmds,
 			       SHELL_CMD(all, NULL, "get voltage all vout command",
 					 cmd_voltage_get_all),
 			       SHELL_SUBCMD_SET_END);
 
-/* level 1 */
+// level 1 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_voltage_cmds,
 			       SHELL_CMD(get, &sub_voltage_get_cmds, "get voltage all", NULL),
 			       SHELL_CMD_ARG(set, &voltage_rname,
@@ -146,5 +116,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_voltage_cmds,
 					     cmd_voltage_set, 3, 1),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command test */
+// Root of command test 
 SHELL_CMD_REGISTER(voltage, &sub_voltage_cmds, "voltage set/get commands", NULL);
+*/

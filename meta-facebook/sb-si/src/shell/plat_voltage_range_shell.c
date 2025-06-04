@@ -22,7 +22,7 @@
 #include "plat_class.h"
 
 LOG_MODULE_REGISTER(plat_voltage_range_shell, LOG_LEVEL_DBG);
-
+/*
 static int cmd_voltage_range_get(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!((argc == 2) || (argc == 3))) {
@@ -33,11 +33,8 @@ static int cmd_voltage_range_get(const struct shell *shell, size_t argc, char **
 
 	if ((argc == 2)) {
 		if (!strcmp(argv[1], "all")) {
-			/* print all range */
+			// print all range 
 			for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-				if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0))
-					continue;
-
 				uint8_t *rail_name = NULL;
 				if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
 					shell_print(shell,
@@ -45,14 +42,11 @@ static int cmd_voltage_range_get(const struct shell *shell, size_t argc, char **
 					continue;
 				}
 
-				uint16_t vout_max_millivolt =
-					vout_range_user_settings.change_vout_max[i];
-				uint16_t vout_min_millivolt =
-					vout_range_user_settings.change_vout_min[i];
-				shell_print(shell, "%-50s vout min: %dmV", rail_name,
-					    vout_min_millivolt);
-				shell_print(shell, "%-50s vout max: %dmV", rail_name,
-					    vout_max_millivolt);
+				uint16_t millivolt = 0xFFFF;
+				plat_get_vout_min(i, &millivolt);
+				shell_print(shell, "%-40s vout min: %dmV", rail_name, millivolt);
+				plat_get_vout_max(i, &millivolt);
+				shell_print(shell, "%-40s vout max: %dmV", rail_name, millivolt);
 			}
 			return 0;
 		} else {
@@ -62,31 +56,29 @@ static int cmd_voltage_range_get(const struct shell *shell, size_t argc, char **
 		}
 	}
 
-	/* covert rail string to enum */
+	// covert rail string to enum 
 	enum VR_RAIL_E rail;
 	if (vr_rail_enum_get(argv[1], &rail) == false) {
 		shell_error(shell, "Invalid rail name: %s", argv[1]);
 		return -1;
 	}
 
-	if ((get_board_type() == MINERVA_AEGIS_BD) && (rail == 0)) {
-		shell_print(shell, "There is no osfp p3v3 on AEGIS BD");
-		return 0;
-	}
-	uint16_t vout_max_millivolt = vout_range_user_settings.change_vout_max[rail];
-	uint16_t vout_min_millivolt = vout_range_user_settings.change_vout_min[rail];
+	uint16_t millivolt = 0xFFFF;
+
 	if (!strcmp(argv[2], "min")) {
-		shell_print(shell, "voltage_range get %s %s: %dmV", argv[1], argv[2],
-			    vout_min_millivolt);
+		//get min range
+		plat_get_vout_min(rail, &millivolt);
 
 	} else if (!strcmp(argv[2], "max")) {
-		shell_print(shell, "voltage_range get %s %s: %dmV", argv[1], argv[2],
-			    vout_max_millivolt);
+		//get max range
+		plat_get_vout_max(rail, &millivolt);
 	} else {
 		shell_error(shell, "voltage_range get all");
 		shell_error(shell, "voltage_range get <voltage-rail> min|max");
 		return -1;
 	}
+
+	shell_print(shell, "voltage_range get %s %s: %dmV", argv[1], argv[2], millivolt);
 
 	return 0;
 }
@@ -98,34 +90,21 @@ static int cmd_voltage_range_set(const struct shell *shell, size_t argc, char **
 		return -1;
 	}
 
-	/* covert rail string to enum */
+	// covert rail string to enum 
 	enum VR_RAIL_E rail;
 	if (vr_rail_enum_get(argv[1], &rail) == false) {
 		shell_error(shell, "Invalid rail name: %s", argv[1]);
 		return -1;
 	}
 
-	if ((get_board_type() == MINERVA_AEGIS_BD) && (rail == 0)) {
-		shell_print(shell, "There is no osfp p3v3 on AEGIS BD");
-		return 0;
-	}
-
-	/* covert voltage to millivolt */
+	// covert voltage to millivolt 
 	uint16_t voltage_set_val_mv = strtol(argv[2], NULL, 0);
 
 	uint16_t voltage_set_val_mv_backup = voltage_set_val_mv;
-	uint16_t voltage_UCT = vout_range_user_settings.default_vout_max[rail];
-	uint16_t voltage_LCT = vout_range_user_settings.default_vout_min[rail];
+
 	if (!strcmp(argv[3], "min")) {
-		/*set min range*/
-		if (voltage_set_val_mv < voltage_LCT || voltage_set_val_mv > voltage_UCT) {
-			shell_error(
-				shell,
-				"voltage_range[%d] cannot be less than %dmV or greater than %dmV",
-				rail, voltage_LCT, voltage_UCT);
-			return -1;
-		}
-		if (!plat_set_vout_range_min(rail, &voltage_set_val_mv)) {
+		//set min range
+		if (!plat_set_vout_min(rail, &voltage_set_val_mv)) {
 			shell_error(shell, "voltage_range set %s %s: %dmV failed", argv[1], argv[2],
 				    voltage_set_val_mv_backup);
 			return -1;
@@ -133,15 +112,8 @@ static int cmd_voltage_range_set(const struct shell *shell, size_t argc, char **
 		shell_print(shell, "voltage_range set %s %s: %dmV", argv[1], argv[2],
 			    voltage_set_val_mv);
 	} else if (!strcmp(argv[3], "max")) {
-		/*set max range*/
-		if (voltage_set_val_mv < voltage_LCT || voltage_set_val_mv > voltage_UCT) {
-			shell_error(
-				shell,
-				"voltage_range[%d] cannot be less than %dmV or greater than %dmV",
-				rail, voltage_LCT, voltage_UCT);
-			return -1;
-		}
-		if (!plat_set_vout_range_max(rail, &voltage_set_val_mv)) {
+		//set max range
+		if (!plat_set_vout_max(rail, &voltage_set_val_mv)) {
 			shell_error(shell, "voltage_range set %s %s: %dmV failed", argv[1], argv[2],
 				    voltage_set_val_mv_backup);
 			return -1;
@@ -190,7 +162,7 @@ static void vr_rname_get_for_set_voltrage(size_t idx, struct shell_static_entry 
 SHELL_DYNAMIC_CMD_CREATE(vr_rname_for_get_voltrage, vr_rname_get_for_get_voltrage);
 SHELL_DYNAMIC_CMD_CREATE(vr_rname_for_set_voltrage, vr_rname_get_for_set_voltrage);
 
-/* level 1 */
+// level 1 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_voltage_range_cmds,
 			       SHELL_CMD(get, &vr_rname_for_get_voltrage,
 					 "get all|<voltage-rail> min|max", cmd_voltage_range_get),
@@ -199,5 +171,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_voltage_range_cmds,
 					 cmd_voltage_range_set),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command test */
+// Root of command test 
 SHELL_CMD_REGISTER(voltage_range, &sub_voltage_range_cmds, "voltage_range set/get commands", NULL);
+*/

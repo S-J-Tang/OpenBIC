@@ -110,12 +110,13 @@ void cmd_get_pwrlevel(const struct shell *shell, size_t argc, char **argv)
 
 	return;
 }
-
-/* Sub-command Level 1 of command pwrlevel1 */
+/*
+// Sub-command Level 1 of command pwrlevel1
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pwrlevel_cmds,
 			       SHELL_CMD(set, NULL, "set_pwrlevel", cmd_set_pwrlevel),
 			       SHELL_CMD(get, NULL, "get_pwrlevel", cmd_get_pwrlevel),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command uart-pwrevent */
+// Root of command uart-pwrevent 
 SHELL_CMD_REGISTER(pwrlevel1, &sub_pwrlevel_cmds, "pwrlevel1 commands for AG", NULL);
+*/

@@ -20,7 +20,7 @@
 #include "plat_hook.h"
 
 LOG_MODULE_REGISTER(plat_temp_threshold_shell, LOG_LEVEL_DBG);
-
+/*
 static int temp_threshold_set_all_default(const struct shell *shell)
 {
 	uint32_t temperature = 0;
@@ -43,7 +43,6 @@ static int temp_threshold_set_all_default(const struct shell *shell)
 
 static int cmd_temp_threshold_get_all(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "This limit is retrieved from the temp chip register.");
 	shell_print(
 		shell,
 		"  id|              temp_threshold_name               |temperature(millidegree C)");
@@ -60,7 +59,7 @@ static int cmd_temp_threshold_get_all(const struct shell *shell, size_t argc, ch
 			continue;
 		}
 
-		shell_print(shell, "%4d|%-50s|%4d", i, temp_index_threshold_name, temperature);
+		shell_print(shell, "%4d|%-40s|%4d", i, temp_index_threshold_name, temperature);
 	}
 
 	return 0;
@@ -68,7 +67,6 @@ static int cmd_temp_threshold_get_all(const struct shell *shell, size_t argc, ch
 
 static int cmd_temp_threshold_set(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "This limit is written to the temp chip register.");
 	bool is_default = false;
 	bool is_perm = false;
 
@@ -90,7 +88,7 @@ static int cmd_temp_threshold_set(const struct shell *shell, size_t argc, char *
 		return -1;
 	}
 
-	/* covert string to enum */
+	// covert string to enum 
 	enum PLAT_TEMP_INDEX_THRESHOLD_TYPE_E temp_index_threshold_type;
 	if (temp_threshold_type_enum_get(argv[1], &temp_index_threshold_type) == false) {
 		shell_error(shell, "Invalid temp threshold name: %s", argv[1]);
@@ -133,13 +131,13 @@ static void temp_index_threshold_type_name_get_(size_t idx, struct shell_static_
 
 SHELL_DYNAMIC_CMD_CREATE(temp_index_threshold_type_name, temp_index_threshold_type_name_get_);
 
-/* level 2 */
+// level 2 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_temp_threshold_get_cmds,
 			       SHELL_CMD(all, NULL, "temp_threshold get all",
 					 cmd_temp_threshold_get_all),
 			       SHELL_SUBCMD_SET_END);
 
-/* level 1 */
+// level 1 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_temp_threshold_cmds,
 			       SHELL_CMD(get, &sub_temp_threshold_get_cmds, "get all", NULL),
 			       SHELL_CMD_ARG(set, &temp_index_threshold_type_name,
@@ -147,6 +145,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_temp_threshold_cmds,
 					     cmd_temp_threshold_set, 3, 1),
 			       SHELL_SUBCMD_SET_END);
 
-/* Root of command test */
+// Root of command test 
 SHELL_CMD_REGISTER(temp_threshold, &sub_temp_threshold_cmds, "temp_threshold set/get commands",
 		   NULL);
+*/
