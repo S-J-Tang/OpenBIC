@@ -19,8 +19,8 @@
 
 #include "version.h"
 
-#define PLATFORM_NAME "Minerva"
-#define PROJECT_NAME "Aegis"
+#define PLATFORM_NAME "RB"
+#define PROJECT_NAME "SI"
 #define PROJECT_STAGE EVT
 
 /*
@@ -40,10 +40,10 @@
 
 #define BIC_FW_YEAR_MSB 0x20
 #define BIC_FW_YEAR_LSB 0x25
-#define BIC_FW_WEEK 0x18
+#define BIC_FW_WEEK 0x23
 #define BIC_FW_VER 0x01
-#define BIC_FW_platform_0 0x61 // char: a
-#define BIC_FW_platform_1 0x67 // char: g
+#define BIC_FW_platform_0 0x73 // char: 's'
+#define BIC_FW_platform_1 0x69 // char: 'i'
 #define BIC_FW_platform_2 0x00 // char: '\0'
 
 #endif
