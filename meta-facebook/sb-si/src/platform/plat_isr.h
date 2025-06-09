@@ -31,6 +31,7 @@ void ISR_GPIO_MEDHA1_CURRENT_SENSE_0_LS_LVC33();
 void ISR_GPIO_MEDHA1_CURRENT_SENSE_1_LS_LVC33();
 void ISR_GPIO_SMBUS_MEDHA0_CRM_LS_PSOC_LVC33_ALERT_N();
 void ISR_GPIO_SMBUS_MEDHA1_CRM_LS_PSOC_LVC33_ALERT_N();
+void ISR_GPIO_VR_STATUS_WORD_ALARM();
 bool plat_i2c_read(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *data, uint8_t len);
 bool plat_i2c_write(uint8_t bus, uint8_t addr, uint8_t offset, uint8_t *data, uint8_t len);
 

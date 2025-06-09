@@ -91,7 +91,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO67)
 #define name_gpio7	\
 	gpio_name_to_num(Reserve_GPIO70) \
-	gpio_name_to_num(Reserve_GPIO71) \
+	gpio_name_to_num(VR_STATUS_WORD_ALARM) \
 	gpio_name_to_num(Reserve_GPIO72) \
 	gpio_name_to_num(Reserve_GPIO73) \
 	gpio_name_to_num(Reserve_GPIO74) \

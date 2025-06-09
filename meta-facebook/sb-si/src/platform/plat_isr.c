@@ -30,16 +30,23 @@
 #include "plat_hwmon.h"
 #include "plat_event.h"
 
+#include "plat_pldm_sensor.h"
+
 LOG_MODULE_REGISTER(plat_isr);
 
 #define AEGIS_CPLD_ADDR (0x4C >> 1)
 #define AEGIS_312M_CLK_GEN_ADDR (0x12 >> 1)
 #define AEGIS_EUSB_REPEATER_ADDR (0x86 >> 1)
 
+#define NUM_I2C_ADDRESSES (sizeof(i2c_addresses) / sizeof(i2c_addresses[0]))
+#define STATUS_WORD_REG 0x79
+
 void check_clk_handler();
+void status_word_handler();
 
 K_TIMER_DEFINE(check_ubc_delayed_timer, check_ubc_delayed, NULL);
 K_WORK_DELAYABLE_DEFINE(check_clk_work, check_clk_handler);
+K_WORK_DELAYABLE_DEFINE(status_word_work, status_word_handler);
 
 void ISR_GPIO_FM_ASIC_0_THERMTRIP_R_N()
 {
@@ -165,6 +172,61 @@ void ISR_GPIO_SMBUS_MEDHA1_CRM_LS_PSOC_LVC33_ALERT_N()
 	LOG_DBG("gpio_%d_isr called, val=%d , dir= %d", SMBUS_MEDHA1_CRM_LS_PSOC_LVC33_ALERT_N,
 		gpio_get(SMBUS_MEDHA1_CRM_LS_PSOC_LVC33_ALERT_N),
 		gpio_get_direction(SMBUS_MEDHA1_CRM_LS_PSOC_LVC33_ALERT_N));
+
+	return;
+}
+
+uint8_t i2c_addresses[] = {
+	// I2C_BUS1
+    VR_ASIC_P0V895_PEX_MP2971_ADDR,
+    VR_ASIC_P0V825_A0_MP2971_ADDR,
+    VR_ASIC_P0V825_A1_MP2971_ADDR,
+    VR_ASIC_P0V825_A2_MP2971_ADDR,
+};
+
+void status_word_handler()
+{
+	LOG_INF("Status Word Handler started!");
+
+	uint8_t data[2] = {0};
+	uint16_t status_word = 0;
+	// uint8_t write_data = 1;
+
+	uint32_t start_time = k_uptime_get();
+
+	for (int i = 0; i < NUM_I2C_ADDRESSES; i++) {
+		uint8_t i2c_addr = i2c_addresses[i];
+
+		uint8_t i2c_bus = I2C_BUS1;
+
+		if (!plat_i2c_read(i2c_bus, i2c_addr, STATUS_WORD_REG, data, sizeof(data))) {
+			LOG_ERR("Failed to read status word from I2C addr 0x%x", i2c_addr);
+			continue;
+		}
+
+		uint8_t third_bit = (data[0] >> 2) & 0x01;
+
+		if (third_bit == 1) {
+			LOG_WRN("Over-temperature (OT) fault or warning has occurred for I2C Addr 0x%02X", i2c_addr);
+		}
+
+		status_word = (data[1] << 8) | data[0];
+
+		LOG_INF("I2C Addr 0x%02X, Status Word (0x79): 0x%04X", i2c_addr, status_word);
+	}
+
+	uint32_t end_time = k_uptime_get();
+	uint32_t interrupt_time = end_time - start_time;
+
+	LOG_INF("Status Word Handler completed in %u ms", interrupt_time);
+
+	LOG_INF("All status words read successfully.");
+}
+
+void ISR_GPIO_VR_STATUS_WORD_ALARM()
+{
+	LOG_INF("ISR_GPIO_VR_STATUS_WORD_ALARM started!");
+	k_work_schedule(&status_word_work, K_MSEC(300));
 
 	return;
 }
