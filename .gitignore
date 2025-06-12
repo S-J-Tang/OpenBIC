@@ -13,6 +13,9 @@ src/include/config.h
 src/tools/Kconfiglib/__pycache__/kconfiglib.cpython-38.pyc
 *.o
 /build
+/fix_patch
+bic-update-metadata.json
+pldm_fwup_pkg_creator.py
 
 # Ignore Vim swap files
 *.swp
