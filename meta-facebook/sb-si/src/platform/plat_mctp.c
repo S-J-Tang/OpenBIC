@@ -198,6 +198,16 @@ int load_mctp_support_types(uint8_t *type_len, uint8_t *types)
 	return MCTP_SUCCESS;
 }
 
+uint8_t plat_get_mctp_port_count()
+{
+	return ARRAY_SIZE(i3c_port);
+}
+
+mctp_port *plat_get_mctp_port(uint8_t index)
+{
+	return i3c_port + index;
+}
+
 uint8_t plat_get_eid()
 {
 	return plat_eid;
