@@ -52,6 +52,7 @@ void pal_pre_init()
 	plat_led_init();
 	vr_mutex_init();
 	pwr_level_mutex_init();
+	plat_i3c_set_pid();
 
 	//if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH)
 	//plat_clock_init();
@@ -73,6 +74,7 @@ void pal_post_init()
 	//init_load_eeprom_log();
 	//init_cpld_polling();
 }
+
 
 #define DEF_PROJ_GPIO_PRIORITY 78
 
