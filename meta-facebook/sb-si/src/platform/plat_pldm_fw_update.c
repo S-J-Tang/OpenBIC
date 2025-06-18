@@ -1,44 +1,44 @@
-// /*
-//  * Copyright (c) Meta Platforms, Inc. and affiliates.
-//  *
-//  * Licensed under the Apache License, Version 2.0 (the "License");
-//  * you may not use this file except in compliance with the License.
-//  * You may obtain a copy of the License at
-//  * 
-//  *     http://www.apache.org/licenses/LICENSE-2.0
-//  *
-//  * Unless required by applicable law or agreed to in writing, software
-//  * distributed under the License is distributed on an "AS IS" BASIS,
-//  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  * See the License for the specific language governing permissions and
-//  * limitations under the License.
-//  */
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include <logging/log.h>
-// #include "libutil.h"
-// #include "sensor.h"
-// #include "pldm.h"
-// #include "pldm_firmware_update.h"
-// #include "mctp_ctrl.h"
-// #include "power_status.h"
-// #include "util_spi.h"
-// #include "plat_pldm_fw_update.h"
-// #include "plat_i2c.h"
-// #include "plat_gpio.h"
-// #include "plat_pldm_sensor.h"
-// #include "mp2971.h"
-// #include "mp2891.h"
-// #include "raa229621.h"
-// #include "raa228249.h"
-// #include "plat_class.h"
-// #include "pldm_sensor.h"
-// #include "mp29816a.h"
-// #include "plat_hook.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <logging/log.h>
+#include "libutil.h"
+#include "sensor.h"
+#include "pldm.h"
+#include "pldm_firmware_update.h"
+#include "mctp_ctrl.h"
+#include "power_status.h"
+#include "util_spi.h"
+#include "plat_pldm_fw_update.h"
+#include "plat_i2c.h"
+#include "plat_gpio.h"
+#include "plat_pldm_sensor.h"
+#include "mp2971.h"
+#include "mp2891.h"
+#include "raa229621.h"
+#include "raa228249.h"
+#include "plat_class.h"
+#include "pldm_sensor.h"
+#include "mp29816a.h"
+#include "plat_hook.h"
 
-// LOG_MODULE_REGISTER(plat_fwupdate);
+LOG_MODULE_REGISTER(plat_fwupdate);
 
 // static uint8_t pldm_pre_vr_update(void *fw_update_param);
 // static uint8_t pldm_post_vr_update(void *fw_update_param);
@@ -69,23 +69,23 @@
 // 	  "RB_VDDPHY_HBM0_HBM2_HBM4_HBM6" },
 // };
 
-// /* PLDM FW update table */
-// pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
-// 	{
-// 		.enable = true,
-// 		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
-// 		.comp_identifier = RB_COMPNT_BIC,
-// 		.comp_classification_index = 0x00,
-// 		.pre_update_func = NULL,
-// 		.update_func = pldm_bic_update,
-// 		.pos_update_func = NULL,
-// 		.inf = COMP_UPDATE_VIA_SPI,
-// 		.activate_method = COMP_ACT_SELF,
-// 		.self_act_func = pldm_bic_activate,
-// 		.get_fw_version_fn = NULL,
-// 		.self_apply_work_func = NULL,
-// 		.comp_version_str = NULL,
-// 	},
+/* PLDM FW update table */
+pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
+	{
+		.enable = true,
+		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+		.comp_identifier = RB_COMPNT_BIC,
+		.comp_classification_index = 0x00,
+		.pre_update_func = NULL,
+		.update_func = pldm_bic_update,
+		.pos_update_func = NULL,
+		.inf = COMP_UPDATE_VIA_SPI,
+		.activate_method = COMP_ACT_SELF,
+		.self_act_func = pldm_bic_activate,
+		.get_fw_version_fn = NULL,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
+	},
 // 	{
 // 		.enable = true,
 // 		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
@@ -251,107 +251,107 @@
 // 		.self_apply_work_func = NULL,
 // 		.comp_version_str = NULL,
 // 	},
-// };
+};
 
-// uint8_t plat_pldm_query_device_identifiers(const uint8_t *buf, uint16_t len, uint8_t *resp,
-// 					   uint16_t *resp_len)
-// {
-// 	CHECK_NULL_ARG_WITH_RETURN(buf, false);
-// 	CHECK_NULL_ARG_WITH_RETURN(resp, PLDM_ERROR);
-// 	CHECK_NULL_ARG_WITH_RETURN(resp_len, PLDM_ERROR);
+uint8_t plat_pldm_query_device_identifiers(const uint8_t *buf, uint16_t len, uint8_t *resp,
+					   uint16_t *resp_len)
+{
+	CHECK_NULL_ARG_WITH_RETURN(buf, false);
+	CHECK_NULL_ARG_WITH_RETURN(resp, PLDM_ERROR);
+	CHECK_NULL_ARG_WITH_RETURN(resp_len, PLDM_ERROR);
 
-// 	LOG_INF("pldm_query_device_identifiers");
+	LOG_INF("pldm_query_device_identifiers");
 
-// 	struct pldm_query_device_identifiers_resp *resp_p =
-// 		(struct pldm_query_device_identifiers_resp *)resp;
+	struct pldm_query_device_identifiers_resp *resp_p =
+		(struct pldm_query_device_identifiers_resp *)resp;
 
-// 	resp_p->completion_code = PLDM_SUCCESS;
-// 	resp_p->descriptor_count = 0x03;
+	resp_p->completion_code = PLDM_SUCCESS;
+	resp_p->descriptor_count = 0x03;
 
-// 	uint8_t iana[PLDM_FWUP_IANA_ENTERPRISE_ID_LENGTH] = { 0x00, 0x00, 0xA0, 0x15 };
+	uint8_t iana[PLDM_FWUP_IANA_ENTERPRISE_ID_LENGTH] = { 0x00, 0x00, 0xA0, 0x15 };
 
-// 	// Set the device id for sd bic
-// 	uint8_t deviceId[PLDM_PCI_DEVICE_ID_LENGTH] = { 0x00, 0x00 };
+	// Set the device id for sd bic
+	uint8_t deviceId[PLDM_PCI_DEVICE_ID_LENGTH] = { 0x00, 0x00 };
 
-// 	uint8_t total_size_of_iana_descriptor =
-// 		sizeof(struct pldm_descriptor_tlv) + sizeof(iana) - 1;
+	uint8_t total_size_of_iana_descriptor =
+		sizeof(struct pldm_descriptor_tlv) + sizeof(iana) - 1;
 
-// 	uint8_t total_size_of_device_id_descriptor =
-// 		sizeof(struct pldm_descriptor_tlv) + sizeof(deviceId) - 1;
+	uint8_t total_size_of_device_id_descriptor =
+		sizeof(struct pldm_descriptor_tlv) + sizeof(deviceId) - 1;
 
-// 	if (sizeof(struct pldm_query_device_identifiers_resp) + total_size_of_iana_descriptor +
-// 		    total_size_of_device_id_descriptor >
-// 	    PLDM_MAX_DATA_SIZE) {
-// 		LOG_ERR("QueryDeviceIdentifiers data length is over PLDM_MAX_DATA_SIZE define size %d",
-// 			PLDM_MAX_DATA_SIZE);
-// 		resp_p->completion_code = PLDM_ERROR;
-// 		return PLDM_ERROR;
-// 	}
+	if (sizeof(struct pldm_query_device_identifiers_resp) + total_size_of_iana_descriptor +
+		    total_size_of_device_id_descriptor >
+	    PLDM_MAX_DATA_SIZE) {
+		LOG_ERR("QueryDeviceIdentifiers data length is over PLDM_MAX_DATA_SIZE define size %d",
+			PLDM_MAX_DATA_SIZE);
+		resp_p->completion_code = PLDM_ERROR;
+		return PLDM_ERROR;
+	}
 
-// 	// Allocate data for tlv which including descriptors data
-// 	struct pldm_descriptor_tlv *tlv_ptr = malloc(total_size_of_iana_descriptor);
-// 	if (tlv_ptr == NULL) {
-// 		LOG_ERR("Memory allocation failed!");
-// 		return PLDM_ERROR;
-// 	}
+	// Allocate data for tlv which including descriptors data
+	struct pldm_descriptor_tlv *tlv_ptr = malloc(total_size_of_iana_descriptor);
+	if (tlv_ptr == NULL) {
+		LOG_ERR("Memory allocation failed!");
+		return PLDM_ERROR;
+	}
 
-// 	tlv_ptr->descriptor_type = PLDM_FWUP_IANA_ENTERPRISE_ID;
-// 	tlv_ptr->descriptor_length = PLDM_FWUP_IANA_ENTERPRISE_ID_LENGTH;
-// 	memcpy(tlv_ptr->descriptor_data, iana, sizeof(iana));
+	tlv_ptr->descriptor_type = PLDM_FWUP_IANA_ENTERPRISE_ID;
+	tlv_ptr->descriptor_length = PLDM_FWUP_IANA_ENTERPRISE_ID_LENGTH;
+	memcpy(tlv_ptr->descriptor_data, iana, sizeof(iana));
 
-// 	uint8_t *end_of_id_ptr =
-// 		(uint8_t *)resp + sizeof(struct pldm_query_device_identifiers_resp);
+	uint8_t *end_of_id_ptr =
+		(uint8_t *)resp + sizeof(struct pldm_query_device_identifiers_resp);
 
-// 	memcpy(end_of_id_ptr, tlv_ptr, total_size_of_iana_descriptor);
-// 	free(tlv_ptr);
+	memcpy(end_of_id_ptr, tlv_ptr, total_size_of_iana_descriptor);
+	free(tlv_ptr);
 
-// 	tlv_ptr = malloc(total_size_of_device_id_descriptor);
-// 	if (tlv_ptr == NULL) {
-// 		LOG_ERR("Memory allocation failed!");
-// 		return PLDM_ERROR;
-// 	}
+	tlv_ptr = malloc(total_size_of_device_id_descriptor);
+	if (tlv_ptr == NULL) {
+		LOG_ERR("Memory allocation failed!");
+		return PLDM_ERROR;
+	}
 
-// 	tlv_ptr->descriptor_type = PLDM_PCI_DEVICE_ID;
-// 	tlv_ptr->descriptor_length = PLDM_PCI_DEVICE_ID_LENGTH;
-// 	memcpy(tlv_ptr->descriptor_data, deviceId, sizeof(deviceId));
+	tlv_ptr->descriptor_type = PLDM_PCI_DEVICE_ID;
+	tlv_ptr->descriptor_length = PLDM_PCI_DEVICE_ID_LENGTH;
+	memcpy(tlv_ptr->descriptor_data, deviceId, sizeof(deviceId));
 
-// 	end_of_id_ptr += total_size_of_iana_descriptor;
-// 	memcpy(end_of_id_ptr, tlv_ptr, total_size_of_device_id_descriptor);
-// 	free(tlv_ptr);
+	end_of_id_ptr += total_size_of_iana_descriptor;
+	memcpy(end_of_id_ptr, tlv_ptr, total_size_of_device_id_descriptor);
+	free(tlv_ptr);
 
-// 	resp_p->device_identifiers_len =
-// 		total_size_of_iana_descriptor + total_size_of_device_id_descriptor;
+	resp_p->device_identifiers_len =
+		total_size_of_iana_descriptor + total_size_of_device_id_descriptor;
 
-// 	*resp_len = sizeof(struct pldm_query_device_identifiers_resp) +
-// 		    total_size_of_iana_descriptor + total_size_of_device_id_descriptor;
+	*resp_len = sizeof(struct pldm_query_device_identifiers_resp) +
+		    total_size_of_iana_descriptor + total_size_of_device_id_descriptor;
 
-// 	LOG_INF("pldm_query_device_identifiers done");
-// 	return PLDM_SUCCESS;
-// }
+	LOG_INF("pldm_query_device_identifiers done");
+	return PLDM_SUCCESS;
+}
 
-// void load_pldmupdate_comp_config(void)
-// {
-// 	if (comp_config) {
-// 		LOG_WRN("PLDM update component table has already been load");
-// 		return;
-// 	}
+void load_pldmupdate_comp_config(void)
+{
+	if (comp_config) {
+		LOG_WRN("PLDM update component table has already been load");
+		return;
+	}
 
-// 	comp_config_count = ARRAY_SIZE(PLDMUPDATE_FW_CONFIG_TABLE);
-// 	comp_config = malloc(sizeof(pldm_fw_update_info_t) * comp_config_count);
-// 	if (!comp_config) {
-// 		LOG_ERR("comp_config malloc failed");
-// 		return;
-// 	}
+	comp_config_count = ARRAY_SIZE(PLDMUPDATE_FW_CONFIG_TABLE);
+	comp_config = malloc(sizeof(pldm_fw_update_info_t) * comp_config_count);
+	if (!comp_config) {
+		LOG_ERR("comp_config malloc failed");
+		return;
+	}
 
-// 	size_t filtered_count = 0;
-// 	for (size_t i = 0; i < comp_config_count; i++) {
-// 		comp_config[filtered_count++] = PLDMUPDATE_FW_CONFIG_TABLE[i];
-// 	}
+	size_t filtered_count = 0;
+	for (size_t i = 0; i < comp_config_count; i++) {
+		comp_config[filtered_count++] = PLDMUPDATE_FW_CONFIG_TABLE[i];
+	}
 
-// 	comp_config_count = filtered_count;
-// }
+	comp_config_count = filtered_count;
+}
 
-// /* pldm pre-update func */
+/* pldm pre-update func */
 // static uint8_t pldm_pre_vr_update(void *fw_update_param)
 // {
 // 	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
@@ -598,18 +598,18 @@
 // 	return ret;
 // }
 
-// void clear_pending_version(uint8_t activate_method)
-// {
-// 	if (!comp_config || !comp_config_count) {
-// 		LOG_ERR("Component configuration is empty");
-// 		return;
-// 	}
+void clear_pending_version(uint8_t activate_method)
+{
+	if (!comp_config || !comp_config_count) {
+		LOG_ERR("Component configuration is empty");
+		return;
+	}
 
-// 	for (uint8_t i = 0; i < comp_config_count; i++) {
-// 		if (comp_config[i].activate_method == activate_method)
-// 			SAFE_FREE(comp_config[i].pending_version_p);
-// 	}
-// }
+	for (uint8_t i = 0; i < comp_config_count; i++) {
+		if (comp_config[i].activate_method == activate_method)
+			SAFE_FREE(comp_config[i].pending_version_p);
+	}
+}
 
 // bool find_sensor_id_and_name_by_firmware_comp_id(uint8_t comp_identifier, uint8_t *sensor_id,
 // 						 char *sensor_name)
