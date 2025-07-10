@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <stdlib.h>
-#include "plat_sensor_polling_shell.h"
-#include "plat_pldm_fw_version_shell.h"
-#include "plat_spi_test_shell.h"
+#include <shell/shell.h>
+#include "plat_gpio.h"
 
-/*
-// Sub-command Level 1 of command test 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_test_cmds,
-			       SHELL_CMD(sensor, &sub_plat_sensor_polling_cmd,
-					 "set/get platform sensor polling command", NULL),
-			       SHELL_CMD(get_fw_version, &sub_get_fw_version_cmd,
-					 "get fw version command", NULL),
-			       SHELL_SUBCMD_SET_END);
+void cmd_enable_spi(const struct shell *shell, size_t argc, char **argv)
+{
+	if (gpio_set(SPI_MUX_SEL, true) == -1) {
+		shell_warn(shell, "SPI_MUX_SEL set fail");
+	};
+}
 
-// Root of command test 
-SHELL_CMD_REGISTER(test, &sub_test_cmds, "Test commands for SI", NULL);
-*/
+void cmd_disable_spi(const struct shell *shell, size_t argc, char **argv)
+{
+	if (gpio_set(SPI_MUX_SEL, false) == -1) {
+		shell_warn(shell, "SPI_MUX_SEL set fail");
+	};
+}

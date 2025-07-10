@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
-#include "plat_sensor_polling_shell.h"
-#include "plat_pldm_fw_version_shell.h"
-#include "plat_spi_test_shell.h"
+#include <shell/shell.h>
 
-/*
-// Sub-command Level 1 of command test 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_test_cmds,
-			       SHELL_CMD(sensor, &sub_plat_sensor_polling_cmd,
-					 "set/get platform sensor polling command", NULL),
-			       SHELL_CMD(get_fw_version, &sub_get_fw_version_cmd,
-					 "get fw version command", NULL),
+void cmd_enable_spi(const struct shell *shell, size_t argc, char **argv);
+void cmd_disable_spi(const struct shell *shell, size_t argc, char **argv);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_spi_cmd,
+			       SHELL_CMD(enable, NULL, "switch mux to flash", cmd_enable_spi),
+			       SHELL_CMD(disable, NULL, "switch mux to pcie", cmd_disable_spi),
 			       SHELL_SUBCMD_SET_END);
 
-// Root of command test 
-SHELL_CMD_REGISTER(test, &sub_test_cmds, "Test commands for SI", NULL);
-*/
+SHELL_CMD_REGISTER(spi_control, &sub_spi_cmd, "flash control", NULL);
