@@ -162,14 +162,10 @@ void plat_mctp_init(void)
 	LOG_INF("plat_mctp_init");
 
 	/* init the mctp/pldm instance */
-	// for (uint8_t i = 0; i < ARRAY_SIZE(smbus_port); i++) {
-	// 	mctp_port *p = smbus_port + i;
-	// 	LOG_DBG("smbus port %d", i);
-	// 	LOG_DBG("bus = %x, addr = %x", p->conf.smbus_conf.bus, p->conf.smbus_conf.addr);
-	for (uint8_t i = 0; i < ARRAY_SIZE(i3c_port); i++) {
-		mctp_port *p = i3c_port + i;
-		LOG_DBG("i3c port %d", i);
-		LOG_DBG("bus = %x, addr = %x", p->conf.i3c_conf.bus, p->conf.i3c_conf.addr);
+	for (uint8_t i = 0; i < ARRAY_SIZE(smbus_port); i++) {
+		mctp_port *p = smbus_port + i;
+		LOG_DBG("smbus port %d", i);
+		LOG_DBG("bus = %x, addr = %x", p->conf.smbus_conf.bus, p->conf.smbus_conf.addr);
 
 		p->mctp_inst = mctp_init();
 		if (!p->mctp_inst) {
@@ -179,7 +175,7 @@ void plat_mctp_init(void)
 
 		LOG_DBG("mctp_inst = %p", p->mctp_inst);
 		uint8_t rc =
-			mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_TARGET_I3C, p->conf);
+			mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_SMBUS, p->conf);
 		LOG_DBG("mctp_set_medium_configure %s",
 			(rc == MCTP_SUCCESS) ? "success" : "failed");
 

@@ -121,10 +121,11 @@ static int i2c_target_read_requested(struct i2c_slave_config *config, uint8_t *v
 	struct i2c_target_data *data;
 	data = i2c_find_slave_config(config);
 
-	if (data->rd_data_collect_func) {
-		if (data->rd_data_collect_func(data) == false)
-			data->skip_msg_wr = true;
-	}
+	// if (data->rd_data_collect_func) {
+	// 	if (data->rd_data_collect_func(data) == false)
+	// 		data->skip_msg_wr = true;
+	// }
+	data->skip_msg_wr = true;
 
 	if (!data->target_rd_msg.msg_length) {
 		LOG_WRN("Data not ready");
