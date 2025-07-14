@@ -495,3 +495,13 @@ __weak bool pal_switch_bios_spi_mux(int gpio_status)
 {
 	return true;
 }
+
+__weak int pal_get_pcie_switch_flash_position()
+{
+	return -1;
+}
+
+__weak bool pal_switch_pcie_switch_spi_mux(int gpio_status)
+{
+	return true;
+}
