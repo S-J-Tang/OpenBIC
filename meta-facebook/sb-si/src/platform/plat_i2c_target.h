@@ -23,4 +23,14 @@
 #define TARGET_ENABLE 1
 #define TARGET_DISABLE 0
 
+struct mmc_info {
+    struct k_work set_eid_work;
+    int slot;
+};
+
+#define SLOT_0_I2C_SET_EID_REG 0x40
+#define SLOT_1_I2C_SET_EID_REG 0x41
+#define SLOT_2_I2C_SET_EID_REG 0x42
+#define SLOT_3_I2C_SET_EID_REG 0x43
+
 #endif
