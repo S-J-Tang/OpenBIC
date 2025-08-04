@@ -16,12 +16,8 @@
 
 #include <shell/shell.h>
 #include <stdlib.h>
-#include <logging/log.h>
 #include "sensor.h"
 #include "plat_hook.h"
-#include "plat_class.h"
-
-LOG_MODULE_REGISTER(plat_vr_status_shell, LOG_LEVEL_DBG);
 
 static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv)
 {
@@ -32,9 +28,6 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 
 	if (!strcmp(argv[1], "all")) {
 		for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-			if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0))
-				continue; // skip osfp p3v3 on AEGIS BD
-
 			uint8_t *rail_name = NULL;
 			if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
 				shell_error(shell, "Can't find vr_rail_name by rail index: %x", i);
@@ -62,7 +55,7 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 						continue;
 					}
 
-					shell_print(shell, "    %-10s:0x%02x", vr_status_name,
+					shell_print(shell, "    %-10s:%2x", vr_status_name,
 						    vr_status);
 				}
 			} else {
@@ -82,8 +75,8 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 					return -1;
 				}
 
-				shell_print(shell, "[%-2x]%-50s %-10s:0x%02x", i, rail_name,
-					    argv[2], vr_status);
+				shell_print(shell, "[%-2x]%-50s %-10s:%2x", i, rail_name, argv[2],
+					    vr_status);
 			}
 		}
 		return 0;
@@ -92,11 +85,6 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 		if (vr_rail_enum_get(argv[1], &rail) == false) {
 			shell_error(shell, "Invalid rail name: %s", argv[1]);
 			return -1;
-		}
-
-		if ((get_board_type() == MINERVA_AEGIS_BD) && (rail == 0)) {
-			shell_print(shell, "There is no osfp p3v3 on AEGIS BD");
-			return 0;
 		}
 
 		if (!strcmp(argv[2], "all")) {
@@ -117,7 +105,7 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 					continue;
 				}
 
-				shell_print(shell, "[%-2x]%-50s %-10s:0x%02x", rail, argv[1],
+				shell_print(shell, "[%-2x]%-50s %-10s:%2x", rail, argv[1],
 					    vr_status_name, vr_status);
 			}
 			return 0;
@@ -136,8 +124,9 @@ static int cmd_vr_status_get(const struct shell *shell, size_t argc, char **argv
 				return -1;
 			}
 
-			shell_print(shell, "[%-2x]%-50s %-10s:0x%02x", rail, argv[1], argv[2],
+			shell_print(shell, "[%-2x]%-50s %-10s:%2x", rail, argv[1], argv[2],
 				    vr_status);
+
 			return 0;
 		}
 	}
@@ -152,9 +141,6 @@ static int cmd_vr_status_clear(const struct shell *shell, size_t argc, char **ar
 
 	if (!strcmp(argv[1], "all")) {
 		for (int i = 0; i < VR_RAIL_E_MAX; i++) {
-			if ((get_board_type() == MINERVA_AEGIS_BD) && (i == 0))
-				continue; // skip osfp p3v3 on AEGIS BD
-
 			uint8_t *rail_name = NULL;
 			if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
 				shell_error(shell, "Can't find vr_rail_name by rail index: %x", i);
@@ -175,11 +161,6 @@ static int cmd_vr_status_clear(const struct shell *shell, size_t argc, char **ar
 			return -1;
 		}
 
-		if ((get_board_type() == MINERVA_AEGIS_BD) && (rail == 0)) {
-			shell_print(shell, "There is no osfp p3v3 on AEGIS BD");
-			return 0;
-		}
-
 		if (!plat_clear_vr_status(rail)) {
 			shell_error(shell, "Can't clear vr status by rail index: %x", rail);
 			return -1;
@@ -191,9 +172,6 @@ static int cmd_vr_status_clear(const struct shell *shell, size_t argc, char **ar
 
 static void vr_status_rname_get(size_t idx, struct shell_static_entry *entry)
 {
-	if ((get_board_type() == MINERVA_AEGIS_BD))
-		idx++;
-
 	uint8_t *name = NULL;
 	vr_status_name_get((uint8_t)idx, &name);
 	if (idx == VR_STAUS_E_MAX)
@@ -209,9 +187,6 @@ SHELL_DYNAMIC_CMD_CREATE(vr_status_rname_for_vr_status, vr_status_rname_get);
 
 static void voltage_rname_get(size_t idx, struct shell_static_entry *entry)
 {
-	if ((get_board_type() == MINERVA_AEGIS_BD))
-		idx++;
-
 	uint8_t *name = NULL;
 	vr_rail_name_get((uint8_t)idx, &name);
 
@@ -226,9 +201,6 @@ static void voltage_rname_get(size_t idx, struct shell_static_entry *entry)
 
 static void voltage_rname_clear(size_t idx, struct shell_static_entry *entry)
 {
-	if ((get_board_type() == MINERVA_AEGIS_BD))
-		idx++;
-
 	uint8_t *name = NULL;
 	vr_rail_name_get((uint8_t)idx, &name);
 

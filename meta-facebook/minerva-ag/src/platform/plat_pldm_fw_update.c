@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(plat_fwupdate);
 
 static uint8_t pldm_pre_vr_update(void *fw_update_param);
 static uint8_t pldm_post_vr_update(void *fw_update_param);
+static uint8_t pldm_pre_bic_update(void *fw_update_param);
 static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
 
 typedef struct aegis_compnt_mapping_sensor {
@@ -52,23 +53,26 @@ typedef struct aegis_compnt_mapping_sensor {
 } aegis_compnt_mapping_sensor;
 
 aegis_compnt_mapping_sensor aegis_vr_compnt_mapping_sensor_table[] = {
-	{ AG_COMPNT_P3V3, VR_P3V3_TEMP_C, "CB_VR_P3V3" },
-	{ AG_COMPNT_P0V85_PVDD, VR_ASIC_P0V85_PVDD_TEMP_C, "CB_VR_ASIC_P0V85_PVDD" },
-	{ AG_COMPNT_P0V75_PVDD_CH_N, VR_ASIC_P0V75_PVDD_CH_N_TEMP_C, "CB_VR_ASIC_P0V75_PVDD_CH_N" },
-	{ AG_COMPNT_P0V75_PVDD_CH_S, VR_ASIC_P0V75_PVDD_CH_S_TEMP_C, "CB_VR_ASIC_P0V75_PVDD_CH_S" },
+	{ AG_COMPNT_P3V3, VR_P3V3_TEMP_C, "Minerva_Aegis_VR_P3V3" },
+	{ AG_COMPNT_P0V85_PVDD, VR_ASIC_P0V85_PVDD_TEMP_C, "Minerva_Aegis_VR_ASIC_P0V85_PVDD" },
+	{ AG_COMPNT_P0V75_PVDD_CH_N, VR_ASIC_P0V75_PVDD_CH_N_TEMP_C,
+	  "Minerva_Aegis_VR_ASIC_P0V75_PVDD_CH_N" },
+	{ AG_COMPNT_P0V75_PVDD_CH_S, VR_ASIC_P0V75_PVDD_CH_S_TEMP_C,
+	  "Minerva_Aegis_VR_ASIC_P0V75_PVDD_CH_S" },
 	{ AG_COMPNT_P0V75_TRVDD_ZONEA, VR_ASIC_P0V75_TRVDD_ZONEA_TEMP_C,
-	  "CB_VR_ASIC_P0V75_TRVDD_ZONEA" },
+	  "Minerva_Aegis_VR_ASIC_P0V75_TRVDD_ZONEA" },
 	{ AG_COMPNT_P0V75_TRVDD_ZONEB, VR_ASIC_P0V75_TRVDD_ZONEB_TEMP_C,
-	  "CB_VR_ASIC_P0V75_TRVDD_ZONEB" },
+	  "Minerva_Aegis_VR_ASIC_P0V75_TRVDD_ZONEB" },
 	{ AG_COMPNT_P1V1_VDDC_HBM0_HBM2_HBM4, VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4_TEMP_C,
-	  "CB_VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4" },
+	  "Minerva_Aegis_VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4" },
 	{ AG_COMPNT_P0V9_TRVDD_ZONEA, VR_ASIC_P0V9_TRVDD_ZONEA_TEMP_C,
-	  "CB_VR_ASIC_P0V9_TRVDD_ZONEA" },
+	  "Minerva_Aegis_VR_ASIC_P0V9_TRVDD_ZONEA" },
 	{ AG_COMPNT_P0V9_TRVDD_ZONEB, VR_ASIC_P0V9_TRVDD_ZONEB_TEMP_C,
-	  "CB_VR_ASIC_P0V9_TRVDD_ZONEB" },
+	  "Minerva_Aegis_VR_ASIC_P0V9_TRVDD_ZONEB" },
 	{ AG_COMPNT_P1V1_VDDC_HBM1_HBM3_HBM5, VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5_TEMP_C,
-	  "CB_VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5" },
-	{ AG_COMPNT_P0V8_VDDA_PCIE, VR_ASIC_P0V8_VDDA_PCIE_TEMP_C, "CB_VR_ASIC_P0V8_VDDA_PCIE" },
+	  "Minerva_Aegis_VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5" },
+	{ AG_COMPNT_P0V8_VDDA_PCIE, VR_ASIC_P0V8_VDDA_PCIE_TEMP_C,
+	  "Minerva_Aegis_VR_ASIC_P0V8_VDDA_PCIE" },
 };
 
 /* PLDM FW update table */
@@ -78,7 +82,7 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
 		.comp_identifier = AG_COMPNT_BIC,
 		.comp_classification_index = 0x00,
-		.pre_update_func = NULL,
+		.pre_update_func = pldm_pre_bic_update,
 		.update_func = pldm_bic_update,
 		.pos_update_func = NULL,
 		.inf = COMP_UPDATE_VIA_SPI,
@@ -387,6 +391,16 @@ static uint8_t pldm_pre_vr_update(void *fw_update_param)
 	/* Get bus and target address by sensor number in sensor configuration */
 	p->bus = bus;
 	p->addr = addr;
+
+	return 0;
+}
+
+static uint8_t pldm_pre_bic_update(void *fw_update_param)
+{
+	ARG_UNUSED(fw_update_param);
+
+	/* Stop sensor polling */
+	set_plat_sensor_polling_enable_flag(false);
 
 	return 0;
 }

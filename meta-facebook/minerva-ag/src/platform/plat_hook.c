@@ -44,14 +44,6 @@ LOG_MODULE_REGISTER(plat_hook);
 
 #define ALERT_LEVEL_USER_SETTINGS_OFFSET 0x8200
 
-#ifndef TMP432_CONFIG_WRITE_REG1
-#define TMP432_CONFIG_WRITE_REG1 0x09
-#endif
-
-#ifndef TMP432_CONFIG_READ_REG1
-#define TMP432_CONFIG_READ_REG1 0x03
-#endif
-
 static struct k_mutex vr_mutex[VR_MAX_NUM];
 static struct k_mutex pwrlevel_mutex;
 
@@ -303,13 +295,13 @@ mpc12109_init_arg mpc12109_init_args[] = {
 
 temp_mapping_sensor temp_index_table[] = {
 	{ TEMP_INDEX_ON_DIE_ATH_0_N_OWL, ASIC_DIE_ATH_SENSOR_0_TEMP_C,
-	  "CB_ASIC_DIE_ATH_SENSOR_0_TEMP" },
+	  "Minerva_Aegis_ASIC_DIE_ATH_SENSOR_0_TEMP" },
 	{ TEMP_INDEX_ON_DIE_ATH_1_S_OWL, ASIC_DIE_ATH_SENSOR_1_TEMP_C,
-	  "CB_ASIC_DIE_ATH_SENSOR_1_TEMP" },
-	{ TEMP_INDEX_TOP_INLET, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP" },
-	{ TEMP_INDEX_BOT_INLET, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP" },
-	{ TEMP_INDEX_TOP_OUTLET, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP" },
-	{ TEMP_INDEX_BOT_OUTLET, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP" },
+	  "Minerva_Aegis_ASIC_DIE_ATH_SENSOR_1_TEMP" },
+	{ TEMP_INDEX_TOP_INLET, TOP_INLET_TEMP_C, "Minerva_Aegis_TOP_INLET_TEMP" },
+	{ TEMP_INDEX_BOT_INLET, BOT_INLET_TEMP_C, "Minerva_Aegis_BOT_INLET_TEMP" },
+	{ TEMP_INDEX_TOP_OUTLET, TOP_OUTLET_TEMP_C, "Minerva_Aegis_TOP_OUTLET_TEMP" },
+	{ TEMP_INDEX_BOT_OUTLET, BOT_OUTLET_TEMP_C, "Minerva_Aegis_BOT_OUTLET_TEMP" },
 };
 
 power_sequence power_sequence_on_table[] = {
@@ -690,27 +682,27 @@ bool get_average_power(uint8_t rail, uint32_t *milliwatt)
 
 // clang-format off
 temp_threshold_mapping_sensor temp_index_threshold_type_table[] = {
-	{ DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_0_TEMP_HIGH_LIM" },
-	{ DIE_ATH_0_N_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_0_TEMP_LOW_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_1_TEMP_HIGH_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "CB_ASIC_DIE_ATH_SENSOR_1_TEMP_LOW_LIM" },
+	{ DIE_ATH_0_N_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "Minerva_Aegis_ASIC_DIE_ATH_SENSOR_0_TEMP_HIGH_LIM" },
+	{ DIE_ATH_0_N_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_0_TEMP_C, "Minerva_Aegis_ASIC_DIE_ATH_SENSOR_0_TEMP_LOW_LIM" },
+	{ DIE_ATH_1_S_OWL_REMOTE_1_HIGH_LIMIT, REMOTE_1_HIGH_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "Minerva_Aegis_ASIC_DIE_ATH_SENSOR_1_TEMP_HIGH_LIM" },
+	{ DIE_ATH_1_S_OWL_REMOTE_1_LOW_LIMIT, REMOTE_1_LOW_LIMIT, ASIC_DIE_ATH_SENSOR_1_TEMP_C, "Minerva_Aegis_ASIC_DIE_ATH_SENSOR_1_TEMP_LOW_LIM" },
 
-	{ DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "CB_ASIC_DIE_N_OWL_TEMP_HIGH_LIM" },
-	{ DIE_ATH_0_N_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "CB_ASIC_DIE_N_OWL_TEMP_LOW_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "CB_ASIC_DIE_S_OWL_TEMP_HIGH_LIM" },
-	{ DIE_ATH_1_S_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "CB_ASIC_DIE_S_OWL_TEMP_LOW_LIM" },
+	{ DIE_ATH_0_N_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "Minerva_Aegis_ASIC_DIE_N_OWL_TEMP_HIGH_LIM" },
+	{ DIE_ATH_0_N_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_N_OWL_TEMP_C, "Minerva_Aegis_ASIC_DIE_N_OWL_TEMP_LOW_LIM" },
+	{ DIE_ATH_1_S_OWL_REMOTE_2_HIGH_LIMIT, REMOTE_2_HIGH_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "Minerva_Aegis_ASIC_DIE_S_OWL_TEMP_HIGH_LIM" },
+	{ DIE_ATH_1_S_OWL_REMOTE_2_LOW_LIMIT, REMOTE_2_LOW_LIMIT, ASIC_DIE_S_OWL_TEMP_C, "Minerva_Aegis_ASIC_DIE_S_OWL_TEMP_LOW_LIM" },
 	
-	{ TOP_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP_LOW_LIM" },
-	{ TOP_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_INLET_TEMP_C, "CB_TOP_INLET_TEMP_HIGH_LIM" },
+	{ TOP_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_INLET_TEMP_C, "Minerva_Aegis_TOP_INLET_TEMP_LOW_LIM" },
+	{ TOP_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_INLET_TEMP_C, "Minerva_Aegis_TOP_INLET_TEMP_HIGH_LIM" },
 
-	{ TOP_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP_LOW_LIM" },
-	{ TOP_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_OUTLET_TEMP_C, "CB_TOP_OUTLET_TEMP_HIGH_LIM" },
+	{ TOP_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, TOP_OUTLET_TEMP_C, "Minerva_Aegis_TOP_OUTLET_TEMP_LOW_LIM" },
+	{ TOP_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, TOP_OUTLET_TEMP_C, "Minerva_Aegis_TOP_OUTLET_TEMP_HIGH_LIM" },
 
-	{ BOT_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP_LOW_LIM" },
-	{ BOT_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_INLET_TEMP_C, "CB_BOT_INLET_TEMP_HIGH_LIM" },
+	{ BOT_INLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_INLET_TEMP_C, "Minerva_Aegis_BOT_INLET_TEMP_LOW_LIM" },
+	{ BOT_INLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_INLET_TEMP_C, "Minerva_Aegis_BOT_INLET_TEMP_HIGH_LIM" },
 
-	{ BOT_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP_LOW_LIM" },
-	{ BOT_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_OUTLET_TEMP_C, "CB_BOT_OUTLET_TEMP_HIGH_LIM" },
+	{ BOT_OUTLET_LOW_LIMIT, LOCAL_LOW_LIMIT, BOT_OUTLET_TEMP_C, "Minerva_Aegis_BOT_OUTLET_TEMP_LOW_LIM" },
+	{ BOT_OUTLET_HIGH_LIMIT, LOCAL_HIGH_LIMIT, BOT_OUTLET_TEMP_C, "Minerva_Aegis_BOT_OUTLET_TEMP_HIGH_LIM" },
 };
 // clang-format on
 
@@ -742,44 +734,45 @@ void vr_mutex_init(void)
 
 /* the order is following enum VR_RAIL_E */
 vr_mapping_sensor vr_rail_table[] = {
-	{ VR_RAIL_E_P3V3, VR_P3V3_VOLT_V, "CB_VR_ASIC_P3V3", 0xffffffff },
-	{ VR_RAIL_E_P0V85_PVDD, VR_ASIC_P0V85_PVDD_VOLT_V, "CB_VR_ASIC_P0V85_PVDD", 0xffffffff },
-	{ VR_RAIL_E_P0V75_PVDD_CH_N, VR_ASIC_P0V75_PVDD_CH_N_VOLT_V, "CB_VR_ASIC_P0V75_PVDD_CH_N",
+	{ VR_RAIL_E_P3V3, VR_P3V3_VOLT_V, "Minerva_Aegis_VR_ASIC_P3V3", 0xffffffff },
+	{ VR_RAIL_E_P0V85_PVDD, VR_ASIC_P0V85_PVDD_VOLT_V, "Minerva_Aegis_VR_ASIC_P0V85_PVDD",
 	  0xffffffff },
-	{ VR_RAIL_E_P0V75_MAX_PHY_N, VR_ASIC_P0V75_MAX_PHY_N_VOLT_V, "CB_VR_ASIC_P0V75_MAX_PHY_N",
-	  0xffffffff },
-	{ VR_RAIL_E_P0V75_PVDD_CH_S, VR_ASIC_P0V75_PVDD_CH_S_VOLT_V, "CB_VR_ASIC_P0V75_PVDD_CH_S",
-	  0xffffffff },
-	{ VR_RAIL_E_P0V75_MAX_PHY_S, VR_ASIC_P0V75_MAX_PHY_S_VOLT_V, "CB_VR_ASIC_P0V75_MAX_PHY_S",
-	  0xffffffff },
+	{ VR_RAIL_E_P0V75_PVDD_CH_N, VR_ASIC_P0V75_PVDD_CH_N_VOLT_V,
+	  "Minerva_Aegis_VR_ASIC_P0V75_PVDD_CH_N", 0xffffffff },
+	{ VR_RAIL_E_P0V75_MAX_PHY_N, VR_ASIC_P0V75_MAX_PHY_N_VOLT_V,
+	  "Minerva_Aegis_VR_ASIC_P0V75_MAX_PHY_N", 0xffffffff },
+	{ VR_RAIL_E_P0V75_PVDD_CH_S, VR_ASIC_P0V75_PVDD_CH_S_VOLT_V,
+	  "Minerva_Aegis_VR_ASIC_P0V75_PVDD_CH_S", 0xffffffff },
+	{ VR_RAIL_E_P0V75_MAX_PHY_S, VR_ASIC_P0V75_MAX_PHY_S_VOLT_V,
+	  "Minerva_Aegis_VR_ASIC_P0V75_MAX_PHY_S", 0xffffffff },
 	{ VR_RAIL_E_P0V75_TRVDD_ZONEA, VR_ASIC_P0V75_TRVDD_ZONEA_VOLT_V,
-	  "CB_VR_ASIC_P0V75_TRVDD_ZONEA", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V75_TRVDD_ZONEA", 0xffffffff },
 	{ VR_RAIL_E_P1V8_VPP_HBM0_HBM2_HBM4, VR_ASIC_P1V8_VPP_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P1V8_VPP_HBM0_HBM2_HBM4", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P1V8_VPP_HBM0_HBM2_HBM4", 0xffffffff },
 	{ VR_RAIL_E_P0V75_TRVDD_ZONEB, VR_ASIC_P0V75_TRVDD_ZONEB_VOLT_V,
-	  "CB_VR_ASIC_P0V75_TRVDD_ZONEB", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V75_TRVDD_ZONEB", 0xffffffff },
 	{ VR_RAIL_E_P0V4_VDDQL_HBM0_HBM2_HBM4, VR_ASIC_P0V4_VDDQL_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P0V4_VDDQL_HBM0_HBM2_HBM4", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V4_VDDQL_HBM0_HBM2_HBM4", 0xffffffff },
 	{ VR_RAIL_E_P1V1_VDDC_HBM0_HBM2_HBM4, VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P1V1_VDDC_HBM0_HBM2_HBM4", 0xffffffff },
 	{ VR_RAIL_E_P0V75_VDDPHY_HBM0_HBM2_HBM4, VR_ASIC_P0V75_VDDPHY_HBM0_HBM2_HBM4_VOLT_V,
-	  "CB_VR_ASIC_P0V75_VDDPHY_HBM0_HBM2_HBM4", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V75_VDDPHY_HBM0_HBM2_HBM4", 0xffffffff },
 	{ VR_RAIL_E_P0V9_TRVDD_ZONEA, VR_ASIC_P0V9_TRVDD_ZONEA_VOLT_V,
-	  "CB_VR_ASIC_P0V9_TRVDD_ZONEA", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V9_TRVDD_ZONEA", 0xffffffff },
 	{ VR_RAIL_E_P1V8_VPP_HBM1_HBM3_HBM5, VR_ASIC_P1V8_VPP_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P1V8_VPP_HBM1_HBM3_HBM5", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P1V8_VPP_HBM1_HBM3_HBM5", 0xffffffff },
 	{ VR_RAIL_E_P0V9_TRVDD_ZONEB, VR_ASIC_P0V9_TRVDD_ZONEB_VOLT_V,
-	  "CB_VR_ASIC_P0V9_TRVDD_ZONEB", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V9_TRVDD_ZONEB", 0xffffffff },
 	{ VR_RAIL_E_P0V4_VDDQL_HBM1_HBM3_HBM5, VR_ASIC_P0V4_VDDQL_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P0V4_VDDQL_HBM1_HBM3_HBM5", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V4_VDDQL_HBM1_HBM3_HBM5", 0xffffffff },
 	{ VR_RAIL_E_P1V1_VDDC_HBM1_HBM3_HBM5, VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P1V1_VDDC_HBM1_HBM3_HBM5", 0xffffffff },
 	{ VR_RAIL_E_P0V75_VDDPHY_HBM1_HBM3_HBM5, VR_ASIC_P0V75_VDDPHY_HBM1_HBM3_HBM5_VOLT_V,
-	  "CB_VR_ASIC_P0V75_VDDPHY_HBM1_HBM3_HBM5", 0xffffffff },
-	{ VR_RAIL_E_P0V8_VDDA_PCIE, VR_ASIC_P0V8_VDDA_PCIE_VOLT_V, "CB_VR_ASIC_P0V8_VDDA_PCIE",
-	  0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P0V75_VDDPHY_HBM1_HBM3_HBM5", 0xffffffff },
+	{ VR_RAIL_E_P0V8_VDDA_PCIE, VR_ASIC_P0V8_VDDA_PCIE_VOLT_V,
+	  "Minerva_Aegis_VR_ASIC_P0V8_VDDA_PCIE", 0xffffffff },
 	{ VR_RAIL_E_P1V2_VDDHTX_PCIE, VR_ASIC_P1V2_VDDHTX_PCIE_VOLT_V,
-	  "CB_VR_ASIC_P1V2_VDDHTX_PCIE", 0xffffffff },
+	  "Minerva_Aegis_VR_ASIC_P1V2_VDDHTX_PCIE", 0xffffffff },
 };
 
 vr_mapping_status vr_status_table[] = {
@@ -1717,8 +1710,6 @@ void user_settings_init(void)
 	alert_level_user_settings_init();
 	vr_vout_default_settings_init();
 	vr_vout_user_settings_init();
-	temp_threshold_default_settings_init();
-	temp_threshold_user_settings_init();
 	soc_pcie_perst_user_settings_init();
 	bootstrap_default_settings_init();
 	bootstrap_user_settings_init();
@@ -2351,11 +2342,8 @@ bool plat_set_temp_threshold(uint8_t temp_index_threshold_type, uint32_t *millid
 	return true;
 }
 
-#define PLAT_TMP432_THERM_HYSTERESIS_VAL 0x64 //100
-
-#ifndef TMP432_THERM_HYSTERESIS_REG
-#define TMP432_THERM_HYSTERESIS_REG 0x21
-#endif
+#define PLAT_TMP432_THERM_HYSTERESIS_VAL 0x5A //90
+#define PLAT_EMC1413_THERM_HYSTERESIS_VAL 0x5A //90
 
 void init_temp_alert_mode(void)
 {
@@ -2370,43 +2358,53 @@ void init_temp_alert_mode(void)
 			continue;
 		}
 
-		const sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+		sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 		if (cfg == NULL) {
 			LOG_ERR("Failed to get sensor config for sensor %s (0x%x)", name,
 				sensor_id);
 			continue;
 		}
 
-		//set to temp alert mode
-		uint8_t data = 0;
-		if (!plat_i2c_read(cfg->port, cfg->target_addr, TMP432_CONFIG_READ_REG1, &data,
-				   1)) {
-			LOG_ERR("Failed to read TMP432 config for sensor %s (0x%x), set TMP432_CONFIG_WRITE_REG1 to %lx ",
-				name, sensor_id, BIT(5));
+		switch (cfg->type) {
+		case sensor_dev_tmp431: {
+			//set to temp alert mode
+			if (!tmp432_set_thermal_mode(cfg)) {
+				LOG_ERR("Failed to set TMP432 to temp alert mode for sensor %s (0x%x)",
+					name, sensor_id);
+				continue;
+			}
+			//set therm hysteresis
+			uint8_t data = PLAT_TMP432_THERM_HYSTERESIS_VAL;
+			if (!tmp432_set_therm_hysteresis(cfg, data)) {
+				LOG_ERR("Failed to set TMP432 therm hysteresis to %d for sensor %s (0x%x)",
+					data, name, sensor_id);
+				continue;
+			}
+			LOG_INF("Sensor %s (0x%x) init therm hysteresis to %d successfully", name,
+				sensor_id, data);
+		} break;
+		case sensor_dev_emc1413: {
+			//set to temp alert mode
+			if (!emc1413_set_comparator_mode(cfg)) {
+				LOG_ERR("Failed to set EMC1413 to temp alert mode for sensor %s (0x%x)",
+					name, sensor_id);
+				continue;
+			}
+			//set therm hysteresis
+			uint8_t data = PLAT_EMC1413_THERM_HYSTERESIS_VAL;
+			if (!emc1413_set_therm_hysteresis(cfg, data)) {
+				LOG_ERR("Failed to set EMC1413 therm hysteresis to %d for sensor %s (0x%x)",
+					data, name, sensor_id);
+				continue;
+			}
+			LOG_INF("Sensor %s (0x%x) init therm hysteresis to %d successfully", name,
+				sensor_id, data);
+		} break;
+		default:
+			LOG_ERR("Unsupport temp type(%x)", cfg->type);
 		}
-
-		data |= BIT(5);
-		if (!plat_i2c_write(cfg->port, cfg->target_addr, TMP432_CONFIG_WRITE_REG1, &data,
-				    1)) {
-			LOG_ERR("Failed to set TMP432 to temp alert mode for sensor %s (0x%x)",
-				name, sensor_id);
-		} else {
-			LOG_INF("Sensor %s (0x%x) init temp alert mode successfully", name,
-				sensor_id);
-		}
-
-		//set therm hysteresis
-		data = PLAT_TMP432_THERM_HYSTERESIS_VAL;
-		if (!plat_i2c_write(cfg->port, cfg->target_addr, TMP432_THERM_HYSTERESIS_REG, &data,
-				    1)) {
-			LOG_ERR("Failed to set TMP432 therm hysteresis to %d for sensor %s (0x%x)",
-				PLAT_TMP432_THERM_HYSTERESIS_VAL, name, sensor_id);
-			continue;
-		}
-
-		LOG_INF("Sensor %s (0x%x) init therm hysteresis to %d successfully", name,
-			sensor_id, PLAT_TMP432_THERM_HYSTERESIS_VAL);
 	}
+	LOG_INF("temp alert mode done");
 }
 
 void init_temp_limit(void)
@@ -2499,4 +2497,15 @@ void init_temp_limit(void)
 	}
 
 	LOG_INF("temp limit init done");
+}
+
+void plat_pldm_sensor_post_load_init(int thread_id)
+{
+	if (thread_id == TEMP_SENSOR_THREAD_ID) {
+		init_temp_alert_mode();
+		init_temp_limit(); //should be before temp_threshold_default_settings_init() and after pldm sensor init
+		temp_threshold_default_settings_init();
+		temp_threshold_user_settings_init();
+	}
+	LOG_INF("plat_pldm_sensor_post_load init done");
 }
