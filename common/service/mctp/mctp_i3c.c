@@ -25,6 +25,7 @@
 #include <logging/log.h>
 #include "libutil.h"
 #include "hal_i3c.h"
+#include "plat_gpio.h"
 
 LOG_MODULE_REGISTER(mctp_i3c);
 
@@ -160,6 +161,7 @@ static uint16_t mctp_i3c_read_smq(void *mctp_p, uint8_t *buf, uint32_t len,
 		if (pec != i3c_msg.data[i3c_msg.rx_len - 1]) {
 			LOG_ERR("mctp i3c pec error: crc8 should be 0x%02x, but got 0x%02x", pec,
 				i3c_msg.data[i3c_msg.rx_len - 1]);
+			gpio_set(TP_NPCM_GPIOC6, true);
 			return 0;
 		}
 
