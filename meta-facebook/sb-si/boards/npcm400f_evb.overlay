@@ -57,8 +57,7 @@
 };
 
 &i2c8a {
-    clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c9a {
