@@ -141,7 +141,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIOC3) \
 	gpio_name_to_num(Reserve_GPIOC4) \
 	gpio_name_to_num(Reserve_GPIOC5) \
-	gpio_name_to_num(Reserve_GPIOC6) \
+	gpio_name_to_num(TP_NPCM_GPIOC6) \
 	gpio_name_to_num(Reserve_GPIOC7)
 #define name_gpioD	\
 	gpio_name_to_num(Reserve_GPIOD0) \

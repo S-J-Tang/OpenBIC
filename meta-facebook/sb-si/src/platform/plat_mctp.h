@@ -53,6 +53,7 @@ void send_cmd_to_dev_handler(struct k_work *work);
 bool mctp_add_sel_to_ipmi(common_addsel_msg_t *sel_msg);
 uint8_t plat_get_eid();
 void plat_set_eid(int slot_eid);
+bool plat_i3c_is_valid_endpoint_id(uint8_t dest_ep, uint8_t src_ep);
 
 extern struct pldm_variable_field nic_vesion[];
 

@@ -232,3 +232,51 @@ void plat_set_eid(int slot_eid)
 	plat_eid = slot_eid;
 	return;
 }
+
+#if MCTP_I3C_MULTIPLE_PACKAGES_ENABLE
+static inline bool is_valid_endpoint(uint8_t eid, uint8_t platform_eid, bool allow_null_eid)
+{
+       /* Check platfrom EID */
+       if (eid == platform_eid) {
+               return true;
+       }
+
+       if (allow_null_eid && eid == MCTP_NULL_EID) {
+               return true;
+       }
+
+       /* Check MCTP route table */
+       for (uint8_t i = 0; i < ARRAY_SIZE(mctp_route_tbl); i++) {
+               if (mctp_route_tbl[i].endpoint == eid) {
+                       return true;
+               }
+       }
+
+       /* Check MMC info table */
+       for (uint8_t i = 0; i < ARRAY_SIZE(mmc_info_table); i++) {
+               if (mmc_info_table[i].eid == eid) {
+                       return true;
+               }
+       }
+
+       return false;
+}
+
+bool plat_i3c_is_valid_endpoint_id(uint8_t dest_ep, uint8_t src_ep)
+{
+       uint8_t platform_eid = plat_get_eid();
+
+       /* Validate destination endpoint (allows null EID) */
+       bool dest_valid = is_valid_endpoint(dest_ep, platform_eid, true);
+
+       /* Early return if destination is invalid */
+       if (!dest_valid) {
+               return false;
+       }
+
+       /* Validate source endpoint */
+       bool src_valid = is_valid_endpoint(src_ep, platform_eid, false);
+
+       return src_valid;
+}
+#endif
