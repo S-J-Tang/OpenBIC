@@ -36,12 +36,12 @@
 
 LOG_MODULE_REGISTER(dev_pex89000);
 
-#define BRCM_I2C5_CMD_READ 0b100
+#define BRCM_I2C5_CMD_READ 0b111
 #define BRCM_I2C5_CMD_WRITE 0b011
 
-#define BRCM_CHIME_AXI_CSR_ADDR 0x001F0100
-#define BRCM_CHIME_AXI_CSR_DATA 0x001F0104
-#define BRCM_CHIME_AXI_CSR_CTL 0x001F0108
+#define BRCM_CHIME_AXI_CSR_ADDR 0x003F0100
+#define BRCM_CHIME_AXI_CSR_DATA 0x003F0104
+#define BRCM_CHIME_AXI_CSR_CTL 0x003F0108
 
 /* Control register of Chime to AXI by SMBus */
 #define BRCM_REG_SMB_WR_CMD 0xFFE00004
@@ -95,10 +95,12 @@ static uint8_t pex_dev_get(uint8_t bus, uint8_t addr, uint8_t idx, pex_dev_t *de
 	uint16_t dev_id = (resp >> 16) & 0xFFFF;
 	if (dev_id == 0xC010 || dev_id == 0xC012)
 		*dev = pex_dev_atlas1;
-	else if (dev_id == 0xC030)
-		*dev = pex_dev_atlas2;
+	// else if (dev_id == 0xC040)
+	// 	*dev = pex_dev_atlas2;
 	else
-		*dev = pex_dev_unknown;
+		LOG_INF("%x", dev_id);
+		// *dev = pex_dev_unknown;
+		*dev = pex_dev_atlas2;
 
 	return pex_api_success;
 }
@@ -138,6 +140,7 @@ static uint8_t pex89000_chime_read(uint8_t bus, uint8_t addr, uint32_t oft, uint
 	msg.tx_len = sizeof(cmd);
 	msg.rx_len = resp_len;
 	memcpy(&msg.data[0], &cmd, sizeof(cmd));
+	LOG_INF("%x %x %x %x", msg.data[0], msg.data[1], msg.data[2], msg.data[3]);
 
 	if (i2c_master_read(&msg, retry)) {
 		LOG_ERR("Chime read failed");
@@ -145,6 +148,7 @@ static uint8_t pex89000_chime_read(uint8_t bus, uint8_t addr, uint32_t oft, uint
 	}
 
 	memcpy(resp, &msg.data[0], resp_len);
+	LOG_INF("%x %x %x %x", msg.data[0], msg.data[1], msg.data[2], msg.data[3]);
 
 	return pex_api_success;
 }
@@ -165,6 +169,12 @@ static uint8_t pex89000_chime_write(uint8_t bus, uint8_t addr, uint32_t oft, uin
 	msg.tx_len = sizeof(cmd) + data_len;
 	memcpy(&msg.data[0], &cmd, sizeof(cmd));
 	memcpy(&msg.data[4], data, data_len);
+	if (data_len == 4){
+		LOG_INF("%x %x %x %x %x %x %x %x", msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4], msg.data[5], msg.data[6], msg.data[7]);
+	}
+	else{
+		LOG_INF("%x %x %x %x", msg.data[0], msg.data[1], msg.data[2], msg.data[3]);
+	}
 
 	if (i2c_master_write(&msg, retry)) {
 		LOG_ERR("Chime write failed");
@@ -382,7 +392,7 @@ static uint8_t pex89000_temp(uint8_t bus, uint8_t addr, pex_dev_t dev, uint32_t 
 		temp = (resp & 0xFFFF) / 128;
 	} else if (dev == pex_dev_atlas2) {
 		for (int8_t i = 7; i < 12; i++) {
-			CmdAddr = (0x21 << 16) | (0x4C << 8) | (0x0B);
+			CmdAddr = (0x21 << 16) | (0x17 << 8) | (0x0B);
 			if (pex89000_chime_to_axi_write(bus, addr, BRCM_REG_SMB_WR_CMD, CmdAddr)) {
 				LOG_ERR("CHIME to AXI Write 0x%x failed", BRCM_REG_SMB_WR_CMD);
 				goto exit;
@@ -394,7 +404,7 @@ static uint8_t pex89000_temp(uint8_t bus, uint8_t addr, pex_dev_t dev, uint32_t 
 				goto exit;
 			}
 
-			CmdAddr = (0x22 << 16) | (0x4C << 8) | (0x14);
+			CmdAddr = (0x22 << 16) | (0x17 << 8) | (0x14);
 			if (pex89000_chime_to_axi_write(bus, addr, BRCM_REG_SMB_RD_CMD, CmdAddr)) {
 				LOG_ERR("CHIME to AXI Write 0x%x failed", BRCM_REG_SMB_RD_CMD);
 				goto exit;
@@ -408,7 +418,9 @@ static uint8_t pex89000_temp(uint8_t bus, uint8_t addr, pex_dev_t dev, uint32_t 
 			if (resp == 0)
 				continue;
 
-			temp = (float)(366.812 - 0.23751 * (float)(resp & 0x7FF));
+			temp = (float)(469.27-0.30654 * (float)(resp & 0x7FF));
+			printk("%f", temp);
+			
 
 			if (temp > highest_temp)
 				highest_temp = temp;
@@ -456,7 +468,7 @@ uint8_t pex89000_read(sensor_cfg *cfg, int *reading)
 
 	switch (cfg->offset) {
 	case PEX_TEMP:
-		if (pex_access_engine(cfg->port, cfg->target_addr, p->idx, pex_access_temp,
+		if (pex_access_engine(cfg->port, cfg->target_addr, p->idx, pex_access_sbr_ver,
 				      reading)) {
 			LOG_ERR("Read temperature failed");
 			rc = SENSOR_FAIL_TO_ACCESS;
