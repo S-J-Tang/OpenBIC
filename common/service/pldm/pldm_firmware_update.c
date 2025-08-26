@@ -159,13 +159,13 @@ uint8_t pldm_fw_update(void *fw_update_param, const int flash_position)
 		update_flag = (SECTOR_END_FLAG | NO_RESET_FLAG);
 	}
 
-	uint8_t ret = fw_update(p->data_ofs, p->data_len, p->data, update_flag, flash_position);
+	// uint8_t ret = fw_update(p->data_ofs, p->data_len, p->data, update_flag, flash_position);
 
-	if (ret) {
-		LOG_ERR("Firmware update failed, offset(0x%x), length(0x%x), status(%d)",
-			p->data_ofs, p->data_len, ret);
-		return 1;
-	}
+	// if (ret) {
+	// 	LOG_ERR("Firmware update failed, offset(0x%x), length(0x%x), status(%d)",
+	// 		p->data_ofs, p->data_len, ret);
+	// 	return 1;
+	// }
 	return 0;
 }
 
