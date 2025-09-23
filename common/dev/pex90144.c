@@ -94,7 +94,7 @@ static uint8_t pex_dev_get(uint8_t bus, uint8_t addr, uint8_t idx, pex_dev_t *de
 
 	uint16_t dev_id = (resp >> 16) & 0xFFFF;
 	if (dev_id == 0xC040) {
-	*dev = pex_dev_pcie_switch;
+		*dev = pex_dev_pcie_switch;
 	} else {
 		LOG_DBG("Unsupported dev_id: 0x%X", dev_id);
 		*dev = pex_dev_unknown;
@@ -396,7 +396,7 @@ uint8_t pex90144_read(sensor_cfg *cfg, int *reading)
 
 	uint8_t rc = SENSOR_UNSPECIFIED_ERROR;
 
-	pex90144_unit *p = (pex90144_unit *)cfg->priv_data;
+	const pex90144_unit *p = (pex90144_unit *)cfg->priv_data;
 
 	switch (cfg->offset) {
 	case PEX_TEMP:

@@ -278,6 +278,7 @@ static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = 
 	// thread id, thread name
 	{ UBC_SENSOR_THREAD_ID, "UBC_PLDM_SENSOR_THREAD" },
 	{ VR_SENSOR_P3V3_THREAD_ID, "VR_PLDM_P3V3_SENSOR_THREAD" },
+	{ VR_SENSOR_P0V85_PVDD_THREAD_ID, "VR_SENSOR_P0V85_PVDD_THREAD_ID", ATH_VDD_INTERVAL_MS },
 	{ VR_SENSOR_THREAD_ID, "VR_PLDM_SENSOR_THREAD" },
 	{ TEMP_SENSOR_THREAD_ID, "TEMP_SENSOR_THREAD" },
 };
@@ -812,7 +813,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			0, //uint32_t warning_high;
 			0, //uint32_t warning_low;
 			13770, //uint32_t critical_high;
-			11370, //uint32_t critical_low;
+			11730, //uint32_t critical_low;
 			0, //uint32_t fatal_high;
 			0, //uint32_t fatal_low;
 		},
@@ -1260,7 +1261,7 @@ pldm_sensor_info plat_pldm_sensor_vr_3v3_table[] = {
 	},
 };
 
-pldm_sensor_info plat_pldm_sensor_vr_table[] = {
+pldm_sensor_info plat_pldm_sensor_vr_0v85_pvdd_table[] = {
 	{
 		{
 			// VR_ASIC_P0V85_PVDD_TEMP_C
@@ -1549,6 +1550,9 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			.post_sensor_read_args = &vr_pre_read_args[VR_INDEX_E_P0V85 * 2],
 		},
 	},
+};
+
+pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 	{
 		{
 			// VR_ASIC_P0V75_PVDD_CH_N_TEMP_C
@@ -7438,6 +7442,81 @@ PDR_sensor_auxiliary_names plat_3v3_pdr_sensor_aux_names_table[] = {
 	},
 };
 
+PDR_sensor_auxiliary_names plat_0v85_pvdd_pdr_sensor_aux_names_table[] = {
+	{
+
+		// VR_ASIC_P0V85_PVDD_TEMP_C
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = VR_ASIC_P0V85_PVDD_TEMP_C,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"VR_ASIC_P0V85_PVDD_TEMP_C",
+	},
+	{
+
+		// VR_ASIC_P0V85_PVDD_VOLT_V
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = VR_ASIC_P0V85_PVDD_VOLT_V,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"VR_ASIC_P0V85_PVDD_VOLT_V",
+	},
+	{
+
+		// VR_ASIC_P0V85_PVDD_CURR_A
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = VR_ASIC_P0V85_PVDD_CURR_A,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"VR_ASIC_P0V85_PVDD_CURR_A",
+	},
+	{
+
+		// VR_ASIC_P0V85_PVDD_PWR_W
+		/*** PDR common header***/
+		{
+			.record_handle = 0x00000000,
+			.PDR_header_version = 0x01,
+			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
+			.record_change_number = 0x0000,
+			.data_length = 0x0000,
+		},
+		.terminus_handle = 0x0000,
+		.sensor_id = VR_ASIC_P0V85_PVDD_PWR_W,
+		.sensor_count = 0x1,
+		.nameStringCount = 0x1,
+		.nameLanguageTag = "en",
+		.sensorName = u"VR_ASIC_P0V85_PVDD_PWR_W",
+	},
+};
+
 PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 	{
 
@@ -7762,78 +7841,6 @@ PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
 		.sensorName = u"ASIC_DIE_S_OWL_TEMP_C",
-	},
-	{
-
-		// VR_ASIC_P0V85_PVDD_TEMP_C
-		/*** PDR common header***/
-		{
-			.record_handle = 0x00000000,
-			.PDR_header_version = 0x01,
-			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
-			.record_change_number = 0x0000,
-			.data_length = 0x0000,
-		},
-		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V85_PVDD_TEMP_C,
-		.sensor_count = 0x1,
-		.nameStringCount = 0x1,
-		.nameLanguageTag = "en",
-		.sensorName = u"VR_ASIC_P0V85_PVDD_TEMP_C",
-	},
-	{
-
-		// VR_ASIC_P0V85_PVDD_VOLT_V
-		/*** PDR common header***/
-		{
-			.record_handle = 0x00000000,
-			.PDR_header_version = 0x01,
-			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
-			.record_change_number = 0x0000,
-			.data_length = 0x0000,
-		},
-		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V85_PVDD_VOLT_V,
-		.sensor_count = 0x1,
-		.nameStringCount = 0x1,
-		.nameLanguageTag = "en",
-		.sensorName = u"VR_ASIC_P0V85_PVDD_VOLT_V",
-	},
-	{
-
-		// VR_ASIC_P0V85_PVDD_CURR_A
-		/*** PDR common header***/
-		{
-			.record_handle = 0x00000000,
-			.PDR_header_version = 0x01,
-			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
-			.record_change_number = 0x0000,
-			.data_length = 0x0000,
-		},
-		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V85_PVDD_CURR_A,
-		.sensor_count = 0x1,
-		.nameStringCount = 0x1,
-		.nameLanguageTag = "en",
-		.sensorName = u"VR_ASIC_P0V85_PVDD_CURR_A",
-	},
-	{
-
-		// VR_ASIC_P0V85_PVDD_PWR_W
-		/*** PDR common header***/
-		{
-			.record_handle = 0x00000000,
-			.PDR_header_version = 0x01,
-			.PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR,
-			.record_change_number = 0x0000,
-			.data_length = 0x0000,
-		},
-		.terminus_handle = 0x0000,
-		.sensor_id = VR_ASIC_P0V85_PVDD_PWR_W,
-		.sensor_count = 0x1,
-		.nameStringCount = 0x1,
-		.nameLanguageTag = "en",
-		.sensorName = u"VR_ASIC_P0V85_PVDD_PWR_W",
 	},
 	{
 
@@ -9163,11 +9170,12 @@ uint32_t plat_get_pdr_size(uint8_t pdr_type)
 		break;
 	case PLDM_SENSOR_AUXILIARY_NAMES_PDR:
 		if (get_board_type() == MINERVA_AEGIS_BD)
-			total_size = ARRAY_SIZE(plat_pdr_sensor_aux_names_table);
+			total_size = ARRAY_SIZE(plat_pdr_sensor_aux_names_table) +
+				     ARRAY_SIZE(plat_0v85_pvdd_pdr_sensor_aux_names_table);
 		else
-
 			total_size = ARRAY_SIZE(plat_3v3_pdr_sensor_aux_names_table) +
-				     ARRAY_SIZE(plat_pdr_sensor_aux_names_table);
+				     ARRAY_SIZE(plat_pdr_sensor_aux_names_table) +
+				     ARRAY_SIZE(plat_0v85_pvdd_pdr_sensor_aux_names_table);
 		break;
 	case PLDM_ENTITY_AUXILIARY_NAMES_PDR:
 		total_size = ARRAY_SIZE(plat_pdr_entity_aux_names_table);
@@ -9201,6 +9209,11 @@ pldm_sensor_info *plat_pldm_sensor_load(int thread_id)
 		plat_pldm_sensor_change_vr_addr();
 		plat_pldm_sensor_change_vr_init_args();
 		return plat_pldm_sensor_vr_3v3_table;
+	case VR_SENSOR_P0V85_PVDD_THREAD_ID:
+		plat_pldm_sensor_change_vr_dev();
+		plat_pldm_sensor_change_vr_addr();
+		plat_pldm_sensor_change_vr_init_args();
+		return plat_pldm_sensor_vr_0v85_pvdd_table;
 	case TEMP_SENSOR_THREAD_ID:
 		plat_pldm_sensor_change_temp_dev();
 		plat_pldm_sensor_change_temp_addr();
@@ -9227,6 +9240,9 @@ int plat_pldm_sensor_get_sensor_count(int thread_id)
 			count = 0;
 		else
 			count = ARRAY_SIZE(plat_pldm_sensor_vr_3v3_table);
+		break;
+	case VR_SENSOR_P0V85_PVDD_THREAD_ID:
+		count = ARRAY_SIZE(plat_pldm_sensor_vr_0v85_pvdd_table);
 		break;
 	case TEMP_SENSOR_THREAD_ID:
 		count = ARRAY_SIZE(plat_pldm_sensor_temp_table);
@@ -9259,6 +9275,11 @@ void plat_pldm_sensor_get_pdr_numeric_sensor(int thread_id, int sensor_num,
 		       &plat_pldm_sensor_vr_3v3_table[sensor_num].pdr_numeric_sensor,
 		       sizeof(PDR_numeric_sensor));
 		break;
+	case VR_SENSOR_P0V85_PVDD_THREAD_ID:
+		memcpy(numeric_sensor_table,
+		       &plat_pldm_sensor_vr_0v85_pvdd_table[sensor_num].pdr_numeric_sensor,
+		       sizeof(PDR_numeric_sensor));
+		break;
 	case TEMP_SENSOR_THREAD_ID:
 		memcpy(numeric_sensor_table,
 		       &plat_pldm_sensor_temp_table[sensor_num].pdr_numeric_sensor,
@@ -9287,15 +9308,34 @@ void plat_load_numeric_sensor_pdr_table(PDR_numeric_sensor *numeric_sensor_table
 
 void plat_load_aux_sensor_names_pdr_table(PDR_sensor_auxiliary_names *aux_sensor_name_table)
 {
-	if (get_board_type() == MINERVA_AEGIS_BD) {
-		memcpy(aux_sensor_name_table, &plat_pdr_sensor_aux_names_table,
-		       sizeof(plat_pdr_sensor_aux_names_table));
-	} else {
-		memcpy(aux_sensor_name_table, plat_3v3_pdr_sensor_aux_names_table,
-		       sizeof(plat_3v3_pdr_sensor_aux_names_table));
+	size_t plat_pdr_sensor_aux_names_table_size = ARRAY_SIZE(plat_pdr_sensor_aux_names_table);
+	size_t plat_3v3_pdr_sensor_aux_names_table_size =
+		ARRAY_SIZE(plat_3v3_pdr_sensor_aux_names_table);
+	size_t plat_0v85_pvdd_pdr_sensor_aux_names_table_size =
+		ARRAY_SIZE(plat_0v85_pvdd_pdr_sensor_aux_names_table);
+	size_t offset = 0;
 
-		memcpy(&aux_sensor_name_table[ARRAY_SIZE(plat_3v3_pdr_sensor_aux_names_table)],
-		       plat_pdr_sensor_aux_names_table, sizeof(plat_pdr_sensor_aux_names_table));
+	if (get_board_type() == MINERVA_AEGIS_BD) {
+		memcpy(aux_sensor_name_table + offset, plat_0v85_pvdd_pdr_sensor_aux_names_table,
+		       plat_0v85_pvdd_pdr_sensor_aux_names_table_size *
+			       sizeof(PDR_sensor_auxiliary_names));
+		offset += plat_0v85_pvdd_pdr_sensor_aux_names_table_size;
+
+		memcpy(aux_sensor_name_table + offset, plat_pdr_sensor_aux_names_table,
+		       plat_pdr_sensor_aux_names_table_size * sizeof(PDR_sensor_auxiliary_names));
+	} else {
+		memcpy(aux_sensor_name_table + offset, plat_3v3_pdr_sensor_aux_names_table,
+		       plat_3v3_pdr_sensor_aux_names_table_size *
+			       sizeof(PDR_sensor_auxiliary_names));
+		offset += plat_3v3_pdr_sensor_aux_names_table_size;
+
+		memcpy(aux_sensor_name_table + offset, plat_0v85_pvdd_pdr_sensor_aux_names_table,
+		       plat_0v85_pvdd_pdr_sensor_aux_names_table_size *
+			       sizeof(PDR_sensor_auxiliary_names));
+		offset += plat_0v85_pvdd_pdr_sensor_aux_names_table_size;
+
+		memcpy(aux_sensor_name_table + offset, plat_pdr_sensor_aux_names_table,
+		       plat_pdr_sensor_aux_names_table_size * sizeof(PDR_sensor_auxiliary_names));
 	}
 }
 
@@ -9461,6 +9501,31 @@ void find_init_args_by_sensor_id(uint16_t sensor_id, void **init_args)
 		}
 	}
 
+	for (int index = 0;
+	     index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_P0V85_PVDD_THREAD_ID); index++) {
+		if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pdr_numeric_sensor.sensor_id ==
+		    sensor_id) {
+			if ((vr_type == VR_MPS_MP2971_MP2891) ||
+			    (vr_type == VR_MPS_MP2971_MP29816A)) {
+				LOG_INF("change vr init args for MPS");
+				*init_args = plat_sensor_vr_extend_table[index].mps_vr_init_args;
+				return;
+			} else if ((vr_type == VR_RNS_ISL69260_RAA228238) ||
+				   (vr_type == VR_RNS_ISL69260_RAA228249)) {
+				LOG_INF("change vr init args for RNS");
+				if (board_stage >= FAB2_DVT) {
+					plat_sensor_vr_extend_table[index].rns_vr_init_args =
+						&isl69259_init_args[1];
+				}
+				*init_args = plat_sensor_vr_extend_table[index].rns_vr_init_args;
+				return;
+			} else {
+				*init_args = NULL;
+				return;
+			}
+		}
+	}
+
 	for (int index = 0; index < plat_pldm_sensor_get_sensor_count(UBC_SENSOR_THREAD_ID);
 	     index++) {
 		if (plat_pldm_sensor_ubc_table[index].pdr_numeric_sensor.sensor_id == sensor_id) {
@@ -9500,18 +9565,6 @@ void plat_pldm_sensor_change_ubc_init_args()
 
 void plat_pldm_sensor_change_vr_init_args()
 {
-	for (int index = 0; index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_THREAD_ID);
-	     index++) {
-		void *init_args;
-		if ((plat_pldm_sensor_vr_table[index].pdr_numeric_sensor.sensor_id ==
-		     VR_P3V3_VOLT_V) ||
-		    (plat_pldm_sensor_vr_table[index].pdr_numeric_sensor.sensor_id ==
-		     VR_P3V3_PWR_W)) {
-			find_init_args_by_sensor_id(
-				plat_pldm_sensor_vr_table[index].pldm_sensor_cfg.num, &init_args);
-			plat_pldm_sensor_vr_table[index].pldm_sensor_cfg.init_args = init_args;
-		}
-	}
 	for (int index = 0; index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_P3V3_THREAD_ID);
 	     index++) {
 		void *init_args;
@@ -9563,6 +9616,15 @@ void plat_pldm_sensor_change_vr_addr()
 				plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.target_addr =
 					addr;
 			}
+			for (int index = 0; index < plat_pldm_sensor_get_sensor_count(
+							    VR_SENSOR_P0V85_PVDD_THREAD_ID);
+			     index++) {
+				find_vr_addr_by_sensor_id(plat_pldm_sensor_vr_0v85_pvdd_table[index]
+								  .pldm_sensor_cfg.num,
+							  &addr);
+				plat_pldm_sensor_vr_0v85_pvdd_table[index]
+					.pldm_sensor_cfg.target_addr = addr;
+			}
 		}
 	}
 
@@ -9579,6 +9641,15 @@ void plat_pldm_sensor_change_vr_addr()
 			find_vr_addr_by_sensor_id(
 				plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.num, &addr);
 			plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.target_addr = addr;
+		}
+		for (int index = 0;
+		     index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_P0V85_PVDD_THREAD_ID);
+		     index++) {
+			find_vr_addr_by_sensor_id(
+				plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.num,
+				&addr);
+			plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.target_addr =
+				addr;
 		}
 	} else if ((vr_type != VR_MPS_MP2971_MP2891) && (vr_type != VR_MPS_MP2971_MP29816A)) {
 		LOG_ERR("Unable to change the VR device due to its unknown status.");
@@ -9608,6 +9679,14 @@ void plat_pldm_sensor_change_vr_dev()
 				plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.type =
 					sensor_dev_mp29816a;
 		}
+		for (int index = 0;
+		     index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_P0V85_PVDD_THREAD_ID);
+		     index++) {
+			if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type ==
+			    sensor_dev_mp2891)
+				plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type =
+					sensor_dev_mp29816a;
+		}
 	} else if (vr_type == VR_RNS_ISL69260_RAA228238) {
 		for (int index = 0; index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_THREAD_ID);
 		     index++) {
@@ -9631,6 +9710,18 @@ void plat_pldm_sensor_change_vr_dev()
 				plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.type =
 					sensor_dev_raa228238;
 		}
+		for (int index = 0;
+		     index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_P0V85_PVDD_THREAD_ID);
+		     index++) {
+			if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type ==
+			    sensor_dev_mp2971)
+				plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type =
+					sensor_dev_isl69259;
+			else if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type ==
+				 sensor_dev_mp2891)
+				plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type =
+					sensor_dev_raa228238;
+		}
 	} else if (vr_type == VR_RNS_ISL69260_RAA228249) {
 		for (int index = 0; index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_THREAD_ID);
 		     index++) {
@@ -9652,6 +9743,18 @@ void plat_pldm_sensor_change_vr_dev()
 			else if (plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.type ==
 				 sensor_dev_mp2891)
 				plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.type =
+					sensor_dev_raa228249;
+		}
+		for (int index = 0;
+		     index < plat_pldm_sensor_get_sensor_count(VR_SENSOR_P0V85_PVDD_THREAD_ID);
+		     index++) {
+			if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type ==
+			    sensor_dev_mp2971)
+				plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type =
+					sensor_dev_isl69259;
+			else if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type ==
+				 sensor_dev_mp2891)
+				plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.type =
 					sensor_dev_raa228249;
 		}
 	} else if (vr_type != VR_MPS_MP2971_MP2891) {
@@ -9857,7 +9960,7 @@ bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *v
 				return true;
 			}
 		}
-	} else if (sensor_id >= VR_ASIC_P0V85_PVDD_TEMP_C &&
+	} else if (sensor_id >= VR_ASIC_P0V75_PVDD_CH_N_TEMP_C &&
 		   sensor_id <= VR_ASIC_P1V2_VDDHTX_PCIE_PWR_W) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(VR_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
@@ -9878,6 +9981,22 @@ bool get_sensor_info_by_sensor_id(uint8_t sensor_id, uint8_t *vr_bus, uint8_t *v
 				*vr_bus = plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.port;
 				*sensor_dev =
 					plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg.type;
+				return true;
+			}
+		}
+	} else if (sensor_id >= VR_ASIC_P0V85_PVDD_TEMP_C &&
+		   sensor_id <= VR_ASIC_P0V85_PVDD_PWR_W) {
+		pldm_sensor_count =
+			plat_pldm_sensor_get_sensor_count(VR_SENSOR_P0V85_PVDD_THREAD_ID);
+		for (int index = 0; index < pldm_sensor_count; index++) {
+			if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.num ==
+			    sensor_id) {
+				*vr_addr = plat_pldm_sensor_vr_0v85_pvdd_table[index]
+						   .pldm_sensor_cfg.target_addr;
+				*vr_bus = plat_pldm_sensor_vr_0v85_pvdd_table[index]
+						  .pldm_sensor_cfg.port;
+				*sensor_dev = plat_pldm_sensor_vr_0v85_pvdd_table[index]
+						      .pldm_sensor_cfg.type;
 				return true;
 			}
 		}
@@ -9904,7 +10023,7 @@ sensor_cfg *get_sensor_cfg_by_sensor_id(uint8_t sensor_id)
 				return &plat_pldm_sensor_temp_table[index].pldm_sensor_cfg;
 			}
 		}
-	} else if (sensor_id >= VR_ASIC_P0V85_PVDD_TEMP_C &&
+	} else if (sensor_id >= VR_ASIC_P0V75_PVDD_CH_N_TEMP_C &&
 		   sensor_id <= VR_ASIC_P1V2_VDDHTX_PCIE_PWR_W) {
 		pldm_sensor_count = plat_pldm_sensor_get_sensor_count(VR_SENSOR_THREAD_ID);
 		for (int index = 0; index < pldm_sensor_count; index++) {
@@ -9919,6 +10038,16 @@ sensor_cfg *get_sensor_cfg_by_sensor_id(uint8_t sensor_id)
 				return &plat_pldm_sensor_vr_3v3_table[index].pldm_sensor_cfg;
 			}
 		}
+	} else if (sensor_id >= VR_ASIC_P0V85_PVDD_TEMP_C &&
+		   sensor_id <= VR_ASIC_P0V85_PVDD_PWR_W) {
+		pldm_sensor_count =
+			plat_pldm_sensor_get_sensor_count(VR_SENSOR_P0V85_PVDD_THREAD_ID);
+		for (int index = 0; index < pldm_sensor_count; index++) {
+			if (plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg.num ==
+			    sensor_id) {
+				return &plat_pldm_sensor_vr_0v85_pvdd_table[index].pldm_sensor_cfg;
+			}
+		}
 	}
 
 	return NULL;
@@ -9928,4 +10057,48 @@ bool is_osfp_3v3_access(uint8_t sensor_num)
 {
 	/* OSFP 3V3 is only accessible on EVB */
 	return (get_board_type() == MINERVA_AEGIS_BD) ? false : is_vr_access(sensor_num);
+}
+
+uint8_t sensor_polling_cmd(void *mctp_inst, uint8_t *buf, uint16_t len, uint8_t instance_id,
+			   uint8_t *resp, uint16_t *resp_len, void *ext_params)
+{
+	CHECK_NULL_ARG_WITH_RETURN(mctp_inst, PLDM_ERROR);
+	CHECK_NULL_ARG_WITH_RETURN(buf, PLDM_ERROR);
+	CHECK_NULL_ARG_WITH_RETURN(resp, PLDM_ERROR);
+	CHECK_NULL_ARG_WITH_RETURN(resp_len, PLDM_ERROR);
+	CHECK_NULL_ARG_WITH_RETURN(ext_params, PLDM_ERROR);
+
+	struct _sensor_polling_cmd_req *req_p = (struct _sensor_polling_cmd_req *)buf;
+	struct _sensor_polling_cmd_resp *resp_p = (struct _sensor_polling_cmd_resp *)resp;
+
+	if (len < (sizeof(*req_p) - 1)) {
+		LOG_WRN("request len %d is invalid", len);
+		resp_p->completion_code = PLDM_ERROR_INVALID_LENGTH;
+		set_iana(resp_p->iana, sizeof(resp_p->iana));
+		goto exit;
+	}
+
+	if (check_iana(req_p->iana) == PLDM_ERROR) {
+		resp_p->completion_code = PLDM_ERROR_INVALID_DATA;
+		set_iana(resp_p->iana, sizeof(resp_p->iana));
+		goto exit;
+	}
+
+	if (!(req_p->set_value == 1 || req_p->set_value == 0)) {
+		LOG_ERR("set sensor_polling:%x is out of range", req_p->set_value);
+		resp_p->completion_code = PLDM_ERROR_INVALID_DATA;
+		set_iana(resp_p->iana, sizeof(resp_p->iana));
+		goto exit;
+	}
+
+	set_plat_sensor_polling_enable_flag(req_p->set_value);
+
+	LOG_INF("set sensor_polling:%x success", req_p->set_value);
+	resp_p->completion_code = PLDM_SUCCESS;
+	set_iana(resp_p->iana, sizeof(resp_p->iana));
+	resp_p->set_value = req_p->set_value;
+
+exit:
+	*resp_len = sizeof(struct _sensor_polling_cmd_resp);
+	return PLDM_SUCCESS;
 }
