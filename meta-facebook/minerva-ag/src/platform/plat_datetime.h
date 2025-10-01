@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include "plat_mctp.h"
+#ifndef PLAT_DATETIME_H
+#define PLAT_DATETIME_H
 
-LOG_MODULE_REGISTER(plat_pldm);
+#include <time.h>
 
-uint8_t plat_pldm_get_tid()
-{
-	// Set TID as EID
-	return plat_get_eid();
-}
+void rtc_init_once(void);
+void rtc_get_tm(struct tm *tm_now);
+
+#endif
