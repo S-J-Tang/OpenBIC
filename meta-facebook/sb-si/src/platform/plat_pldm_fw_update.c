@@ -49,6 +49,7 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
 static bool get_pcie_switch_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
 static uint8_t plat_pldm_pre_pcie_switch_update(void *fw_update_param);
 static uint8_t plat_pldm_post_pcie_switch_update(void *fw_update_param);
+static uint8_t pldm_pre_bic_update(void *fw_update_param);
 
 typedef struct si_compnt_mapping_sensor {
 	uint8_t firmware_comp_id;
@@ -72,7 +73,7 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
 		.comp_identifier = SI_COMPNT_BIC,
 		.comp_classification_index = 0x00,
-		.pre_update_func = NULL,
+		.pre_update_func = pldm_pre_bic_update,
 		.update_func = pldm_bic_update,
 		.pos_update_func = NULL,
 		.inf = COMP_UPDATE_VIA_SPI,
@@ -225,6 +226,16 @@ void load_pldmupdate_comp_config(void)
 	}
 
 	comp_config_count = filtered_count;
+}
+
+static uint8_t pldm_pre_bic_update(void *fw_update_param)
+{
+	ARG_UNUSED(fw_update_param);
+
+	/* Stop sensor polling */
+	set_plat_sensor_polling_enable_flag(false);
+
+	return 0;
 }
 
 static uint8_t plat_pldm_pre_pcie_switch_update(void *fw_update_param)
