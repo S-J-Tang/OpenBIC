@@ -315,9 +315,24 @@ void update_strap_capability_table()
 		sensor_data->strap_set_format[i].strap_set_value = drive_level;
 	}
 }
-void plat_pldm_sensor_poll_post()
+uint8_t count = 0;
+uint64_t start = 0;
+void vr_power_sensor_polling_average(int thread_id, int times)
+{
+	if (thread_id == QUICK_VR_SENSOR_THREAD_ID){
+		if (count == times){
+			count = 0;
+			uint64_t end = k_uptime_get();
+			printk("vr power polling per %d times = %llu ms\n", times, end - start);
+			start = k_uptime_get();
+		}
+		count++;
+	}
+}
+void plat_pldm_sensor_poll_post(int thread_id)
 {
 	update_strap_capability_table();
+	vr_power_sensor_polling_average(thread_id, 100);
 }
 void set_sensor_polling_handler(struct k_work *work_item)
 {

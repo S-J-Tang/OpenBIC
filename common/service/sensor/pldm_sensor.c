@@ -58,7 +58,7 @@ __weak void plat_pldm_sensor_post_load_init(int thread_id)
 	return;
 }
 
-__weak void plat_pldm_sensor_poll_post()
+__weak void plat_pldm_sensor_poll_post(int thread_id)
 {
 	return;
 }
@@ -463,7 +463,7 @@ void pldm_sensor_polling_handler(void *arug0, void *arug1, void *arug2)
 				}
 			}
 		}
-		plat_pldm_sensor_poll_post();
+		plat_pldm_sensor_poll_post(thread_id);
 		k_msleep(poll_interval_ms);
 	}
 }
