@@ -1408,6 +1408,21 @@ int get_vr_mp2971_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg)
 			goto err;
 		}
 		break;
+
+	case OVP_2_MODE: {
+		uint8_t mode = OVP2_ACTION_UNKNOWN;
+
+		if (!mp2971_get_ovp2_action_mode(cfg, pre_proc_args->vr_page, &mode)) {
+			LOG_ERR("The VR mp2971 ovp2 action mode read failed");
+			goto err;
+		}
+
+		/* Return mode via get_data for shell/UI:
+		* 0: NO_ACTION, 1: LATCH_OFF, 0xFF: UNKNOWN
+		*/
+		*get_data = (uint16_t)mode;
+		break;
+	}
 	default:
 		LOG_ERR("Unsupport VR mp29816a setting reg (%x)", cfg->type);
 		goto err;
@@ -1429,7 +1444,7 @@ int set_vr_mp2971_reg(uint8_t rail, uint16_t *set_data, uint8_t set_reg)
 
 	int ret = -1;
 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
-	sensor_cfg *cfg = set_sensor_cfg_by_sensor_id(sensor_id);
+	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 	if (cfg == NULL) {
 		LOG_ERR("Failed to set sensor config for sensor 0x%x", sensor_id);
 		return false;
@@ -1444,12 +1459,12 @@ int set_vr_mp2971_reg(uint8_t rail, uint16_t *set_data, uint8_t set_reg)
 	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)cfg->pre_sensor_read_args;
 
 	switch (set_reg) {
-	case UVP_THRESHOLD:
-		if (!mp2971_set_uvp(cfg, pre_proc_args->vr_page, set_data)) {
-			LOG_ERR("The VR mp2971 uvp threshold setting failed");
-			goto err;
-		}
-		break;
+	// case UVP_THRESHOLD:
+	// 	if (!mp2971_set_uvp(cfg, pre_proc_args->vr_page, set_data)) {
+	// 		LOG_ERR("The VR mp2971 uvp threshold setting failed");
+	// 		goto err;
+	// 	}
+	// 	break;
 	case VOUT_MAX:
 		if (!mp2971_set_vout_max(cfg, pre_proc_args->vr_page, set_data)) {
 			LOG_ERR("The VR mp2971 vout max setting failed");
@@ -1462,30 +1477,57 @@ int set_vr_mp2971_reg(uint8_t rail, uint16_t *set_data, uint8_t set_reg)
 			goto err;
 		}
 		break;
-	case VOUT_OFFSET:
-		if (!mp2971_set_vout_offset(cfg, set_data)) {
-			LOG_ERR("The VR mp2971 vout offset setting failed");
-			goto err;
-		}
-		break;
+	// case VOUT_OFFSET:
+	// 	if (!mp2971_set_vout_offset(cfg, set_data)) {
+	// 		LOG_ERR("The VR mp2971 vout offset setting failed");
+	// 		goto err;
+	// 	}
+	// 	break;
 	case TOTAL_OCP:
-		if (!mp2971_set_total_ocp(cfg, pre_proc_args->vr_page, set_data)) {
+		if (!mp2971_set_total_ocp(cfg, pre_proc_args->vr_page, *set_data)) {
 			LOG_ERR("The VR mp2971 total ocp setting failed");
 			goto err;
 		}
 		break;
-	case OVP_1:
-		if (!mp2971_set_ovp_1(cfg, pre_proc_args->vr_page, set_data)) {
-			LOG_ERR("The VR mp2971 ovp 1 setting failed");
+	// case OVP_1:
+	// 	if (!mp2971_set_ovp_1(cfg, pre_proc_args->vr_page, set_data)) {
+	// 		LOG_ERR("The VR mp2971 ovp 1 setting failed");
+	// 		goto err;
+	// 	}
+	// 	break;
+	// case OVP_2:
+	// 	if (!mp2971_set_ovp_2(cfg, pre_proc_args->vr_page, set_data)) {
+	// 		LOG_ERR("The VR mp2971 ovp 1 setting failed");
+	// 		goto err;
+	// 	}
+	// 	break;
+	case OVP_2_MODE: {
+		uint8_t mode;
+
+		/* interpret user input:
+		* 0 -> NO_ACTION
+		* 1 -> LATCH_OFF
+		*/
+		if (*set_data == 0) {
+			mode = OVP2_ACTION_NO_ACTION;
+		} else if (*set_data == 1) {
+			mode = OVP2_ACTION_LATCH_OFF;
+		} else {
+			LOG_ERR("Invalid OVP2 action mode=%u (expect 0 or 1)", *set_data);
+			goto err;
+		}
+
+		// if (!plat_set_ovp2_action_mode(cfg, pre_proc_args->vr_page, mode)) {
+		// 	LOG_ERR("The VR mp2971 ovp2 action mode set failed");
+		// 	goto err;
+		// }
+
+		if (!mp2971_set_ovp2_action_mode(cfg, pre_proc_args->vr_page, &mode)) {
+			LOG_ERR("The VR mp2971 ovp2 action mode set failed");
 			goto err;
 		}
 		break;
-	case OVP_2:
-		if (!mp2971_set_ovp_2(cfg, pre_proc_args->vr_page, set_data)) {
-			LOG_ERR("The VR mp2971 ovp 1 setting failed");
-			goto err;
-		}
-		break;
+	}
 	default:
 		LOG_ERR("Unsupport VR mp29816a setting reg (%x)", cfg->type);
 		goto err;

@@ -1370,6 +1370,96 @@ bool mp2971_get_total_ocp(sensor_cfg *cfg, uint8_t rail, uint16_t *total_ocp)
 	return true;
 }
 
+bool mp2971_set_total_ocp(sensor_cfg *cfg, uint8_t rail, uint16_t total_ocp)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+
+	/* rail must be page0/page1 */
+	uint8_t mc_reg = 0;
+	bool is_rail1 = false;
+
+	if (rail == VR_MPS_PAGE_0) {
+		mc_reg = VR_MPS_REG_MFR_VR_MULTI_CONFIG_R1; /* 0x0D */
+		is_rail1 = true;                           /* phase bit[3:0] */
+	} else if (rail == VR_MPS_PAGE_1) {
+		mc_reg = VR_MPS_REG_MFR_VR_MULTI_CONFIG_R2; /* 0x1D */
+		is_rail1 = false;                          /* phase bit[2:0] */
+	} else {
+		LOG_ERR("mp2971_set_total_ocp: invalid rail=%u (expect 0/1)", rail);
+		return false;
+	}
+
+	if (!mp2856_set_page(cfg->port, cfg->target_addr, VR_MPS_PAGE_2)) {
+		LOG_ERR("mp2971_set_total_ocp: set page2 failed (bus=%u addr=0x%02X)",
+			cfg->port, cfg->target_addr);
+		return false;
+	}
+
+	uint8_t mc[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, mc_reg, mc, sizeof(mc))) {
+		LOG_ERR("mp2971_set_total_ocp: read multi_config failed (bus=%u addr=0x%02X reg=0x%02X)",
+			cfg->port, cfg->target_addr, mc_reg);
+		return false;
+	}
+
+	uint16_t raw_mc = (uint16_t)mc[0] | ((uint16_t)mc[1] << 8);
+	uint8_t phase_code = is_rail1 ? (uint8_t)(raw_mc & 0x0F) : (uint8_t)(raw_mc & 0x07);
+
+	uint8_t phase_cnt = 1;
+	if (phase_code == 0x0 || phase_code == 0x1) {
+		phase_cnt = 1;
+	} else {
+		phase_cnt = phase_code;
+	}
+	if (phase_cnt == 0) {
+		phase_cnt = 1;
+	}
+
+	/* 2) Switch back to rail page before touching OCP_TOTAL_SET (0x5F) */
+	if (!mp2856_set_page(cfg->port, cfg->target_addr, rail)) {
+		LOG_ERR("mp2971_set_total_ocp: set rail page failed (bus=%u addr=0x%02X rail=%u)",
+			cfg->port, cfg->target_addr, rail);
+		return false;
+	}
+
+	/* 3) Reverse-calc ocp_code (bit[6:0]) with rounding ("趨近") */
+	uint32_t ocp_code_u32 = 0;
+	if (total_ocp == 0) {
+		ocp_code_u32 = 0;
+	} else {
+		ocp_code_u32 = ((uint32_t)total_ocp + (uint32_t)(phase_cnt / 2U)) / (uint32_t)phase_cnt;
+	}
+	if (ocp_code_u32 > 0x7FU) {
+		ocp_code_u32 = 0x7FU;
+	}
+	uint8_t ocp_code = (uint8_t)ocp_code_u32;
+
+	/* 4) RMW write MP2971_MFR_OCP_TOTAL_SET bit[6:0] only */
+	uint8_t ocp_raw_bytes[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, MP2971_MFR_OCP_TOTAL_SET,
+			     ocp_raw_bytes, sizeof(ocp_raw_bytes))) {
+		LOG_ERR("mp2971_set_total_ocp: read OCP_TOTAL_SET failed (bus=%u addr=0x%02X rail=%u reg=0x%02X)",
+			cfg->port, cfg->target_addr, rail, MP2971_MFR_OCP_TOTAL_SET);
+		return false;
+	}
+
+	uint16_t raw_ocp = (uint16_t)ocp_raw_bytes[0] | ((uint16_t)ocp_raw_bytes[1] << 8);
+	raw_ocp = (raw_ocp & ~0x007FU) | ((uint16_t)ocp_code & 0x007FU);
+
+	uint8_t wr[2] = { (uint8_t)(raw_ocp & 0xFF), (uint8_t)((raw_ocp >> 8) & 0xFF) };
+	if (!mp2971_i2c_write(cfg->port, cfg->target_addr, MP2971_MFR_OCP_TOTAL_SET,
+			      wr, sizeof(wr))) {
+		LOG_ERR("mp2971_set_total_ocp: write OCP_TOTAL_SET failed (bus=%u addr=0x%02X rail=%u reg=0x%02X)",
+			cfg->port, cfg->target_addr, rail, MP2971_MFR_OCP_TOTAL_SET);
+		return false;
+	}
+
+	LOG_INF("mp2971_set_total_ocp: rail=%u phase_code=0x%X phase_cnt=%u total_ocp=%u => ocp_code=%u",
+		rail, phase_code, phase_cnt, total_ocp, ocp_code);
+
+	return true;
+}
+
 bool mp2971_get_ovp_1(sensor_cfg *cfg, uint8_t rail, uint16_t *ovp_1_mv)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
@@ -1549,6 +1639,128 @@ bool mp2971_get_uvp(sensor_cfg *cfg, uint8_t rail, uint16_t *uvp_mv)
 		*uvp_mv = UINT16_MAX;
 	} else {
 		*uvp_mv = (uint16_t)uvp_calc;
+	}
+
+	return true;
+}
+
+#define OVP_UVP_MODE_REG 0x61
+#define OVP2_ACTION_MODE_MASK GENMASK(15, 14)
+#define OVP2_ACTION_MODE_SHIFT 14
+
+// bool mp2971_set_ovp2_action_mode(sensor_cfg *cfg, uint8_t rail, uint8_t *mode)
+// {
+// 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+
+// 	/*
+// 	 * MFR_OVP_UVP_MODE (0x61) bit[15:14] OVP2 action mode:
+// 	 *   0: No action      (2'b00)
+// 	 *   1: Latch-off mode (2'b01)
+// 	 */
+// 	if (mode != 0x0 && mode != 0x1) {
+// 		LOG_ERR("mp2971_set_ovp2_action_mode: invalid mode=%d (expect 0:NoAction 1:LatchOff)",
+// 			mode);
+// 		return false;
+// 	}
+
+// 	/* Read current 0x61 */
+// 	uint8_t data[2] = { 0 };
+// 	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, OVP_UVP_MODE_REG, data, sizeof(data))) {
+// 		LOG_ERR("mp2971_set_ovp2_action_mode: read failed");
+// 		return false;
+// 	}
+
+// 	uint16_t cur = (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+
+// 	/* Update only bit[15:14] */
+// 	uint16_t newv = (uint16_t)((cur & ~OVP2_ACTION_MODE_MASK) |
+// 				   (((uint16_t)mode << OVP2_ACTION_MODE_SHIFT) &
+// 				    OVP2_ACTION_MODE_MASK));
+
+// 	/* Write back */
+// 	data[0] = (uint8_t)(newv & 0xFF);
+// 	data[1] = (uint8_t)((newv >> 8) & 0xFF);
+
+// 	if (!mp2971_i2c_write(cfg->port, cfg->target_addr,
+// 			     OVP_UVP_MODE_REG, data, sizeof(data))) {
+// 		LOG_ERR("mp2971_set_ovp2_action_mode: write failed");
+// 		return false;
+// 	}
+
+// 	// LOG_INF("mp2971_set_ovp2_action_mode: rail=%u reg=0x61 cur=0x%04X new=0x%04X mode=%u",
+// 	// 	rail, cur, newv, (unsigned)mode);
+
+// 	return true;
+// }
+
+bool mp2971_set_ovp2_action_mode(sensor_cfg *cfg, uint8_t rail, uint8_t *mode)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(mode, false);
+
+	(void)rail;
+
+	/*
+	 * MFR_OVP_UVP_MODE (0x61) bit[15:14] OVP2 action mode:
+	 *   0: No action      (2'b00)
+	 *   1: Latch-off mode (2'b01)
+	 */
+	uint8_t m = *mode;
+	if (m != 0x0 && m != 0x1) {
+		LOG_ERR("mp2971_set_ovp2_action_mode: invalid mode=%d (expect 0:NoAction 1:LatchOff)",
+			(int)m);
+		return false;
+	}
+
+	uint8_t data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, OVP_UVP_MODE_REG, data, sizeof(data))) {
+		LOG_ERR("mp2971_set_ovp2_action_mode: read failed");
+		return false;
+	}
+
+	uint16_t cur = (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+
+	uint16_t newv = (uint16_t)((cur & (uint16_t)~OVP2_ACTION_MODE_MASK) |
+				   ((((uint16_t)m) << OVP2_ACTION_MODE_SHIFT) &
+				    OVP2_ACTION_MODE_MASK));
+
+	data[0] = (uint8_t)(newv & 0xFF);
+	data[1] = (uint8_t)((newv >> 8) & 0xFF);
+
+	if (!mp2971_i2c_write(cfg->port, cfg->target_addr, OVP_UVP_MODE_REG, data, sizeof(data))) {
+		LOG_ERR("mp2971_set_ovp2_action_mode: write failed");
+		return false;
+	}
+
+	return true;
+}
+
+bool mp2971_get_ovp2_action_mode(sensor_cfg *cfg, uint8_t rail, uint8_t *mode)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(mode, false);
+
+	uint8_t data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, OVP_UVP_MODE_REG, data, sizeof(data))) {
+		LOG_ERR("mp2971_get_ovp2_action_mode: read failed");
+		return false;
+	}
+
+	uint16_t regv = (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+	uint16_t field = (regv & OVP2_ACTION_MODE_MASK) >> OVP2_ACTION_MODE_SHIFT;
+
+	/*
+	 * MFR_OVP_UVP_MODE (0x61) bit[15:14] OVP2 action mode:
+	 *   0: No action      (2'b00)
+	 *   1: Latch-off mode (2'b01)
+	 *   others: Unknown/Reserved
+	 */
+	if (field == 0x0) {
+		*mode = 0x0; /* No action */
+	} else if (field == 0x1) {
+		*mode = 0x1; /* Latch-off mode */
+	} else {
+		*mode = 0xFF; /* Unknown/Reserved */
 	}
 
 	return true;

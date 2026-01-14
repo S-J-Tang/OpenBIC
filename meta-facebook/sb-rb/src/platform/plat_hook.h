@@ -205,6 +205,7 @@ enum VR_MP29816_REG_E {
 	TOTAL_OCP,
 	OVP_1,
 	OVP_2,
+	OVP_2_MODE,
 	VR_MP29816_SET_REG_MAX,
 };
 
@@ -231,6 +232,10 @@ typedef struct bootstrap_mapping_register {
 typedef struct bootstrap_user_settings_struct {
 	uint16_t user_setting_value[STRAP_INDEX_MAX];
 } bootstrap_user_settings_struct;
+
+#define OVP2_ACTION_NO_ACTION   0x00 /* 2'b00 */
+#define OVP2_ACTION_LATCH_OFF   0x01 /* 2'b01 */
+#define OVP2_ACTION_UNKNOWN     0xFF
 
 extern bootstrap_user_settings_struct bootstrap_user_settings;
 extern vr_vout_user_settings user_settings;

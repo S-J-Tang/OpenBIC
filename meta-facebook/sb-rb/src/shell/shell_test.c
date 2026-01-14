@@ -191,12 +191,99 @@ void cmd_info(const struct shell *shell, size_t argc, char **argv)
 	shell_warn(shell, "tray location: %d", tray_loc);
 }
 
+void cmd_mp2971_set_ocp(const struct shell *shell, size_t argc, char **argv)
+{
+	/* Usage: test mp2971_set_ocp <total_ocp> */
+	if (argc != 2) {
+		shell_warn(shell, "Usage: test mp2971_set_ocp <total_ocp>");
+		return;
+	}
+
+	uint16_t ocp_set = (uint16_t)strtoul(argv[1], NULL, 0);
+
+	/* Target rail for test */
+	uint8_t rail = VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD;
+
+	shell_print(shell, "MP2971 set TOTAL_OCP: rail=%u (%s), ocp_set=%u",
+		    rail, "VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD", ocp_set);
+
+	/* Write */
+	int ret = set_vr_mp2971_reg(rail, &ocp_set, TOTAL_OCP);
+	if (ret != 0) {
+		shell_warn(shell, "set_vr_mp2971_reg(TOTAL_OCP) failed, ret=%d", ret);
+		return;
+	}
+
+	/* Read back */
+	uint16_t ocp_rb = 0;
+	ret = get_vr_mp2971_reg(rail, &ocp_rb, TOTAL_OCP);
+	if (ret != 0) {
+		shell_warn(shell, "get_vr_mp2971_reg(TOTAL_OCP) failed, ret=%d", ret);
+		return;
+	}
+
+	shell_print(shell, "MP2971 TOTAL_OCP readback: %u", ocp_rb);
+}
+
+void cmd_mp2971_set_ovp2_mode(const struct shell *shell, size_t argc, char **argv)
+{
+	/* Usage: test mp2971_set_ovp2_mode <mode>
+	 * mode: 0=No action, 1=Latch-off
+	 */
+	if (argc != 2) {
+		shell_warn(shell, "Usage: test mp2971_set_ovp2_mode <mode(0:NoAction 1:LatchOff)>");
+		return;
+	}
+
+	uint16_t mode_u16 = (uint16_t)strtoul(argv[1], NULL, 0);
+
+	uint8_t rail = VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD;
+
+	int ret = set_vr_mp2971_reg(rail, &mode_u16, OVP_2_MODE);
+	if (ret != 0) {
+		shell_warn(shell, "set_vr_mp2971_reg(OVP_2_MODE) failed, ret=%d", ret);
+		return;
+	}
+
+	shell_print(shell, "MP2971 set OVP2 mode done: rail=%u mode=%u", rail, mode_u16);
+}
+
+void cmd_mp2971_get_ovp2_mode(const struct shell *shell, size_t argc, char **argv)
+{
+	/* Usage: test mp2971_get_ovp2_mode */
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	uint8_t rail = VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD;
+
+	uint16_t mode_u16 = 0xFFFF;
+	int ret = get_vr_mp2971_reg(rail, &mode_u16, OVP_2_MODE);
+	if (ret != 0) {
+		shell_warn(shell, "get_vr_mp2971_reg(OVP_2_MODE) failed, ret=%d", ret);
+		return;
+	}
+
+	const char *mode_str = "UNKNOWN";
+	if (mode_u16 == 0) {
+		mode_str = "NO_ACTION";
+	} else if (mode_u16 == 1) {
+		mode_str = "LATCH_OFF";
+	}
+
+	shell_print(shell, "MP2971 get OVP2 mode: rail=%u mode=%u (%s)", rail, mode_u16, mode_str);
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cpld_cmds, SHELL_CMD(dump, NULL, "cpld dump", cmd_cpld_dump),
 			       SHELL_CMD(write, NULL, "write cpld register", cmd_cpld_write),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_test_cmds, SHELL_CMD(test, NULL, "test command", cmd_test),
+	SHELL_CMD(mp2971_set_ocp, NULL, "set MP2971 TOTAL_OCP on OWL_W_TRVDD", cmd_mp2971_set_ocp),
+	SHELL_CMD(mp2971_get_ovp2_mode, NULL, "get MP2971 OVP2 action mode (0:NoAction 1:LatchOff)",
+	  cmd_mp2971_get_ovp2_mode),
+	SHELL_CMD(mp2971_set_ovp2_mode, NULL, "set MP2971 OVP2 action mode (0:NoAction 1:LatchOff)",
+		cmd_mp2971_set_ovp2_mode),
 	SHELL_CMD(read_raw, NULL, "read raw data test command", cmd_read_raw),
 	SHELL_CMD(read_info, NULL, "read sensor info test command", cmd_read_info),
 	SHELL_CMD(cpld, &sub_cpld_cmds, "cpld commands", NULL),
