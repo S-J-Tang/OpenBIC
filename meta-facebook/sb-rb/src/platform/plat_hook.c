@@ -1422,3 +1422,81 @@ err:
 	}
 	return ret;
 }
+
+int set_vr_mp2971_reg(uint8_t rail, uint16_t *set_data, uint8_t set_reg)
+{
+	CHECK_NULL_ARG_WITH_RETURN(set_data, false);
+
+	int ret = -1;
+	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+	sensor_cfg *cfg = set_sensor_cfg_by_sensor_id(sensor_id);
+	if (cfg == NULL) {
+		LOG_ERR("Failed to set sensor config for sensor 0x%x", sensor_id);
+		return false;
+	}
+	if (cfg->pre_sensor_read_hook) {
+		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
+			LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
+			goto err;
+		}
+	}
+
+	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)cfg->pre_sensor_read_args;
+
+	switch (set_reg) {
+	case UVP_THRESHOLD:
+		if (!mp2971_set_uvp(cfg, pre_proc_args->vr_page, set_data)) {
+			LOG_ERR("The VR mp2971 uvp threshold setting failed");
+			goto err;
+		}
+		break;
+	case VOUT_MAX:
+		if (!mp2971_set_vout_max(cfg, pre_proc_args->vr_page, set_data)) {
+			LOG_ERR("The VR mp2971 vout max setting failed");
+			goto err;
+		}
+		break;
+	case VOUT_COMMAND:
+		if (!mp2971_set_vout_command(cfg, pre_proc_args->vr_page, set_data)) {
+			LOG_ERR("The VR mp2971 vout max setting failed");
+			goto err;
+		}
+		break;
+	case VOUT_OFFSET:
+		if (!mp2971_set_vout_offset(cfg, set_data)) {
+			LOG_ERR("The VR mp2971 vout offset setting failed");
+			goto err;
+		}
+		break;
+	case TOTAL_OCP:
+		if (!mp2971_set_total_ocp(cfg, pre_proc_args->vr_page, set_data)) {
+			LOG_ERR("The VR mp2971 total ocp setting failed");
+			goto err;
+		}
+		break;
+	case OVP_1:
+		if (!mp2971_set_ovp_1(cfg, pre_proc_args->vr_page, set_data)) {
+			LOG_ERR("The VR mp2971 ovp 1 setting failed");
+			goto err;
+		}
+		break;
+	case OVP_2:
+		if (!mp2971_set_ovp_2(cfg, pre_proc_args->vr_page, set_data)) {
+			LOG_ERR("The VR mp2971 ovp 1 setting failed");
+			goto err;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupport VR mp29816a setting reg (%x)", cfg->type);
+		goto err;
+	}
+
+	ret = 0;
+err:
+	if (cfg->post_sensor_read_hook) {
+		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
+			LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
+		}
+	}
+	return ret;
+}
