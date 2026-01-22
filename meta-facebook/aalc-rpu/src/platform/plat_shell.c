@@ -416,11 +416,11 @@ static void cmd_pump_redundant_enable(const struct shell *shell, size_t argc, ch
 static void cmd_pump_redundant_switch_day_set(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t type = strtoul(argv[1], NULL, 10);
-	uint8_t time = strtoul(argv[2], NULL, 10);
+	uint16_t time = strtoul(argv[2], NULL, 10);
 
 	set_pump_redundant_switch_time_type(type);
 	set_pump_redundant_switch_time(time);
-	shell_warn(shell, "set pump redundant to %d %s", time, (type ? "hours" : "day"));
+	shell_warn(shell, "set pump redundant to %d %s", time, (type ? "minute" : "day"));
 }
 
 // modbus
