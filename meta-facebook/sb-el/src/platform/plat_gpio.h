@@ -28,10 +28,10 @@ void gpio_int_default();
 // Default name: Reserve_GPIOH0
 #define name_gpio0	\
 	gpio_name_to_num(FM_ASIC_0_THERMTRIP_R_N) \
-	gpio_name_to_num(RST_IRIS_PWR_ON_PLD_R1_N) \
-	gpio_name_to_num(Reserve_GPIO02) \
-	gpio_name_to_num(Reserve_GPIO03) \
-	gpio_name_to_num(Reserve_GPIO04) \
+	gpio_name_to_num(RST_ARKE_PWR_ON_PLD_R1_N) \
+	gpio_name_to_num(HAMSA_SW_EN) \
+	gpio_name_to_num(NUWA0_SW_EN) \
+	gpio_name_to_num(FM_OWL_E_JTAG_MUX_SEL_00) \
 	gpio_name_to_num(ALL_VR_PM_ALERT_R_N) \
 	gpio_name_to_num(SMB_HAMSA_MMC_LVC33_ALERT_N) \
 	gpio_name_to_num(FM_PLD_UBC_EN_R)
@@ -45,13 +45,13 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO16) \
 	gpio_name_to_num(Reserve_GPIO17)
 #define name_gpio2	\
-	gpio_name_to_num(Reserve_GPIO20) \
+	gpio_name_to_num(OWL_E_JTAG_MUX_PLD_SEL_02) \
 	gpio_name_to_num(Reserve_GPIO21) \
 	gpio_name_to_num(Reserve_GPIO22) \
 	gpio_name_to_num(Reserve_GPIO23) \
 	gpio_name_to_num(Reserve_GPIO24) \
 	gpio_name_to_num(Reserve_GPIO25) \
-	gpio_name_to_num(Reserve_GPIO26) \
+	gpio_name_to_num(NUWA1_CHIP_STRAP0_MMC) \
 	gpio_name_to_num(NUWA0_HBM_CATTRIP_MMC_LVC33_R_ALARM)
 #define name_gpio3	\
 	gpio_name_to_num(Reserve_GPIO30) \
@@ -92,7 +92,7 @@ void gpio_int_default();
 #define name_gpio7	\
 	gpio_name_to_num(Reserve_GPIO70) \
 	gpio_name_to_num(NC_SPI_HAMSA_CRM_MUX_IN1) \
-	gpio_name_to_num(Reserve_GPIO72) \
+	gpio_name_to_num(NOWA1_SW_EN) \
 	gpio_name_to_num(Reserve_GPIO73) \
 	gpio_name_to_num(GPIO74_STRAP_DSW_EN) \
 	gpio_name_to_num(GPIO75_STRAP_JEN_N) \
@@ -100,7 +100,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO77)
 #define name_gpio8	\
 	gpio_name_to_num(Reserve_GPIO80) \
-	gpio_name_to_num(I3C_RAINBOW_ALERT_R_N) \
+	gpio_name_to_num(I3C_Electra_ALERT_R_N) \
 	gpio_name_to_num(LED_MMC_HEARTBEAT_R) \
 	gpio_name_to_num(Reserve_GPIO83) \
 	gpio_name_to_num(Reserve_GPIO84) \
@@ -117,11 +117,11 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO96) \
 	gpio_name_to_num(Reserve_GPIO97)
 #define name_gpioA	\
-	gpio_name_to_num(NUWA0_CURRENT_SENSE_0_LS_LVC33_R) \
-	gpio_name_to_num(NUWA0_CURRENT_SENSE_1_LS_LVC33_R) \
+	gpio_name_to_num(NUWA0_PWR_CAP_LV1_LS_LVC33_R) \
+	gpio_name_to_num(Reserve_GPIOA1) \
 	gpio_name_to_num(Reserve_GPIOA2) \
-	gpio_name_to_num(NUWA1_CURRENT_SENSE_0_LS_LVC33_R) \
-	gpio_name_to_num(NUWA1_CURRENT_SENSE_1_LS_LVC33_R) \
+	gpio_name_to_num(NUWA1_PWR_CAP_LV1_LS_LVC33_R) \
+	gpio_name_to_num(Reserve_GPIOA4) \
 	gpio_name_to_num(Reserve_GPIOA5) \
 	gpio_name_to_num(Reserve_GPIOA6) \
 	gpio_name_to_num(Reserve_GPIOA7)
@@ -132,7 +132,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIOB3) \
 	gpio_name_to_num(Reserve_GPIOB4) \
 	gpio_name_to_num(Reserve_GPIOB5) \
-	gpio_name_to_num(Reserve_GPIOB6) \
+	gpio_name_to_num(NUWA0_CHIP_STRAP0_MMC) \
 	gpio_name_to_num(Reserve_GPIOB7)
 #define name_gpioC	\
 	gpio_name_to_num(Reserve_GPIOC0) \

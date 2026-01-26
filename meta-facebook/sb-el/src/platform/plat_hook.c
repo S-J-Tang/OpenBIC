@@ -125,11 +125,11 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 
 bool is_mb_dc_on()
 {
-	/* RST_IRIS_PWR_ON_PLD_R1_N is low active,
+	/* RST_ARKE_PWR_ON_PLD_R1_N is low active,
    * 1 -> power on
    * 0 -> power off
    */
-	return gpio_get(RST_IRIS_PWR_ON_PLD_R1_N);
+	return gpio_get(RST_ARKE_PWR_ON_PLD_R1_N);
 }
 
 void vr_mutex_init(void)
