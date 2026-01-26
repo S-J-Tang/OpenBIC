@@ -254,8 +254,8 @@ void cmd_adc_set_ucr(const struct shell *shell, size_t argc, char **argv)
 
 void cmd_adc_get_good_status(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_info(shell, "%02x %02x", get_adc_good_status(ADC_RB_IDX_NUWA0),
-		   get_adc_good_status(ADC_RB_IDX_NUWA1));
+	shell_info(shell, "%02x %02x", get_adc_good_status(ADC_EL_IDX_NUWA0),
+		   get_adc_good_status(ADC_EL_IDX_NUWA1));
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_poll_cmds,

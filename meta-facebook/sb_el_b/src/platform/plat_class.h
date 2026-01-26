@@ -19,7 +19,7 @@
 
 #include "stdint.h"
 
-enum RB_VR_VENDER_MODULE {
+enum EL_VR_VENDER_MODULE {
 	DELTA_UBC_AND_MPS_VR,
 	DELTA_UBC_AND_RNS_VR,
 	MPS_UBC_AND_MPS_VR,

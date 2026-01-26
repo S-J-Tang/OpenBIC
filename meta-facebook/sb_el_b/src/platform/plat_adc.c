@@ -199,11 +199,11 @@ static void update_adc_info(uint16_t raw_data, uint8_t base_idx, float vref)
 		adc->avg_val = adc->sum / adc->avg_times;
 		// voltage averge
 		float temp_voltage_value = 0;
-		if (base_idx == ADC_RB_IDX_NUWA0)
+		if (base_idx == ADC_EL_IDX_NUWA0)
 			temp_voltage_value = get_cached_sensor_reading_by_sensor_number(
 						     SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_VOLT_V) /
 					     1000.0;
-		else if (base_idx == ADC_RB_IDX_NUWA1)
+		else if (base_idx == ADC_EL_IDX_NUWA1)
 			temp_voltage_value = get_cached_sensor_reading_by_sensor_number(
 						     SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_VOLT_V) /
 					     1000.0;
@@ -321,10 +321,10 @@ int ads7066_read_reg(uint8_t reg, uint8_t idx, uint8_t *out_data)
 		.delay = 0, // No delay
 	};
 	switch (idx) {
-	case ADC_RB_IDX_NUWA0:
+	case ADC_EL_IDX_NUWA0:
 		// do nothing
 		break;
-	case ADC_RB_IDX_NUWA1:
+	case ADC_EL_IDX_NUWA1:
 		// Set GPIO73 as CS control pin SPI_ADC_CS1_N
 		cs_ctrl.gpio_dev = device_get_binding("GPIO_C");
 		cs_ctrl.gpio_pin = 1;
@@ -382,10 +382,10 @@ int ads7066_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx)
 		.delay = 0, // No delay
 	};
 	switch (idx) {
-	case ADC_RB_IDX_NUWA0:
+	case ADC_EL_IDX_NUWA0:
 		// do nothing
 		break;
-	case ADC_RB_IDX_NUWA1:
+	case ADC_EL_IDX_NUWA1:
 		// Set GPIO73 as CS control pin SPI_ADC_CS1_N
 		cs_ctrl.gpio_dev = device_get_binding("GPIO_C");
 		cs_ctrl.gpio_pin = 1;
@@ -434,10 +434,10 @@ static void ads7066_read_voltage(uint8_t idx)
 		.delay = 0, // No delay
 	};
 	switch (idx) {
-	case ADC_RB_IDX_NUWA0:
+	case ADC_EL_IDX_NUWA0:
 		// do nothing
 		break;
-	case ADC_RB_IDX_NUWA1:
+	case ADC_EL_IDX_NUWA1:
 		// Set GPIOC1 as CS control pin SPI_ADC_CS1_N
 		cs_ctrl.gpio_dev = device_get_binding("GPIO_C");
 		cs_ctrl.gpio_pin = 1;
@@ -477,12 +477,12 @@ static void ads7066_read_voltage(uint8_t idx)
 
 	LOG_HEXDUMP_DBG(out_buf, 3, "ads7066_read_voltage_value");
 	uint16_t raw_value = out_buf[0] << 8 | out_buf[1];
-	if (idx == ADC_RB_IDX_NUWA0) {
+	if (idx == ADC_EL_IDX_NUWA0) {
 		ads7066_val_0 = ((float)raw_value / 65536) * ads7066_vref;
-		update_adc_info(raw_value, ADC_RB_IDX_NUWA0, ads7066_vref);
-	} else if (idx == ADC_RB_IDX_NUWA1) {
+		update_adc_info(raw_value, ADC_EL_IDX_NUWA0, ads7066_vref);
+	} else if (idx == ADC_EL_IDX_NUWA1) {
 		ads7066_val_1 = ((float)raw_value / 65536) * ads7066_vref;
-		update_adc_info(raw_value, ADC_RB_IDX_NUWA1, ads7066_vref);
+		update_adc_info(raw_value, ADC_EL_IDX_NUWA1, ads7066_vref);
 	}
 
 	return;
@@ -503,11 +503,11 @@ int ad4058_read_reg(uint8_t reg, uint8_t idx, uint8_t *out_data)
 		.delay = 0, // No delay
 	};
 	switch (idx) {
-	case ADC_RB_IDX_NUWA0:
+	case ADC_EL_IDX_NUWA0:
 		// do nothing
 		cnv_pin = NUWA0_CNV;
 		break;
-	case ADC_RB_IDX_NUWA1:
+	case ADC_EL_IDX_NUWA1:
 		// Set GPIO73 as CS control pin SPI_ADC_CS1_N
 		cs_ctrl.gpio_dev = device_get_binding("GPIO_C");
 		cs_ctrl.gpio_pin = 1;
@@ -562,10 +562,10 @@ int ad4058_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx)
 		.delay = 0, // No delay
 	};
 	switch (idx) {
-	case ADC_RB_IDX_NUWA0:
+	case ADC_EL_IDX_NUWA0:
 		// do nothing
 		break;
-	case ADC_RB_IDX_NUWA1:
+	case ADC_EL_IDX_NUWA1:
 		// Set GPIO73 as CS control pin SPI_ADC_CS1_N
 		cs_ctrl.gpio_dev = device_get_binding("GPIO_C");
 		cs_ctrl.gpio_pin = 1;
@@ -619,11 +619,11 @@ static void ad4058_read_voltage(uint8_t idx)
 		.delay = 0, // No delay
 	};
 	switch (idx) {
-	case ADC_RB_IDX_NUWA0:
+	case ADC_EL_IDX_NUWA0:
 		// do nothing
 		cnv_pin = NUWA0_CNV;
 		break;
-	case ADC_RB_IDX_NUWA1:
+	case ADC_EL_IDX_NUWA1:
 		// Set GPIO73 as CS control pin SPI_ADC_CS1_N
 		cs_ctrl.gpio_dev = device_get_binding("GPIO_C");
 		cs_ctrl.gpio_pin = 1;
@@ -674,12 +674,12 @@ static void ad4058_read_voltage(uint8_t idx)
 	uint8_t low = (uint8_t)(((out_buf[1] & 0x0F) << 4) | (out_buf[2] >> 4));
 
 	uint16_t raw_value = (uint16_t)((high << 8) | low);
-	if (idx == ADC_RB_IDX_NUWA0) {
+	if (idx == ADC_EL_IDX_NUWA0) {
 		ad4058_val_0 = (float)raw_value / 65536 * ad4058_vref;
-		update_adc_info(raw_value, ADC_RB_IDX_NUWA0, ad4058_vref);
-	} else if (idx == ADC_RB_IDX_NUWA1) {
+		update_adc_info(raw_value, ADC_EL_IDX_NUWA0, ad4058_vref);
+	} else if (idx == ADC_EL_IDX_NUWA1) {
 		ad4058_val_1 = (float)raw_value / 65536 * ad4058_vref;
-		update_adc_info(raw_value, ADC_RB_IDX_NUWA1, ad4058_vref);
+		update_adc_info(raw_value, ADC_EL_IDX_NUWA1, ad4058_vref);
 	}
 
 	// set cnv_pin to high
@@ -692,7 +692,7 @@ void ads7066_mode_init()
 {
 	//set auto-sequence mode
 	// nuwa0 & nuwa1
-	for (int i = 0; i < ADC_RB_IDX_MAX; i++) {
+	for (int i = 0; i < ADC_EL_IDX_MAX; i++) {
 		ads7066_write_reg(0, 0x1, i);
 		// if electra board revid >= EVT1B, disable internal Volt reference
 		if (get_asic_board_id() == ASIC_BOARD_ID_RAINBOW &&
@@ -723,7 +723,7 @@ void ad4058_mode_init()
 		Averaging ratio: 256
 		3.33us * 256 = 0.8ms per sample
 	*/
-	for (int i = 0; i < ADC_RB_IDX_MAX; i++) {
+	for (int i = 0; i < ADC_EL_IDX_MAX; i++) {
 		// exit to config mode, check product id
 		ad4058_write_reg(0xA8, 0x00, i);
 		uint8_t value = 0;
@@ -754,12 +754,12 @@ void adc_electra_polling_handler(void *p1, void *p2, void *p3)
 			if (adc_poll_flag) {
 				switch (adc_idx_read) {
 				case ADI_AD4058:
-					ad4058_read_voltage(ADC_RB_IDX_NUWA0);
-					ad4058_read_voltage(ADC_RB_IDX_NUWA1);
+					ad4058_read_voltage(ADC_EL_IDX_NUWA0);
+					ad4058_read_voltage(ADC_EL_IDX_NUWA1);
 					break;
 				case TIC_ADS7066:
-					ads7066_read_voltage(ADC_RB_IDX_NUWA0);
-					ads7066_read_voltage(ADC_RB_IDX_NUWA1);
+					ads7066_read_voltage(ADC_EL_IDX_NUWA0);
+					ads7066_read_voltage(ADC_EL_IDX_NUWA1);
 					break;
 				default:
 					LOG_DBG("Invalid ADC index %d", adc_idx_read);

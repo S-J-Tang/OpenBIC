@@ -23,9 +23,9 @@ enum {
 };
 
 enum {
-	ADC_RB_IDX_NUWA0 = 0,
-	ADC_RB_IDX_NUWA1,
-	ADC_RB_IDX_MAX,
+	ADC_EL_IDX_NUWA0 = 0,
+	ADC_EL_IDX_NUWA1,
+	ADC_EL_IDX_MAX,
 };
 
 #define ADC_AVERGE_TIMES_MIN 1
