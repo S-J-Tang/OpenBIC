@@ -201,11 +201,11 @@ static void update_adc_info(uint16_t raw_data, uint8_t base_idx, float vref)
 		float temp_voltage_value = 0;
 		if (base_idx == ADC_RB_IDX_NUWA0)
 			temp_voltage_value = get_cached_sensor_reading_by_sensor_number(
-						     SENSOR_NUM_ASIC_P0V85_NUWA0_VDD_VOLT_V) /
+						     SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_VOLT_V) /
 					     1000.0;
 		else if (base_idx == ADC_RB_IDX_NUWA1)
 			temp_voltage_value = get_cached_sensor_reading_by_sensor_number(
-						     SENSOR_NUM_ASIC_P0V85_NUWA1_VDD_VOLT_V) /
+						     SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_VOLT_V) /
 					     1000.0;
 		// transfer to uint16_t
 		uint16_t voltage_packed = float_voltage_transfer_to_uint16(temp_voltage_value);
@@ -236,10 +236,10 @@ static void update_vr_base_power_info()
 	uint16_t val_nuwa0 = 0;
 	uint16_t val_nuwa1 = 0;
 	int_value =
-		get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_ASIC_P0V85_NUWA0_VDD_PWR_W);
+		get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W);
 	val_nuwa0 = (int_value + 500) / 1000;
 	int_value =
-		get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_ASIC_P0V85_NUWA1_VDD_PWR_W);
+		get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W);
 	val_nuwa1 = (int_value + 500) / 1000;
 
 	for (uint8_t i = 0; i < ADC_IDX_MAX; i++) {

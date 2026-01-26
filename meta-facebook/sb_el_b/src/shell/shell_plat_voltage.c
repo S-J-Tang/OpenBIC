@@ -112,8 +112,8 @@ static int cmd_voltage_set(const struct shell *shell, size_t argc, char **argv)
 	// if vr is MPS, read back uvp and keep it >= 200mv
 	uint8_t vr = get_vr_module();
 	if (vr == VR_MODULE_MPS) {
-		if (rail == VR_RAIL_E_ASIC_P0V85_NUWA0_VDD ||
-		    rail == VR_RAIL_E_ASIC_P0V85_NUWA1_VDD) {
+		if (rail == VR_RAIL_E_ASIC_P0V75_NUWA0_VDD ||
+		    rail == VR_RAIL_E_ASIC_P0V75_NUWA1_VDD) {
 			uint16_t uvp = 0;
 			uint16_t vout_offset = 0;
 			if (get_vr_mp29816a_reg(rail, &vout_offset, VOUT_OFFSET)) {

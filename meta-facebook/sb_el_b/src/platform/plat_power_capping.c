@@ -45,10 +45,10 @@ static power_capping_info_t power_capping_info = { 0 };
 static const uint16_t cpld_lv1_time_window_list[CPLD_LV1_TIME_WINDOW_NUM] = { 0,  1,  3,  5,
 									      10, 15, 20, 50 };
 static uint8_t prev_set_ucr_status = 0;
-const static uint8_t volt_sensor_id_list[2] = { SENSOR_NUM_ASIC_P0V85_NUWA0_VDD_VOLT_V,
-						SENSOR_NUM_ASIC_P0V85_NUWA1_VDD_VOLT_V };
-const static uint8_t powr_sensor_id_list[2] = { SENSOR_NUM_ASIC_P0V85_NUWA0_VDD_PWR_W,
-						SENSOR_NUM_ASIC_P0V85_NUWA1_VDD_PWR_W };
+const static uint8_t volt_sensor_id_list[2] = { SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_VOLT_V,
+						SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_VOLT_V };
+const static uint8_t powr_sensor_id_list[2] = { SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W,
+						SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W };
 
 K_WORK_DELAYABLE_DEFINE(sync_vr_oc_work, power_capping_syn_vr_oc_warn_limit);
 
