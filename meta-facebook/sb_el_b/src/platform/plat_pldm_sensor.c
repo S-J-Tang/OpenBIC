@@ -12254,42 +12254,42 @@ PDR_numeric_sensor *get_pdr_numeric_sensor_by_sensor_id(uint8_t sensor_id)
 }
 
 #define SENSOR_CFG_NO_CHANGE 0xFF
-static void change_sensor_cfg_from_thread(uint8_t thread, uint8_t type, uint8_t addr,
-					  void *init_args, uint8_t change_flag)
-{
-	pldm_sensor_info *table = plat_pldm_sensor_load(thread);
-	if (table == NULL)
-		return;
+// static void change_sensor_cfg_from_thread(uint8_t thread, uint8_t type, uint8_t addr,
+// 					  void *init_args, uint8_t change_flag)
+// {
+// 	pldm_sensor_info *table = plat_pldm_sensor_load(thread);
+// 	if (table == NULL)
+// 		return;
 
-	int count = plat_pldm_sensor_get_sensor_count(thread);
-	if (count < 0)
-		return;
+// 	int count = plat_pldm_sensor_get_sensor_count(thread);
+// 	if (count < 0)
+// 		return;
 
-	for (uint8_t j = 0; j < count; j++) {
-		if (type != SENSOR_CFG_NO_CHANGE)
-			table[j].pldm_sensor_cfg.type = type;
-		if (addr != SENSOR_CFG_NO_CHANGE)
-			table[j].pldm_sensor_cfg.target_addr = addr;
-		if (init_args != NULL)
-			table[j].pldm_sensor_cfg.init_args = init_args;
+// 	for (uint8_t j = 0; j < count; j++) {
+// 		if (type != SENSOR_CFG_NO_CHANGE)
+// 			table[j].pldm_sensor_cfg.type = type;
+// 		if (addr != SENSOR_CFG_NO_CHANGE)
+// 			table[j].pldm_sensor_cfg.target_addr = addr;
+// 		if (init_args != NULL)
+// 			table[j].pldm_sensor_cfg.init_args = init_args;
 
-		// if change_flag is true, change UBC1 address
-		if (change_flag) {
-			if (table[j].pldm_sensor_cfg.num >= SENSOR_NUM_UBC1_P12V_TEMP_C &&
-			    table[j].pldm_sensor_cfg.num <= SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V) {
-				table[j].pldm_sensor_cfg.target_addr = ADDR_UNKNOWN;
-				LOG_INF("change UBC1 sensors 0x%x address to 0x%x",
-					table[j].pldm_sensor_cfg.num,
-					table[j].pldm_sensor_cfg.target_addr);
-			}
-		}
-	}
-}
+// 		// if change_flag is true, change UBC1 address
+// 		if (change_flag) {
+// 			if (table[j].pldm_sensor_cfg.num >= SENSOR_NUM_UBC1_P12V_TEMP_C &&
+// 			    table[j].pldm_sensor_cfg.num <= SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V) {
+// 				table[j].pldm_sensor_cfg.target_addr = ADDR_UNKNOWN;
+// 				LOG_INF("change UBC1 sensors 0x%x address to 0x%x",
+// 					table[j].pldm_sensor_cfg.num,
+// 					table[j].pldm_sensor_cfg.target_addr);
+// 			}
+// 		}
+// 	}
+// }
 
 void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_module,
 		       uint8_t board_rev_id)
 {
-	uint8_t ubc1_change_flag = 0;
+	// uint8_t ubc1_change_flag = 0;
 	uint8_t vr_change_mode = OLD_MPS;
 	/*
 	When changing the address version, you first need to check the board type (EVB or Electra), and then check the board revision ID.
@@ -12347,25 +12347,25 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_mod
 		}
 	}
 
-	// UBC check newer than FAB2
-	if (board_rev_id >= REV_ID_EVT1B) {
-		// PU82 0x14 -> 0x17
-		ubc1_change_flag = 1;
-	}
-	// ubc sensor, default: UBC_MODULE_DELTA
-	if (ubc_module == UBC_MODULE_MPS)
-		change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_mpc12109,
-					      SENSOR_CFG_NO_CHANGE, &mpc12109_init_args[0],
-					      ubc1_change_flag);
-	else if (ubc_module == UBC_MODULE_FLEX)
-		change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_bmr316,
-					      SENSOR_CFG_NO_CHANGE, NULL, ubc1_change_flag);
-	else if (ubc_module == UBC_MODULE_LUXSHARE)
-		change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_lx6301,
-					      SENSOR_CFG_NO_CHANGE, NULL, ubc1_change_flag);
-	else if (ubc_module == UBC_MODULE_DELTA)
-		change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_u50su4p180pmdafc,
-					      SENSOR_CFG_NO_CHANGE, NULL, ubc1_change_flag);
+	// // UBC check newer than FAB2
+	// if (board_rev_id >= REV_ID_EVT1B) {
+	// 	// PU82 0x14 -> 0x17
+	// 	ubc1_change_flag = 1;
+	// }
+	// // ubc sensor, default: UBC_MODULE_DELTA
+	// if (ubc_module == UBC_MODULE_MPS)
+	// 	change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_mpc12109,
+	// 				      SENSOR_CFG_NO_CHANGE, &mpc12109_init_args[0],
+	// 				      ubc1_change_flag);
+	// else if (ubc_module == UBC_MODULE_FLEX)
+	// 	change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_bmr316,
+	// 				      SENSOR_CFG_NO_CHANGE, NULL, ubc1_change_flag);
+	// else if (ubc_module == UBC_MODULE_LUXSHARE)
+	// 	change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_lx6301,
+	// 				      SENSOR_CFG_NO_CHANGE, NULL, ubc1_change_flag);
+	// else if (ubc_module == UBC_MODULE_DELTA)
+	// 	change_sensor_cfg_from_thread(UBC_SENSOR_THREAD_ID, sensor_dev_u50su4p180pmdafc,
+	// 				      SENSOR_CFG_NO_CHANGE, NULL, ubc1_change_flag);
 }
 
 bool is_dc_access(uint8_t sensor_num)
