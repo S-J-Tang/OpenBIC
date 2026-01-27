@@ -25,6 +25,7 @@
 #include "plat_i2c.h"
 #include "plat_util.h"
 #include "plat_mctp.h"
+#include "plat_hook.h"
 
 LOG_MODULE_REGISTER(plat_class);
 
@@ -120,6 +121,7 @@ void init_plat_config()
 	// cpld fru offset 0x3FF: tray location
 	plat_cpld_eerprom_read(&tray_location, 1023, 1);
 	LOG_INF("init_plat_eid: 0x%x", init_plat_eid);
+	plat_ubc_otw_otp_init();
 }
 
 uint8_t get_vr_module()
