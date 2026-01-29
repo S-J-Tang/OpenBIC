@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(raa228249);
 
 #define raa228249_READ_VOUT_RESOLUTION 0.001
 #define raa228249_READ_IOUT_RESOLUTION 0.1
+#define raa228249_READ_VIN_RESOLUTION 0.01
 
 // RAA GEN3p5
 #define VR_RAA_REG_REMAIN_WR 0x35
@@ -518,6 +519,40 @@ bool raa228249_set_vout_command(sensor_cfg *cfg, uint8_t rail, uint16_t *millivo
 	return true;
 }
 
+bool raa228249_get_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t *value)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(value, false);
+
+	uint8_t data[2] = { 0 };
+	if (!raa228249_i2c_read(cfg->port, cfg->target_addr, PMBUS_IOUT_OC_WARN_LIMIT, data,
+				sizeof(data))) {
+		return false;
+	}
+
+	// 1 unit = 0.1A
+	*value = (data[0] | (data[1] << 8)) * 0.1;
+	return true;
+}
+
+bool raa228249_set_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t value)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+
+	/* input value unit: 1A */
+	uint8_t data[2] = { 0 };
+	uint16_t cal_value = value * 10;
+	data[0] = cal_value & 0xFF;
+	data[1] = cal_value >> 8;
+
+	if (!raa228249_i2c_write(cfg->port, cfg->target_addr, PMBUS_IOUT_OC_WARN_LIMIT, data,
+				 sizeof(data))) {
+		return false;
+	}
+
+	return true;
+}
+
 bool raa228249_get_vr_status(sensor_cfg *cfg, uint8_t rail, uint8_t vr_status_rail,
 			     uint16_t *vr_status)
 {
@@ -652,6 +687,11 @@ uint8_t raa228249_read(sensor_cfg *cfg, int *reading)
 		/* 2's complement */
 		int16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = read_value * raa228249_READ_IOUT_RESOLUTION;
+
+	} else if (cfg->offset == PMBUS_READ_VIN) {
+		/* 2's complement */
+		int16_t read_value = (msg.data[1] << 8) | msg.data[0];
+		val = read_value * raa228249_READ_VIN_RESOLUTION;
 
 	} else {
 		return SENSOR_FAIL_TO_ACCESS;

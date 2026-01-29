@@ -58,6 +58,16 @@ __weak void plat_pldm_sensor_post_load_init(int thread_id)
 	return;
 }
 
+__weak void plat_pldm_sensor_poll_post()
+{
+	return;
+}
+
+__weak void plat_pldm_sensor_change_poll_interval(int thread_id, uint32_t *poll_interval_ms)
+{
+	return;
+}
+
 bool pldm_sensor_is_interval_ready(pldm_sensor_info *pldm_sensor_list)
 {
 	CHECK_NULL_ARG_WITH_RETURN(pldm_sensor_list, false);
@@ -298,7 +308,10 @@ void pldm_sensor_get_reading(sensor_cfg *pldm_sensor_cfg, uint32_t *update_time,
 	if (pldm_sensor_cfg->post_sensor_read_hook) {
 		if (!pldm_sensor_cfg->post_sensor_read_hook(
 			    pldm_sensor_cfg, pldm_sensor_cfg->post_sensor_read_args, &reading)) {
-			pldm_sensor_cfg->cache_status = PLDM_SENSOR_FAILED;
+			if (pldm_sensor_cfg->cache_status == SENSOR_OPEN_CIRCUIT)
+				pldm_sensor_cfg->cache_status = PLDM_SENSOR_OPEN_CIRCUIT;
+			else
+				pldm_sensor_cfg->cache_status = PLDM_SENSOR_FAILED;
 			*update_time_ms = k_uptime_get_32();
 			*update_time = (*update_time_ms / 1000);
 			LOG_DBG("Failed to pose read sensor_num 0x%x of thread %d", sensor_num,
@@ -412,6 +425,7 @@ void pldm_sensor_polling_handler(void *arug0, void *arug1, void *arug2)
 	int thread_id = (int)arug0;
 	int pldm_sensor_count = 0;
 	uint32_t poll_interval_ms = PLDM_SENSOR_POLL_TIME_DEFAULT_MS;
+	uint8_t is_need_check = false;
 
 	pldm_sensor_count = plat_pldm_sensor_get_sensor_count(thread_id);
 	if (pldm_sensor_count <= 0) {
@@ -430,6 +444,8 @@ void pldm_sensor_polling_handler(void *arug0, void *arug1, void *arug2)
 		poll_interval_ms = pldm_sensor_thread_list[thread_id].poll_interval_ms;
 	}
 
+	is_need_check = pldm_sensor_thread_list[thread_id].still_check_interval == 0 ? false : true;
+
 	plat_pldm_sensor_post_load_init(thread_id);
 
 	while (1) {
@@ -438,6 +454,8 @@ void pldm_sensor_polling_handler(void *arug0, void *arug1, void *arug2)
 			k_msleep(poll_interval_ms);
 			continue;
 		}
+		// Dynamic change polling interval
+		plat_pldm_sensor_change_poll_interval(thread_id, &poll_interval_ms);
 
 		for (sensor_num = 0; sensor_num < pldm_sensor_count; sensor_num++) {
 			if (get_sensor_poll_enable_flag() == false) {
@@ -447,7 +465,8 @@ void pldm_sensor_polling_handler(void *arug0, void *arug1, void *arug2)
 			if (pldm_sensor_thread_list[thread_id].poll_interval_ms != 0) {
 				if (pldm_polling_sensor_reading_optional_check(
 					    &pldm_sensor_list[thread_id][sensor_num],
-					    pldm_sensor_count, thread_id, sensor_num, false) != 0) {
+					    pldm_sensor_count, thread_id, sensor_num,
+					    is_need_check) != 0) {
 					continue;
 				}
 			} else {
@@ -458,7 +477,7 @@ void pldm_sensor_polling_handler(void *arug0, void *arug1, void *arug2)
 				}
 			}
 		}
-
+		plat_pldm_sensor_poll_post();
 		k_msleep(poll_interval_ms);
 	}
 }
