@@ -3,7 +3,7 @@
 };
 
 &adc0 {
-    status = "ok";
+    status = "disabled";
 };
 
 &uart0 {

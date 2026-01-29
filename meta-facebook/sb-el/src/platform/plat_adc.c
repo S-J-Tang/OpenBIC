@@ -189,6 +189,7 @@ void adc_polling_handler(void *p1, void *p2, void *p3)
 
 void plat_adc_init(void)
 {
+	return;
 	for (uint8_t i = 0; i < ADC_IDX_MAX; i++) {
 		k_work_init(&adc_info[i].ucr_work, adc_ucr_work_handler);
 	}
