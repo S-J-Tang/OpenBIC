@@ -37,22 +37,22 @@ plat_sensor_reading *sensor_reading_table[DATA_TABLE_LENGTH_4] = { NULL };
 /* I2C target init-enable table */
 const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
-	TARGET_DISABLE, TARGET_ENABLE,	TARGET_DISABLE, TARGET_DISABLE,
+	TARGET_DISABLE, TARGET_ENABLE,	TARGET_ENABLE, TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 };
 
-static bool command_reply_data_handle(void *arg)
-{
-	/*TODO: put board telemetry here*/
+// static bool command_reply_data_handle(void *arg)
+// {
+// 	/*TODO: put board telemetry here*/
 
-	return false;
-}
+// 	return false;
+// }
 
 /* I2C target init-config table */
 const struct _i2c_target_config I2C_TARGET_CONFIG_TABLE[MAX_TARGET_NUM] = {
 	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0xFF, 0xA },
-	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0x40, 0xA, command_reply_data_handle },
-	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0xFF, 0xA },
+	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0x42, 0xA },
+	{ 0x40, 0xA }, { 0xFF, 0xA }, { 0xFF, 0xA },
 	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0xFF, 0xA },
 };
 #define SENSOR_READING_PDR_INDEX_MAX 50

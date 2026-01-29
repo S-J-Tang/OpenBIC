@@ -40,7 +40,7 @@
 LOG_MODULE_REGISTER(plat_mctp);
 
 /* i2c 8 bit address */
-#define I2C_ADDR_BIC 0x40
+#define I2C_ADDR_BIC 0x42
 #define I2C_ADDR_BMC 0x20
 
 /* i2c dev bus */
@@ -167,18 +167,21 @@ void plat_mctp_init(void)
 
 		LOG_DBG("mctp_inst = %p", p->mctp_inst);
 
-		uint8_t rc;
-		if (p->conf.i3c_conf.bus == I3C_BUS_BMC) {
-			// Slave (i3c5)More actions
-			rc = mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_SMBUS,
-						       p->conf);
-			LOG_DBG("MCTP medium type for slave: %s",
-				(rc == MCTP_SUCCESS) ? "success" : "failed");
-		} else {
-			LOG_ERR("Unknown I3C Bus number!");
-			continue;
-		}
-
+		// uint8_t rc;
+		// if (p->conf.i3c_conf.bus == I3C_BUS_BMC) {
+		// 	// Slave (i3c5)More actions
+		// 	rc = mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_SMBUS,
+		// 				       p->conf);
+		// 	LOG_DBG("MCTP medium type for slave: %s",
+		// 		(rc == MCTP_SUCCESS) ? "success" : "failed");
+		// } else {
+		// 	LOG_ERR("Unknown I3C Bus number!");
+		// 	continue;
+		// }
+		uint8_t rc =
+			mctp_set_medium_configure(p->mctp_inst, MCTP_MEDIUM_TYPE_SMBUS, p->conf);
+		LOG_DBG("mctp_set_medium_configure %s",
+			(rc == MCTP_SUCCESS) ? "success" : "failed");
 		// mctp_reg_endpoint_resolve_func(p->mctp_inst, get_mctp_route_info);
 		mctp_reg_msg_rx_func(p->mctp_inst, mctp_msg_recv);
 		mctp_start(p->mctp_inst);
