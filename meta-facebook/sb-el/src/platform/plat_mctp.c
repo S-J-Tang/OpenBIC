@@ -204,3 +204,9 @@ uint8_t plat_get_eid()
 	// mmc slot 1-4 * 0x0A
 	return ((get_mmc_slot() + 1) * MCTP_DEFAULT_ENDPOINT);
 }
+
+void plat_set_eid(uint8_t slot_eid)
+{
+	plat_eid = slot_eid;
+	LOG_WRN("set eid to %d", plat_eid);
+}

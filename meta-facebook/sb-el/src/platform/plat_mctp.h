@@ -49,5 +49,6 @@ struct mctp_to_ipmi_sel_resp {
 /* init the mctp moduel for platform */
 void plat_mctp_init(void);
 void plat_i3c_set_pid(void);
+void plat_set_eid(uint8_t slot_eid);
 
 #endif /* _PLAT_MCTP_h */

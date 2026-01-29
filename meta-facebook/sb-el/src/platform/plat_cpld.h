@@ -5,9 +5,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#define CPLD_OFFSET_BOARD_REV_ID 0x14
 #define CPLD_OFFSET_VR_VENDER_TYPE 0x15
 #define CPLD_OFFSET_POWER_CLAMP 0x25
 #define CPLD_OFFSET_USERCODE 0x32
+#define CPLD_OFFSET_ASIC_BOARD_ID 0x3C
 
 typedef struct _cpld_info_ cpld_info;
 

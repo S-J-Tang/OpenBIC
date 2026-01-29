@@ -24,3 +24,20 @@
 #define TARGET_DISABLE 0
 
 #endif
+
+typedef struct __attribute__((__packed__)) {
+	uint8_t sensor_index_offset; // Sensor index offset (e.g. PDR sensor index offset)
+	uint32_t sensor_value; // Sensor value (4 bytes)
+} sensor_entry;
+
+typedef struct __attribute__((__packed__)) {
+	uint8_t device_type; // Device type (Aegis = 0x01, Rainbow = 0x02)
+	uint8_t register_layout_version; // Register layout version (e.g. VERSION_1 = 0x01)
+	uint16_t sensor_base_index; // Sensor base index (SBI)
+	uint8_t max_sbi_off; // Max sensor base index offset in this register (0 <= MAX_SBI_OFF <= 49)
+	// The following is a flexible array of sensor entries.
+	// The number of entries is (max_sbi_off + 1)
+	sensor_entry sensor_entries[];
+} plat_sensor_reading;
+
+void update_sensor_reading_by_sensor_number(uint8_t sensor_number);
