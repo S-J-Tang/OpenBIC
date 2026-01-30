@@ -22,6 +22,7 @@
 #include "fru.h"
 #include "plat_fru.h"
 #include <time.h>
+#include "plat_class.h"
 
 LOG_MODULE_REGISTER(plat_fru);
 
@@ -51,38 +52,6 @@ const EEPROM_CFG plat_fru_config[] = {
 		CPLD_FRU_SIZE,
 	},
 };
-
-#define CHASSIS_CUSTOM_DATA_MAX 24
-#define BOARD_CUSTOM_DATA_MAX 4
-
-typedef struct {
-	uint8_t chassis_type;
-	char chassis_part_number[32];
-	char chassis_serial_number[32];
-	char chassis_custom_data[CHASSIS_CUSTOM_DATA_MAX][32];
-} ChassisInfo;
-
-typedef struct {
-	uint8_t language;
-	char board_mfg_date[32];
-	char board_mfg[32];
-	char board_product[32];
-	char board_serial[32];
-	char board_part_number[32];
-	char board_fru_id[32];
-	char board_custom_data[BOARD_CUSTOM_DATA_MAX][32];
-} BoardInfo;
-
-typedef struct {
-	uint8_t language;
-	char product_manufacturer[32];
-	char product_name[32];
-	char product_part_number[32];
-	char product_version[32];
-	char product_serial[32];
-	char product_asset_tag[32];
-	char product_fru_id[32];
-} ProductInfo;
 
 void pal_load_fru_config(void)
 {
@@ -177,24 +146,19 @@ bool plat_get_cpld_fru_data(uint8_t *data)
 
 	const uint32_t total_size = CPLD_FRU_SIZE; // 0x0400
 	const uint32_t chunk_size = 0x80; // 0x80 bytes per read
-	uint32_t offset = 0;
+	uint32_t offset = 1; // fru header is start at offset 1 (0 is slot id)
 
-	while (offset < total_size) {
-		if (!plat_cpld_fru_read(CPLD_FRU_START + offset, data + offset, chunk_size)) {
+	while (offset < total_size + 1) {
+		uint32_t bytes_to_read = MIN(chunk_size, total_size + 1 - offset);
+		if (!plat_cpld_eerprom_read(data + (offset - 1), offset, bytes_to_read)) {
 			LOG_ERR("Failed to read FRU chunk at offset 0x%x", offset);
 			return false;
 		}
-		offset += chunk_size;
+		offset += bytes_to_read;
 	}
 
 	return true;
 }
-
-typedef struct {
-	ChassisInfo chassis;
-	BoardInfo board;
-	ProductInfo product;
-} FRU_INFO;
 
 FRU_INFO *plat_fru_info = NULL;
 
@@ -532,4 +496,9 @@ void print_fru_info(void)
 	printf("  Product Asset Tag: %s\n", plat_fru_info->product.product_asset_tag);
 	printf("  Product FRU ID: %s\n", plat_fru_info->product.product_fru_id);
 	printf("\n");
+}
+
+FRU_INFO *get_fru_info(void)
+{
+	return plat_fru_info;
 }

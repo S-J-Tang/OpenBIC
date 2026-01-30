@@ -43,7 +43,7 @@ void pal_pre_init()
 	init_plat_config();
 	plat_led_init();
 	vr_mutex_init();
-	plat_i3c_set_pid();
+	// plat_i3c_set_pid();
 }
 
 void pal_set_sys_status()
