@@ -39,5 +39,7 @@ bool plat_read_cpld(uint8_t offset, uint8_t *data, uint8_t len);
 bool plat_write_cpld(uint8_t offset, uint8_t *data);
 void init_cpld_polling(void);
 void check_cpld_polling_alert_status(void);
+void get_cpld_polling_power_info(int *reading);
+void set_cpld_polling_enable_flag(bool status);
 
 #endif
