@@ -42,10 +42,10 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO13) \
 	gpio_name_to_num(Reserve_GPIO14) \
 	gpio_name_to_num(Reserve_GPIO15) \
-	gpio_name_to_num(Reserve_GPIO16) \
+	gpio_name_to_num(NUWA1_CHIP_STRAP1_MMC) \
 	gpio_name_to_num(Reserve_GPIO17)
 #define name_gpio2	\
-	gpio_name_to_num(OWL_E_JTAG_MUX_PLD_SEL_02) \
+	gpio_name_to_num(FM_OWL_E_JTAG_MUX_SEL_02) \
 	gpio_name_to_num(Reserve_GPIO21) \
 	gpio_name_to_num(Reserve_GPIO22) \
 	gpio_name_to_num(Reserve_GPIO23) \
@@ -92,15 +92,15 @@ void gpio_int_default();
 #define name_gpio7	\
 	gpio_name_to_num(Reserve_GPIO70) \
 	gpio_name_to_num(NC_SPI_HAMSA_CRM_MUX_IN1) \
-	gpio_name_to_num(NOWA1_SW_EN) \
-	gpio_name_to_num(Reserve_GPIO73) \
+	gpio_name_to_num(NUWA1_SW_EN) \
+	gpio_name_to_num(SPI_ADC_CS0_N) \
 	gpio_name_to_num(GPIO74_STRAP_DSW_EN) \
 	gpio_name_to_num(GPIO75_STRAP_JEN_N) \
 	gpio_name_to_num(Reserve_GPIO76) \
 	gpio_name_to_num(Reserve_GPIO77)
 #define name_gpio8	\
 	gpio_name_to_num(Reserve_GPIO80) \
-	gpio_name_to_num(I3C_Electra_ALERT_R_N) \
+	gpio_name_to_num(I3C_RAINBOW_ALERT_R_N) \
 	gpio_name_to_num(LED_MMC_HEARTBEAT_R) \
 	gpio_name_to_num(Reserve_GPIO83) \
 	gpio_name_to_num(Reserve_GPIO84) \
@@ -117,10 +117,10 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO96) \
 	gpio_name_to_num(Reserve_GPIO97)
 #define name_gpioA	\
-	gpio_name_to_num(NUWA0_PWR_CAP_LV1_LS_LVC33_R) \
+	gpio_name_to_num(NUWA0_PWR_CAP_LV1_LVC33) \
 	gpio_name_to_num(Reserve_GPIOA1) \
 	gpio_name_to_num(Reserve_GPIOA2) \
-	gpio_name_to_num(NUWA1_PWR_CAP_LV1_LS_LVC33_R) \
+	gpio_name_to_num(NUWA1_PWR_CAP_LV1_LVC33) \
 	gpio_name_to_num(Reserve_GPIOA4) \
 	gpio_name_to_num(Reserve_GPIOA5) \
 	gpio_name_to_num(Reserve_GPIOA6) \
@@ -128,19 +128,19 @@ void gpio_int_default();
 #define name_gpioB	\
 	gpio_name_to_num(RSVD_GPIO_1) \
 	gpio_name_to_num(Reserve_GPIOB1) \
-	gpio_name_to_num(Reserve_GPIOB2) \
-	gpio_name_to_num(Reserve_GPIOB3) \
+	gpio_name_to_num(NUWA0_CHIP_STRAP1_MMC) \
+	gpio_name_to_num(FM_OWL_E_JTAG_MUX_SEL_01) \
 	gpio_name_to_num(Reserve_GPIOB4) \
 	gpio_name_to_num(Reserve_GPIOB5) \
 	gpio_name_to_num(NUWA0_CHIP_STRAP0_MMC) \
 	gpio_name_to_num(Reserve_GPIOB7)
 #define name_gpioC	\
 	gpio_name_to_num(Reserve_GPIOC0) \
-	gpio_name_to_num(Reserve_GPIOC1) \
+	gpio_name_to_num(SPI_ADC_CS1_N) \
 	gpio_name_to_num(Reserve_GPIOC2) \
 	gpio_name_to_num(Reserve_GPIOC3) \
-	gpio_name_to_num(Reserve_GPIOC4) \
-	gpio_name_to_num(Reserve_GPIOC5) \
+	gpio_name_to_num(NUWA0_CNV) \
+	gpio_name_to_num(NUWA1_CNV) \
 	gpio_name_to_num(Reserve_GPIOC6) \
 	gpio_name_to_num(Reserve_GPIOC7)
 #define name_gpioD	\
