@@ -57,7 +57,7 @@ void pal_post_init()
 	init_fru_info();
 	uint8_t data = 0;
 	plat_write_cpld(CPLD_OFFSET_POWER_CLAMP, &data);
-	plat_adc_init();
+	plat_adc_electra_init();
 	init_load_eeprom_log();
 	init_cpld_polling();
 }
