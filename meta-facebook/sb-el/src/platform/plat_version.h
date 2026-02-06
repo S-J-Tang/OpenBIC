@@ -20,7 +20,7 @@
 #include "version.h"
 
 #define PLATFORM_NAME "SantaBrabara"
-#define PROJECT_NAME "Rainbow"
+#define PROJECT_NAME "Electra"
 #define PROJECT_STAGE POC
 
 #define BOARD_ID 0x01
@@ -40,7 +40,7 @@
 #define BIC_FW_WEEK 0x26
 #define BIC_FW_VER 0x01
 #define BIC_FW_platform_0 0x73 // char: s
-#define BIC_FW_platform_1 0x72 // char: r
+#define BIC_FW_platform_1 0x65 // char: e
 #define BIC_FW_platform_2 0x00 // char: '\0'
 
 #endif

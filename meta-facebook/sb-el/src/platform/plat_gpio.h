@@ -100,7 +100,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO77)
 #define name_gpio8	\
 	gpio_name_to_num(Reserve_GPIO80) \
-	gpio_name_to_num(I3C_RAINBOW_ALERT_R_N) \
+	gpio_name_to_num(I3C_ELECTRA_ALERT_R_N) \
 	gpio_name_to_num(LED_MMC_HEARTBEAT_R) \
 	gpio_name_to_num(Reserve_GPIO83) \
 	gpio_name_to_num(Reserve_GPIO84) \

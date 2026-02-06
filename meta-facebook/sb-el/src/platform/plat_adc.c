@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(plat_adc);
 #define NUWA0_ADC_CHANNEL 8
 #define NUWA1_ADC_CHANNEL 6
 
-K_THREAD_STACK_DEFINE(adc_rainbow_thread_stack, ADC_STACK_SIZE);
-struct k_thread adc_rainbow_poll_thread;
+K_THREAD_STACK_DEFINE(adc_electra_thread_stack, ADC_STACK_SIZE);
+struct k_thread adc_electra_poll_thread;
 
 static bool adc_poll_flag = true;
 uint8_t adc_idx_read = 0;
@@ -520,11 +520,11 @@ void adc_electra_polling_handler(void *p1, void *p2, void *p3)
 
 void plat_adc_electra_init(void)
 {
-	k_thread_create(&adc_rainbow_poll_thread, adc_rainbow_thread_stack, ADC_STACK_SIZE,
+	k_thread_create(&adc_electra_poll_thread, adc_electra_thread_stack, ADC_STACK_SIZE,
 			adc_electra_polling_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY,
 			0, K_NO_WAIT);
 
-	k_thread_name_set(&adc_rainbow_poll_thread, "platform adc(electra) read");
+	k_thread_name_set(&adc_electra_poll_thread, "platform adc(electra) read");
 
 	LOG_INF("ADC(electra) polling thread started...\n");
 }

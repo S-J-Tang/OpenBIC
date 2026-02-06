@@ -12651,7 +12651,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_mod
 		vr_module);
 	// VR check version
 	switch (asic_board_id) {
-	case ASIC_BOARD_ID_RAINBOW:
+	case ASIC_BOARD_ID_ELECTRA:
 		if (vr_module == VR_MODULE_RNS) {
 			LOG_WRN("change VR address to old RNS");
 			vr_change_mode = OLD_RNS;
