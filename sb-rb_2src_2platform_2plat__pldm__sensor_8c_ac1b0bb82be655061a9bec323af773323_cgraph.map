@@ -1,0 +1,13 @@
+<map id="quick_sensor_poll_handler" name="quick_sensor_poll_handler">
+<area shape="rect" id="node1" title=" " alt="" coords="5,132,180,159"/>
+<area shape="rect" id="node2" href="$sb-rb_2src_2platform_2plat__pldm__sensor_8c.html#acd197a948181bb9d89cb3ea96372ad71" title=" " alt="" coords="230,5,345,32"/>
+<area shape="rect" id="node3" href="$sb-rb_2src_2platform_2plat__pldm__sensor_8c.html#a49fcac8a9cff9b16dbba2845722cf9ec" title=" " alt="" coords="236,56,339,83"/>
+<area shape="rect" id="node6" href="$sb-rb_2src_2platform_2plat__pldm__sensor_8c.html#a0a5c98fa5451dc469d965945dc18c8de" title=" " alt="" coords="228,107,347,133"/>
+<area shape="rect" id="node7" href="$sb-rb_2src_2platform_2plat__pldm__sensor_8c.html#ae0fbebc21f0dc9cf652ac2d6692c7610" title=" " alt="" coords="395,107,497,133"/>
+<area shape="rect" id="node9" href="$gt-cc_2src_2platform_2plat__hook_8c.html#abda0c3d7a63cc6f68d1ed88e1d36729d" title=" " alt="" coords="238,208,337,235"/>
+<area shape="rect" id="node11" href="$sb-rb_2src_2platform_2plat__pldm__sensor_8c.html#a0b65ad20539cb9d44b608d133211d18d" title=" " alt="" coords="230,259,345,285"/>
+<area shape="rect" id="node4" href="$hal__i2c_8c.html#a10a12888a55c2d866fcf01cbd342652f" title=" " alt="" coords="547,56,665,83"/>
+<area shape="rect" id="node5" href="$hal__i2c_8c.html#abe0116512c803f4b7188c17345eb998f" title=" " alt="" coords="715,81,857,108"/>
+<area shape="rect" id="node8" href="$hal__i2c_8c.html#a044cf163a5942b056d4a4feb0c056e9e" title=" " alt="" coords="545,107,667,133"/>
+<area shape="rect" id="node10" href="$hal__gpio_8c.html#af700ee50de3d113e223c2b011c41f966" title=" " alt="" coords="411,208,481,235"/>
+</map>
