@@ -49,6 +49,7 @@ enum PLAT_TEMP_INDEX_E {
 	TEMP_INDEX_MAX,
 };
 
+bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading);
 void user_settings_init(void);
 
 #endif

@@ -229,9 +229,10 @@ typedef struct bootstrap_user_settings_struct {
 
 extern vr_vout_range_user_settings_struct vout_range_user_settings;
 extern mp2971_init_arg mp2971_init_args[];
+extern vr_mapping_sensor vr_rail_table[];
 
 bool pre_vr_read(sensor_cfg *cfg, void *args);
-bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading);
+bool post_sensor_reading_hook_func(uint8_t sensor_number);
 bool is_mb_dc_on();
 void *vr_mutex_get(enum VR_INDEX_E vr_index);
 void vr_mutex_init(void);

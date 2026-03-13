@@ -20,7 +20,7 @@
 #include "pdr.h"
 #include "sensor.h"
 
-#define QUICK_POLL_INTERVAL 1000
+#define QUICK_POLL_INTERVAL 0xFF
 #define VR_DEFAULT_POLLING_INTERVAL_MS 1000
 
 #define ADDR_UNKNOWN (0xFF >> 1)
