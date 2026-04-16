@@ -25,6 +25,7 @@
 #include "plat_i2c.h"
 #include "plat_util.h"
 #include "plat_mctp.h"
+#include "plat_hook.h"
 
 LOG_MODULE_REGISTER(plat_class);
 
@@ -119,6 +120,7 @@ void init_plat_config()
 	plat_set_eid(init_plat_eid);
 	// cpld fru offset 0x3FF: tray location
 	plat_cpld_eerprom_read(&tray_location, 1023, 1);
+	set_delta_ubc_time_of_vout_rise();
 	LOG_INF("init_plat_eid: 0x%x", init_plat_eid);
 }
 
@@ -210,7 +212,7 @@ void pal_show_board_types(const struct shell *shell)
 		    (adc_type == ADI_AD4058) ? "ADI_AD4058" :
 		    (adc_type == TIC_ADS7066) ? "TI_ADS7066" : "not supported");
 	
-	shell_print(shell, "* I2C connection for MEDHA0/1 to MMC: Disable");
+	shell_print(shell, "* I2C connection for MEDHA0/1 to MMC: Enable");
 	return;
 }
 

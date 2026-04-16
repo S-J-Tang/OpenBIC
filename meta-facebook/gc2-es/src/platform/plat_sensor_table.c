@@ -34,6 +34,7 @@
 #include "libutil.h"
 #include "sq52205.h"
 #include <logging/log.h>
+#include "util_sys.h"
 
 LOG_MODULE_REGISTER(plat_sensor_table);
 
@@ -60,6 +61,14 @@ bool m2_access(uint8_t sensor_num)
 	}
 
 	return get_post_status();
+}
+
+bool bootdrive_access(uint8_t sensor_num)
+{
+	if (!get_bootdrive_exist_status()) {
+		return false;
+	}
+	return post_access(sensor_num);
 }
 
 sensor_cfg plat_sensor_config[] = {
@@ -160,17 +169,17 @@ sensor_cfg mp5990_sensor_config_table[] = {
 	/* number,                  type,       port,      address,      offset,
 	   access check arg0, arg1, sample_count, cache, cache_status, mux_address, mux_offset,
 	   pre_sensor_read_fn, pre_sensor_read_args, post_sensor_read_fn, post_sensor_read_fn  */
-	{ SENSOR_NUM_TEMP_HSC, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR,
+	{ SENSOR_NUM_TEMP_EFUSE, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR,
 	  PMBUS_READ_TEMPERATURE_1, stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &mp5990_init_args[0] },
-	{ SENSOR_NUM_VOL_HSCIN, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR, PMBUS_READ_VIN,
+	{ SENSOR_NUM_VOL_EFUSE_IN, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR, PMBUS_READ_VIN,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
 	  SENSOR_INIT_STATUS, NULL, NULL, post_mp5998_voltage_read, NULL, &mp5990_init_args[0] },
-	{ SENSOR_NUM_CUR_HSCOUT, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR, PMBUS_READ_IOUT,
+	{ SENSOR_NUM_CUR_EFUSE_OUT, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR, PMBUS_READ_IOUT,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
 	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, &mp5990_init_args[0] },
-	{ SENSOR_NUM_PWR_HSCIN, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR, PMBUS_READ_PIN,
+	{ SENSOR_NUM_PWR_EFUSE_IN, sensor_dev_mp5990, I2C_BUS2, MPS_MP5990_ADDR, PMBUS_READ_PIN,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
 	  SENSOR_INIT_STATUS, NULL, NULL, post_mp5998_power_read, NULL, &mp5990_init_args[0] },
 };
@@ -429,33 +438,52 @@ sensor_cfg vr_isl69259_sensor_config_table[] = {
 
 sensor_cfg ina233_sensor_config_table[] = {
 	{ MB_PMON_E1S_Boot_VOLT_V, sensor_dev_ina233, I2C_BUS2, ADDR_E1S_BOOT_INA233,
-	  PMBUS_READ_VOUT, post_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  PMBUS_READ_VOUT, bootdrive_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &ina233_init_args[2] },
 	{ MB_PMON_E1S_Boot_CURR_A, sensor_dev_ina233, I2C_BUS2, ADDR_E1S_BOOT_INA233,
-	  PMBUS_READ_IOUT, post_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  PMBUS_READ_IOUT, bootdrive_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &ina233_init_args[2] },
 	{ MB_PMON_E1S_Boot_PWR_W, sensor_dev_ina233, I2C_BUS2, ADDR_E1S_BOOT_INA233,
-	  PMBUS_READ_POUT, post_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  PMBUS_READ_POUT, bootdrive_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &ina233_init_args[2] },
 };
 
 sensor_cfg sq52205_sensor_config_table[] = {
 	{ MB_PMON_E1S_Boot_VOLT_V, sensor_dev_sq52205, I2C_BUS2, ADDR_E1S_BOOT_SQ52205,
-	  SQ52205_READ_VOL_OFFSET, post_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  SQ52205_READ_VOL_OFFSET, bootdrive_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &sq52205_init_args[0] },
 	{ MB_PMON_E1S_Boot_CURR_A, sensor_dev_sq52205, I2C_BUS2, ADDR_E1S_BOOT_SQ52205,
-	  SQ52205_READ_CUR_OFFSET, post_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  SQ52205_READ_CUR_OFFSET, bootdrive_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &sq52205_init_args[0] },
 	{ MB_PMON_E1S_Boot_PWR_W, sensor_dev_sq52205, I2C_BUS2, ADDR_E1S_BOOT_SQ52205,
-	  SQ52205_READ_PWR_OFFSET, post_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
+	  SQ52205_READ_PWR_OFFSET, bootdrive_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT,
 	  ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
 	  &sq52205_init_args[0] },
 };
+
+void plat_sensor_clear_vr_fault(uint8_t vr_addr, uint8_t vr_bus)
+{
+	// Clear VR fault by command code 03h - CLEAR_FAULTS
+	uint8_t retry = 5;
+	int ret = 0;
+	I2C_MSG msg = { 0 };
+	msg.bus = vr_bus;
+	msg.target_addr = vr_addr;
+
+	/* write CLEAR_FAULTS */
+	msg.tx_len = 1;
+	msg.data[0] = PMBUS_CLEAR_FAULTS;
+	ret = i2c_master_write(&msg, retry);
+	if (ret != 0) {
+		LOG_ERR("Clear faults failed, bus: 0x%x, addr: 0x%x", msg.bus,
+			msg.target_addr);
+	}
+}
 
 const int SENSOR_CONFIG_SIZE = ARRAY_SIZE(plat_sensor_config);
 
@@ -481,6 +509,10 @@ uint8_t pal_get_extend_sensor_config()
 		break;
 	case HSC_MODULE_MP5990:
 		extend_sensor_config_size += ARRAY_SIZE(mp5990_sensor_config_table);
+		if (is_ac_lost()) {
+			// Clear VR fault bit
+			plat_sensor_clear_vr_fault(MPS_MP5990_ADDR, I2C_BUS2);
+		}
 		break;
 	case HSC_MODULE_LTC4286:
 		extend_sensor_config_size += ARRAY_SIZE(ltc4286_sensor_config_table);

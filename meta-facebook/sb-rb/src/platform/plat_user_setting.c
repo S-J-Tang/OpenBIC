@@ -35,12 +35,14 @@
 #include "pldm_monitor.h"
 #include "sensor.h"
 #include "pldm_sensor.h"
+#include "plat_hamsa_avdd_pcie.h"
 
 LOG_MODULE_REGISTER(plat_user_setting);
 
 #define EEPROM_MAX_WRITE_TIME 5 // the BR24G512 eeprom max write time is 3.5 ms
 #define TMP75_ALERT_CPLD_OFFSET 0x2F
-
+#define CLOCK_LPHCSL_AMP_CTRL_REG 0x11
+#define CLOCK_LPHCSL_AMP_CTRL_TO_1V 0xF7
 int32_t alert_level_mA_default = 180000;
 int32_t alert_level_mA_user_setting = 180000;
 static bool uart_pwr_event_is_enable = true;
@@ -812,6 +814,25 @@ static int delay_module_pg_user_settings_init(void)
 
 	return 0;
 }
+static int hamsa_avdd_pcie_user_settings_init(void)
+{
+	uint16_t setting_value = 0;
+
+	if (get_user_settings_hamsa_avdd_pcie_from_eeprom(&setting_value, sizeof(setting_value)) ==
+	    false) {
+		LOG_ERR("get hamsa avdd pcie user settings failed");
+		return -1;
+	}
+
+	if (setting_value != 0xffff) {
+		if (!set_hamsa_avdd_pcie(&setting_value, false)) {
+			LOG_ERR("set hamsa avdd pcie failed");
+			return -1;
+		}
+	}
+
+	return 0;
+}
 bool get_user_settings_delay_pcie_perst_from_eeprom(void *user_settings, uint8_t data_length)
 {
 	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
@@ -880,6 +901,30 @@ bool set_user_settings_delay_module_pg_to_eeprom(void *user_settings, uint8_t da
 
 	return true;
 }
+bool get_user_settings_hamsa_avdd_pcie_from_eeprom(void *user_settings, uint8_t data_length)
+{
+	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
+
+	if (!plat_eeprom_read(HAMSA_AVDD_PCIE_VOUT_USER_SETTINGS_OFFSET, user_settings,
+			      data_length)) {
+		LOG_ERR("Failed to read hamsa_avdd_pcie from eeprom");
+		return false;
+	}
+	return true;
+}
+bool set_user_settings_hamsa_avdd_pcie_to_eeprom(void *user_settings, uint8_t data_length)
+{
+	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
+
+	if (!plat_eeprom_write(HAMSA_AVDD_PCIE_VOUT_USER_SETTINGS_OFFSET, user_settings,
+			       data_length)) {
+		LOG_ERR("hamsa_avdd_pcie Failed to write eeprom");
+		return false;
+	}
+	k_msleep(EEPROM_MAX_WRITE_TIME);
+
+	return true;
+}
 bool perm_config_clear(void)
 {
 	/* clear all temp_threshold perm parameters */
@@ -900,7 +945,7 @@ bool perm_config_clear(void)
 
 	/* clear soc_pcie_perst perm parameter */
 	uint32_t setting_value_for_delay_pcie_perst[4] = { 0 };
-	memset(setting_value_for_delay_pcie_perst, 0xffffffff,
+	memset(setting_value_for_delay_pcie_perst, 0xFF,
 	       sizeof(setting_value_for_delay_pcie_perst));
 	if (!set_user_settings_delay_pcie_perst_to_eeprom(
 		    &setting_value_for_delay_pcie_perst[0],
@@ -929,6 +974,15 @@ bool perm_config_clear(void)
 	uint8_t setting_value_for_throttle = 0xFF;
 	if (!set_user_settings_throttle_to_eeprom(&setting_value_for_throttle,
 						  sizeof(setting_value_for_throttle))) {
+		LOG_ERR("The perm_config clear failed");
+		return false;
+	}
+
+	/* clear hamsa_avdd_pcie perm parameter */
+	uint16_t setting_value_for_hamsa_avdd_pcie = 0xFFFF;
+	if (!set_user_settings_hamsa_avdd_pcie_to_eeprom(
+		    &setting_value_for_hamsa_avdd_pcie,
+		    sizeof(setting_value_for_hamsa_avdd_pcie))) {
 		LOG_ERR("The perm_config clear failed");
 		return false;
 	}
@@ -1233,10 +1287,10 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 		if (integer < 0 && fraction > 0)
 			fraction = -fraction;
 
-		float tmp_reading = (float)integer + fraction;
+		float tmp_reading_value = (float)integer + fraction;
 
-		if (tmp_reading < 0) {
-			tmp_reading = 0;
+		if (tmp_reading_value < 0) {
+			tmp_reading_value = 0;
 			*reading = 0;
 			LOG_DBG("Original sensor reading: integer = %d, fraction = %f", integer,
 				fraction);
@@ -1244,7 +1298,8 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 		}
 
 		int decoded_reading =
-			(int)((tmp_reading * power(10, -1 * unit_modifier) - offset) / resolution);
+			(int)((tmp_reading_value * power(10, -1 * unit_modifier) - offset) /
+			      resolution);
 
 		/* record power history */
 		for (int i = 0; i < UBC_VR_RAIL_E_MAX; i++) {
@@ -1327,6 +1382,49 @@ bool get_average_power(uint8_t rail, uint32_t *milliwatt)
 
 	return true;
 }
+
+clock_compnt_mapping clock_buffer_mapping_table[] = {
+	{ CLK_BUF_U87, CLK_BUF_U87_ADDR, I2C_BUS1 },
+	{ CLK_BUF_U88, CLK_BUF_U88_ADDR, I2C_BUS3 },
+};
+
+void set_clock_value(uint8_t clock_index, uint8_t write_offset, uint8_t write_length,
+		     const uint8_t *data)
+{
+	if (write_length == 0) {
+		LOG_ERR("write_length is 0");
+		return;
+	}
+	uint8_t byte_count = write_length;
+	I2C_MSG i2c_msg = { 0 };
+	uint8_t retry = 5;
+	i2c_msg.bus = clock_buffer_mapping_table[clock_index].bus;
+	i2c_msg.target_addr = clock_buffer_mapping_table[clock_index].addr;
+	i2c_msg.tx_len = write_length + 2;
+	i2c_msg.rx_len = 0;
+
+	i2c_msg.data[0] = write_offset;
+	i2c_msg.data[1] = byte_count;
+	for (int i = 2; i < i2c_msg.tx_len; i++) {
+		i2c_msg.data[i] = data[i - 2];
+	}
+
+	if (i2c_master_write(&i2c_msg, retry)) {
+		LOG_ERR("Failed to write clock reg, bus: %d, addr: 0x%x, reg: 0x%x", i2c_msg.bus,
+			i2c_msg.target_addr, write_offset);
+		return;
+	}
+
+	LOG_INF("Set clock reg success, bus: %d, addr: 0x%x, reg: 0x%x", i2c_msg.bus,
+		i2c_msg.target_addr, write_offset);
+}
+
+void set_clock_u87_u88_lphcsl_amp_ctrl_to_1v()
+{
+	uint8_t write_data = CLOCK_LPHCSL_AMP_CTRL_TO_1V;
+	set_clock_value(CLK_BUF_U87, CLOCK_LPHCSL_AMP_CTRL_REG, 1, &write_data);
+	set_clock_value(CLK_BUF_U88, CLOCK_LPHCSL_AMP_CTRL_REG, 1, &write_data);
+}
 void user_settings_init(void)
 {
 	bootstrap_default_settings_init();
@@ -1338,4 +1436,5 @@ void user_settings_init(void)
 	delay_asic_rst_user_settings_init();
 	delay_module_pg_user_settings_init();
 	delay_pcie_perst_user_settings_init();
+	hamsa_avdd_pcie_user_settings_init();
 }

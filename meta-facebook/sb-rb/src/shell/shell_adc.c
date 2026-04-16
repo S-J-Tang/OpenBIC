@@ -94,14 +94,18 @@ void shell_adc_get_averge_val(const struct shell *shell, uint8_t idx)
 	uint8_t lv = (idx == 0 || idx == 1) ? 2 : 3;
 
 	shell_warn(shell, "LV%d MEDHA%d CURR: %f(A)", lv, idx % 2,
-		   adc_raw_mv_to_apms(get_adc_averge_val(idx), vref));
+		   adc_raw_v_to_apms(get_adc_averge_val(idx), vref));
 
 	float pwr = get_adc_vr_pwr(idx);
 	shell_warn(shell, "LV%d MEDHA%d PWR:  %f(W)", lv, idx % 2, pwr);
 
 	float vol = get_vr_vol_sum(idx);
 	uint16_t len = get_adc_averge_times(idx);
-	shell_warn(shell, "LV%d MEDHA%d VOLT: %f(V)", lv, idx % 2, vol / len);
+	shell_warn(shell, "LV%d MEDHA%d VR VOLT: %f(V)", lv, idx % 2, vol / len);
+
+	uint16_t adc_voltage_average = get_adc_averge_val(idx);
+	float adc_volt = ((float)adc_voltage_average / 65536) * vref;
+	shell_warn(shell, "LV%d MEDHA%d ADC VOLT: %f(V)", lv, idx % 2, adc_volt);
 	shell_print(shell, "");
 }
 
@@ -158,19 +162,39 @@ void shell_adc_get_buf(const struct shell *shell, uint8_t idx)
 {
 	uint8_t lv = (idx == 0 || idx == 1) ? 2 : 3;
 	uint16_t len = get_adc_averge_times(idx);
-	uint16_t *buf = get_adc_buf(idx);
+	const uint16_t *buf = get_adc_buf(idx);
+	const uint16_t *vr_buf = get_vr_buf(idx);
 	float vref = 0;
 	uint8_t adc_type = get_adc_type();
+	uint16_t *adc_snapshot = malloc(sizeof(uint16_t) * len);
+	uint16_t *vr_snapshot = malloc(sizeof(uint16_t) * len);
+
+	if (adc_snapshot == NULL || vr_snapshot == NULL) {
+		free(adc_snapshot);
+		free(vr_snapshot);
+		shell_error(shell, "adc snapshot alloc fail (len=%d)", len);
+		return;
+	}
+
+	for (uint16_t i = 0; i < len; i++) {
+		adc_snapshot[i] = buf[i];
+		vr_snapshot[i] = vr_buf[i];
+	}
+
 	if (adc_type == ADI_AD4058)
 		vref = get_ad4058_vref();
 	else if (adc_type == TIC_ADS7066)
 		vref = get_ads7066_vref();
-	else
+	else {
 		shell_error(shell, "invalid adc type %d", adc_type);
+		free(adc_snapshot);
+		free(vr_snapshot);
+		return;
+	}
 
 	shell_warn(shell, "LV%d MEDHA%d CURR (len=%d)(unit=A)): ", lv, idx % 2, len);
 	for (uint16_t i = 0; i < len; i++) {
-		shell_fprintf(shell, SHELL_NORMAL, "%f ", adc_raw_mv_to_apms(buf[i], vref));
+		shell_fprintf(shell, SHELL_NORMAL, "%f ", adc_raw_v_to_apms(adc_snapshot[i], vref));
 		if ((i + 1) % 10 == 0) {
 			shell_print(shell, "");
 		}
@@ -178,28 +202,40 @@ void shell_adc_get_buf(const struct shell *shell, uint8_t idx)
 	shell_print(shell, "");
 
 	shell_warn(shell, "LV%d MEDHA%d PWR (len=%d)(unit=W)): ", lv, idx % 2, len);
-	uint16_t *vr_buf = get_vr_buf(idx);
 	for (uint16_t i = 0; i < len; i++) {
 		// average pwr = average voltage * average current
 		// P = V * I
-		float pwr_buf = uint16_voltage_transfer_to_float(vr_buf[i]) *
-				adc_raw_mv_to_apms(buf[i], vref);
+		float pwr_buf = uint16_voltage_transfer_to_float(vr_snapshot[i]) *
+				adc_raw_v_to_apms(adc_snapshot[i], vref);
 		shell_fprintf(shell, SHELL_NORMAL, "%f ", pwr_buf);
 		if ((i + 1) % 10 == 0) {
 			shell_print(shell, "");
 		}
 	}
 	shell_print(shell, "");
-
-	shell_warn(shell, "LV%d MEDHA%d VOLT (len=%d)(unit=V)): ", lv, idx % 2, len);
+	// VR voltage buf
+	shell_warn(shell, "LV%d MEDHA%d VR VOLT (len=%d)(unit=V)): ", lv, idx % 2, len);
 	for (uint16_t i = 0; i < len; i++) {
-		float tmp = uint16_voltage_transfer_to_float(vr_buf[i]);
+		float tmp = uint16_voltage_transfer_to_float(vr_snapshot[i]);
 		shell_fprintf(shell, SHELL_NORMAL, "%f ", tmp);
 		if ((i + 1) % 10 == 0) {
 			shell_print(shell, "");
 		}
 	}
 	shell_print(shell, "");
+	// ADC voltage buf
+	shell_warn(shell, "LV%d MEDHA%d ADC VOLT (len=%d)(unit=V): ", lv, idx % 2, len);
+	for (uint16_t i = 0; i < len; i++) {
+		float tmp_volt = ((float)adc_snapshot[i] / 65536) * vref;
+		shell_fprintf(shell, SHELL_NORMAL, "%f ", tmp_volt);
+		if ((i + 1) % 10 == 0) {
+			shell_print(shell, "");
+		}
+	}
+	shell_print(shell, "");
+
+	free(adc_snapshot);
+	free(vr_snapshot);
 }
 
 void cmd_adc_get_buf(const struct shell *shell, size_t argc, char **argv)

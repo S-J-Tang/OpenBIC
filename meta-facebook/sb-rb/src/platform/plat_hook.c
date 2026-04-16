@@ -253,8 +253,8 @@ bootstrap_mapping_register bootstrap_table[] = {
 	  true },
 	{ STRAP_INDEX_HAMSA_CRM_STRAP_1, STRAP_TYPE_CPLD, 0x16, "HAMSA_CRM_STRAP_1", 0, 1, 0x0, 0x0,
 	  true },
-	{ STRAP_INDEX_HAMSA_MFIO7, STRAP_TYPE_CPLD, 0x17, "HAMSA_MFIO7", 4, 1, 0x01, 0x01, false },
-	{ STRAP_INDEX_HAMSA_MFIO9, STRAP_TYPE_CPLD, 0x17, "HAMSA_MFIO9", 3, 1, 0x0, 0x0, false },
+	{ STRAP_INDEX_HAMSA_MFIO7, STRAP_TYPE_CPLD, 0x17, "HAMSA_MFIO7", 4, 1, 0x00, 0x01, false },
+	{ STRAP_INDEX_HAMSA_MFIO9, STRAP_TYPE_CPLD, 0x17, "HAMSA_MFIO9", 3, 1, 0x1, 0x0, false },
 	{ STRAP_INDEX_HAMSA_MFIO11, STRAP_TYPE_CPLD, 0x17, "HAMSA_MFIO11", 2, 1, 0x0, 0x0, false },
 	{ STRAP_INDEX_HAMSA_MFIO17, STRAP_TYPE_CPLD, 0x17, "HAMSA_MFIO17", 1, 1, 0x0, 0x0, false },
 	{ STRAP_INDEX_HAMSA_MFIO18, STRAP_TYPE_CPLD, 0x17, "HAMSA_MFIO18", 0, 1, 0x01, 0x01,
@@ -276,7 +276,7 @@ bootstrap_mapping_register bootstrap_table[] = {
 	  0x0, true },
 	{ STRAP_INDEX_MEDHA0_CHIP_STRAP_0, STRAP_TYPE_CPLD, 0x1a, "MEDHA0_CHIP_STRAP_0", 1, 1, 0x01,
 	  0x01, true },
-	{ STRAP_INDEX_MEDHA0_CHIP_STRAP_1, STRAP_TYPE_CPLD, 0x1a, "MEDHA0_CHIP_STRAP_1", 0, 1, 0x01,
+	{ STRAP_INDEX_MEDHA0_CHIP_STRAP_1, STRAP_TYPE_CPLD, 0x1a, "MEDHA0_CHIP_STRAP_1", 0, 1, 0x00,
 	  0x01, true },
 	{ STRAP_INDEX_MEDHA0_CORE_TAP_CTRL_PLD_L, STRAP_TYPE_CPLD, 0x1b,
 	  "MEDHA0_CORE_TAP_CTRL_PLD_L", 3, 1, 0x01, 0x01, false },
@@ -294,7 +294,7 @@ bootstrap_mapping_register bootstrap_table[] = {
 	  0x0, true },
 	{ STRAP_INDEX_MEDHA1_CHIP_STRAP_0, STRAP_TYPE_CPLD, 0x1c, "MEDHA1_CHIP_STRAP_0", 1, 1, 0x01,
 	  0x01, true },
-	{ STRAP_INDEX_MEDHA1_CHIP_STRAP_1, STRAP_TYPE_CPLD, 0x1c, "MEDHA1_CHIP_STRAP_1", 0, 1, 0x01,
+	{ STRAP_INDEX_MEDHA1_CHIP_STRAP_1, STRAP_TYPE_CPLD, 0x1c, "MEDHA1_CHIP_STRAP_1", 0, 1, 0x00,
 	  0x01, true },
 	{ STRAP_INDEX_MEDHA1_CORE_TAP_CTRL_PLD_L, STRAP_TYPE_CPLD, 0x1d,
 	  "MEDHA1_CORE_TAP_CTRL_PLD_L", 3, 1, 0x01, 0x01, false },
@@ -598,7 +598,7 @@ err:
 
 struct vr_vout_user_settings voltage_command_get = { 0 };
 vr_vout_range_user_settings_struct vout_range_user_settings = { 0 };
-bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt)
+bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm)
 {
 	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
 
@@ -645,6 +645,14 @@ bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt)
 	default:
 		LOG_ERR("Unsupport VR type(%x)", cfg->type);
 		goto err;
+	}
+
+	if (is_perm && rail == VR_RAIL_E_ASIC_P0V8_HAMSA_AVDD_PCIE) {
+		if (!set_user_settings_hamsa_avdd_pcie_to_eeprom(&setting_millivolt,
+								 sizeof(setting_millivolt))) {
+			LOG_ERR("set user settings hamsa avdd pcie to eeprom failed");
+			goto err;
+		}
 	}
 
 	voltage_command_get.vout[rail] = setting_millivolt;
@@ -874,6 +882,71 @@ bool bootstrap_default_settings_init(void)
 {
 	// read cpld value and write to bootstrap_table
 	for (int i = 0; i <= STRAP_INDEX_OWL_W_DVT_ENABLE; i++) {
+		// set default value first then read back from cpld
+		/*
+		For all boards
+			HAMSA_MFIO7 = 0
+			HAMSA_MFIO9 = 1
+			MEDHA0_CHIP_STRAP_1 = 0
+			MEDHA1_CHIP_STRAP_1 = 0
+
+		For Rainbow <=fab 2
+			HAMSA_LS_STRAP_0 = 0x1
+			MEDHA0_CHIP_STRAP_0 = 0x1
+			MEDHA1_CHIP_STRAP_0 = 0x1
+
+		For Rainbow >=fab 3
+			HAMSA_LS_STRAP_0 = 0x0
+			MEDHA0_CHIP_STRAP_0 = 0x0
+			MEDHA1_CHIP_STRAP_0 = 0x0
+		*/
+		uint8_t asic_board_id = get_asic_board_id();
+		uint8_t rev_id = get_board_rev_id();
+		uint8_t hamsa_ls_strap_defauilt_setting = 0;
+		uint8_t medha0_chip_strap_defauilt_setting = 0;
+		uint8_t medha1_chip_strap_defauilt_setting = 0;
+		if (asic_board_id == ASIC_BOARD_ID_RAINBOW) {
+			if (rev_id <= REV_ID_EVT2) {
+				hamsa_ls_strap_defauilt_setting = 0x1;
+				medha0_chip_strap_defauilt_setting = 0x1;
+				medha1_chip_strap_defauilt_setting = 0x1;
+			} else {
+				hamsa_ls_strap_defauilt_setting = 0x0;
+				medha0_chip_strap_defauilt_setting = 0x0;
+				medha1_chip_strap_defauilt_setting = 0x0;
+			}
+		}
+		if (bootstrap_table[i].index == STRAP_INDEX_HAMSA_LS_STRAP_0) {
+			bootstrap_table[i].default_setting_value = hamsa_ls_strap_defauilt_setting;
+			if (!set_cpld_bit(bootstrap_table[i].cpld_offsets,
+					  bootstrap_table[i].bit_offset,
+					  bootstrap_table[i].default_setting_value)) {
+				LOG_ERR("Failed to set cpld bit for HAMSA_LS_STRAP_0");
+				return false;
+			}
+		}
+
+		if (bootstrap_table[i].index == STRAP_INDEX_MEDHA0_CHIP_STRAP_0) {
+			bootstrap_table[i].default_setting_value =
+				medha0_chip_strap_defauilt_setting;
+			if (!set_cpld_bit(bootstrap_table[i].cpld_offsets,
+					  bootstrap_table[i].bit_offset,
+					  bootstrap_table[i].default_setting_value)) {
+				LOG_ERR("Failed to set cpld bit for MEDHA0_CHIP_STRAP_0");
+				return false;
+			}
+		}
+		if (bootstrap_table[i].index == STRAP_INDEX_MEDHA1_CHIP_STRAP_0) {
+			bootstrap_table[i].default_setting_value =
+				medha1_chip_strap_defauilt_setting;
+			if (!set_cpld_bit(bootstrap_table[i].cpld_offsets,
+					  bootstrap_table[i].bit_offset,
+					  bootstrap_table[i].default_setting_value)) {
+				LOG_ERR("Failed to set cpld bit for MEDHA1_CHIP_STRAP_0");
+				return false;
+			}
+		}
+
 		uint8_t data = 0;
 		if (!plat_read_cpld(bootstrap_table[i].cpld_offsets, &data, 1)) {
 			LOG_ERR("Can't find bootstrap default by rail index from cpld: %d", i);
@@ -889,7 +962,6 @@ bool bootstrap_default_settings_init(void)
 				reverse_bits(bootstrap_table[i].change_setting_value,
 					     bootstrap_table[i].bit_count);
 	}
-
 	// read io-exp value and write to bootstrap_table
 	return set_ioexp_val_to_bootstrap_table();
 }
@@ -1538,4 +1610,70 @@ err:
 		}
 	}
 	return ret;
+}
+
+void set_delta_ubc_time_of_vout_rise()
+{
+	uint8_t ubc_module = get_ubc_module();
+	const uint8_t sensor_ids[2] = {
+		SENSOR_NUM_UBC1_P12V_VOLT_V,
+		SENSOR_NUM_UBC2_P12V_VOLT_V,
+	};
+
+	if (ubc_module == UBC_MODULE_DELTA) {
+		for (int i = 0; i < ARRAY_SIZE(sensor_ids); i++) {
+			uint8_t id = sensor_ids[i];
+			const sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(id);
+			if (!cfg) {
+				LOG_ERR("DELTA UBC vout rising init: sensor cfg not found (sensor_id=0x%02X)",
+					id);
+				return;
+			}
+
+			uint8_t bus = cfg->port;
+			uint8_t addr = cfg->target_addr;
+
+			uint8_t write_data[2] = { 0 };
+			/* read  vout rising time first, if it's 0x0078, just skip*/
+			if (!plat_i2c_read(bus, addr, 0x61, write_data, 2)) {
+				LOG_ERR("UBC(id=0x%02X bus=%u addr=0x%02X): read 0x61 failed", id,
+					bus, addr);
+				return;
+			}
+			if (write_data[0] == 0x78 && write_data[1] == 0x00) {
+				LOG_INF("UBC vout rising time already set, skip setting. vout_rise: 0x%02X%02X, bus: %d, address: 0x%x",
+					write_data[0], write_data[1], bus, addr);
+				continue;
+			}
+
+			/* remove protection: reg 0x10 = 0x00 */
+			write_data[0] = 0x00;
+
+			if (!plat_i2c_write(bus, addr, 0x10, &write_data[0], 1)) {
+				LOG_ERR("UBC(id=0x%02X bus=%u addr=0x%02X): write 0x10 failed", id,
+					bus, addr);
+				return;
+			}
+			LOG_INF("remove UBC protection bus: %d, address: 0x%x", bus, addr);
+			/* set vout rising time: reg 0x61 = 0x78 0x00 */
+			write_data[0] = 0x78;
+			write_data[1] = 0x00;
+
+			if (!plat_i2c_write(bus, addr, 0x61, write_data, 2)) {
+				LOG_ERR("UBC(id=0x%02X bus=%u addr=0x%02X): write 0x51 failed", id,
+					bus, addr);
+				return;
+			}
+			LOG_INF("set UBC vout rising time bus: %d, address: 0x%x", bus, addr);
+			/* Save command's (Reg 0x61) data to OTP */
+			write_data[0] = 0x61;
+
+			if (!plat_i2c_write(bus, addr, 0x17, write_data, 1)) {
+				LOG_ERR("UBC(id=0x%02X bus=%u addr=0x%02X): write 0x4F failed", id,
+					bus, addr);
+				return;
+			}
+			LOG_INF("save UBC command bus: %d, address: 0x%x", bus, addr);
+		}
+	}
 }

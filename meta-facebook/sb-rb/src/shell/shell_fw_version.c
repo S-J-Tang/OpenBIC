@@ -65,8 +65,7 @@ void cmd_get_fw_version_vr(const struct shell *shell, size_t argc, char **argv)
 		char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
 
 		if (check_p3v3_p5v_pwrgd() == false) {
-			shell_warn(shell,
-				   "PWRGD_P3V3_R and PWRGD_P5V_R is not on, skip get VR version");
+			shell_warn(shell, "PWRGD_P3V3_R is not on, skip get VR version");
 			continue;
 		}
 
@@ -162,11 +161,11 @@ void cmd_get_fw_version_asic(const struct shell *shell, size_t argc, char **argv
 		shell_warn(shell, "Can't get boot0, boot1 version from ASIC");
 		return;
 	}
-	shell_print(shell, " boot1 VER from asic: %02d.%02d.%02d", i2c_msg.data[2], i2c_msg.data[3],
-		    i2c_msg.data[4]);
-	shell_print(shell, " boot0 VER from asic: %02d.%02d.%02d", i2c_msg.data[9], i2c_msg.data[8],
-		    i2c_msg.data[7]);
-	uint32_t tmp_version_boot0 = i2c_msg.data[9] << 16 | i2c_msg.data[8] << 8 | i2c_msg.data[7];
+	shell_print(shell, " boot1 VER from asic: %02d.%02d.%02d", i2c_msg.data[1], i2c_msg.data[2],
+		    i2c_msg.data[3]);
+	shell_print(shell, " boot0 VER from asic: %02d.%02d.%02d", i2c_msg.data[8], i2c_msg.data[7],
+		    i2c_msg.data[6]);
+	uint32_t tmp_version_boot0 = i2c_msg.data[8] << 16 | i2c_msg.data[7] << 8 | i2c_msg.data[6];
 	// if boot0 version is not 0, update temp data
 	if (tmp_version_boot0) {
 		// update temp data

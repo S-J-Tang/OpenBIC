@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(plat_fru);
 
 #define CPLD_FRU_START 0x0000
 #define CPLD_FRU_SIZE 0x0400
+#define EEPROM_WRITE_CYCLE_MS 5
 
 const EEPROM_CFG plat_fru_config[] = {
 	{
@@ -77,6 +78,8 @@ bool plat_eeprom_write(uint32_t offset, uint8_t *data, uint16_t data_len)
 
 	memcpy(entry.data, data, data_len);
 	memcpy(&entry.config, &fru_config[fru_index], sizeof(fru_config[fru_index]));
+
+	k_msleep(5);
 
 	if (!eeprom_write(&entry)) {
 		LOG_ERR("write eeprom 0x%x fail", offset);
