@@ -35,7 +35,7 @@
 #define MCTP_EID_BMC 0x08
 
 /* I3C related defines */ //Not used in this platform
-#define I3C_BUS_BMC I2C_BUS1
+#define I3C_BUS_BMC I2C_BUS6
 #define I3C_STATIC_ADDR_BMC 0x20
 
 struct mctp_to_ipmi_header_req {
