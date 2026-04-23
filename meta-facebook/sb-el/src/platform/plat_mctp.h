@@ -30,6 +30,7 @@
 
 /* i3c vendor-def-id */
 #define DEFAULT_VENDOR_DEF_ID 0x567
+#define PLAT_DEFAULT_PID 0x510
 
 /* mctp endpoint */
 #define MCTP_EID_BMC 0x08
@@ -37,6 +38,9 @@
 /* I3C related defines */ //Not used in this platform
 #define I3C_BUS_BMC I2C_BUS6
 #define I3C_STATIC_ADDR_BMC 0x20
+
+/* MMC max slot numbers */
+#define MAX_SLOT 4
 
 struct mctp_to_ipmi_header_req {
 	uint8_t iana[IANA_LEN];
@@ -63,6 +67,12 @@ struct mctp_to_ipmi_sel_resp {
 	struct mctp_to_ipmi_header_resp header;
 	struct ipmi_storage_add_sel_resp resp_data;
 } __attribute__((__packed__));
+
+typedef struct {
+	uint8_t slot;
+	uint8_t eid;
+	uint16_t pid;
+} mmc_info_t;
 
 /* init the mctp moduel for platform */
 void plat_mctp_init(void);

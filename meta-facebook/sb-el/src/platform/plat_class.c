@@ -222,6 +222,7 @@ void init_plat_config()
 	// cpld fru offset 0x3FF: tray location
 	plat_cpld_eerprom_read(&tray_location, 1023, 1);
 	LOG_INF("init_plat_eid: 0x%x", init_plat_eid);
+	plat_i3c_set_pid();
 }
 
 uint8_t get_vr_module()
