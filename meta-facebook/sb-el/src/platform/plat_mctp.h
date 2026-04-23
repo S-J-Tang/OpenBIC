@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -35,7 +35,7 @@
 #define MCTP_EID_BMC 0x08
 
 /* I3C related defines */ //Not used in this platform
-#define I3C_BUS_BMC I2C_BUS6
+#define I3C_BUS_BMC I2C_BUS1
 #define I3C_STATIC_ADDR_BMC 0x20
 
 struct mctp_to_ipmi_header_req {
