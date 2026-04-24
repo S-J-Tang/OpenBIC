@@ -221,7 +221,25 @@ void plat_i3c_set_pid(void)
 {
 	I3C_MSG i3c_msg;
 	i3c_msg.bus = I3C_BUS_BMC;
-	i3c_set_pid(&i3c_msg, DEFAULT_VENDOR_DEF_ID);
+	uint8_t slot_id = (get_mmc_slot() + 1);
+	switch(slot_id) {
+		case 1:
+			i3c_set_pid(&i3c_msg, DEFAULT_VENDOR_DEF_ID_1);
+			break;
+		case 2:
+			i3c_set_pid(&i3c_msg, DEFAULT_VENDOR_DEF_ID_2);
+			break;
+		case 3:
+			i3c_set_pid(&i3c_msg, DEFAULT_VENDOR_DEF_ID_3);
+			break;
+		case 4:
+			i3c_set_pid(&i3c_msg, DEFAULT_VENDOR_DEF_ID_4);
+			break;
+		default:
+			LOG_ERR("Invalid MMC slot %d, set default vendor def id", slot_id);
+			i3c_set_pid(&i3c_msg, DEFAULT_VENDOR_DEF_ID_1);
+			break;
+		}
 }
 
 uint8_t plat_get_eid()
