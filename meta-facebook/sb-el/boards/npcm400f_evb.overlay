@@ -189,6 +189,10 @@
 	};
 };
 
+&i3c0 {
+	status = "disabled";
+};
+
 &pwm1 {
     status = "disabled";
 };
