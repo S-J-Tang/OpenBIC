@@ -6,6 +6,32 @@
 #include "plat_adc.h"
 #include "plat_class.h"
 
+#define I2C_DEVICE_PREFIX "I2C_"
+#define MAX_I2C_BYTES 31
+
+static int8_t name2idx(const char *name)
+{
+	if (name == NULL)
+		return -1;
+
+	if (strncmp(name, I2C_DEVICE_PREFIX, strlen(I2C_DEVICE_PREFIX)) != 0)
+		return -1;
+
+	return strtol(name + strlen(I2C_DEVICE_PREFIX), NULL, 10);
+}
+
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, I2C_DEVICE_PREFIX);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 // test command
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
@@ -133,6 +159,73 @@ void cmd_info(const struct shell *shell, size_t argc, char **argv)
 	shell_warn(shell, "tray location: %d", tray_loc);
 }
 
+void cmd_test_write_read(const struct shell *shell, size_t argc, char **argv)
+{
+	/*
+	 * Usage:
+	 * test write_read <bus> <devaddr> <read_bytes> <write_byte1> [<write_byte2> ...]
+	 *
+	 * Examples:
+	 * test write_read I2C_2 0x09 4 0x00 0xA8
+	 *   -> write 0x00 0xA8, repeated-start, read 4 bytes
+	 *
+	 * test write_read I2C_2 0x08 0 0x02 0x40 0x2C 0x30
+	 *   -> pure write 0x02 0x40 0x2C 0x30
+	 */
+	if (argc < 5) {
+		shell_warn(shell,
+			   "Help: test write_read <bus> <devaddr> <read_bytes> <write_byte1> [<write_byte2> ...]");
+		return;
+	}
+
+	I2C_MSG msg = { 0 };
+
+	msg.bus = name2idx(argv[1]);
+	if (msg.bus == 0xff) {
+		shell_error(shell, "Invalid bus name: %s", argv[1]);
+		return;
+	}
+
+	msg.target_addr = strtol(argv[2], NULL, 16);
+	msg.rx_len = strtol(argv[3], NULL, 16);
+	msg.tx_len = argc - 4;
+
+	if (msg.tx_len == 0) {
+		shell_error(shell, "write bytes should not be empty");
+		return;
+	}
+
+	if (msg.tx_len > I2C_BUFF_SIZE) {
+		shell_error(shell, "write bytes exceed max buffer size");
+		return;
+	}
+
+	for (int i = 0; i < msg.tx_len; i++) {
+		msg.data[i] = strtol(argv[4 + i], NULL, 16);
+	}
+
+	if (msg.rx_len == 0) {
+		if (i2c_master_write(&msg, 5)) {
+			shell_error(shell, "Failed to write to bus %d device: 0x%x",
+				    msg.bus, msg.target_addr);
+			return;
+		}
+
+		shell_print(shell, "Write success");
+		shell_hexdump(shell, msg.data, msg.tx_len);
+		shell_print(shell, "");
+	} else {
+		if (i2c_master_read(&msg, 5)) {
+			shell_error(shell, "Failed to write-read from bus %d device: 0x%x",
+				    msg.bus, msg.target_addr);
+			return;
+		}
+
+		shell_hexdump(shell, msg.data, msg.rx_len);
+		shell_print(shell, "");
+	}
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cpld_cmds, SHELL_CMD(dump, NULL, "cpld dump", cmd_cpld_dump),
 			SHELL_CMD(write, NULL, "write cpld register", cmd_cpld_write),	
 			SHELL_SUBCMD_SET_END);
@@ -142,6 +235,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_test_cmds, SHELL_CMD(test, NULL, "test comman
 			SHELL_CMD(read_info, NULL, "read sensor info test command", cmd_read_info),
 			SHELL_CMD(cpld, &sub_cpld_cmds, "cpld commands", NULL),
 			SHELL_CMD(info, NULL, "info commands", cmd_info),
+			SHELL_CMD_ARG(write_read, &dsub_device_name,
+		      "test write_read <bus> <devaddr> <read_bytes> <write_byte1> [<write_byte2> ...]",
+		      cmd_test_write_read, 5, MAX_I2C_BYTES),
 			SHELL_SUBCMD_SET_END);
 
 /* Root of command test */
