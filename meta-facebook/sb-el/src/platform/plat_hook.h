@@ -234,6 +234,27 @@ extern bootstrap_user_settings_struct bootstrap_user_settings;
 extern vr_vout_range_user_settings_struct vout_range_user_settings;
 extern mp2971_init_arg mp2971_init_args[];
 
+//VR test mode
+enum VR_MP29816_REG_E {
+	UVP_THRESHOLD = 0,
+	UVP,
+	VOUT_MAX,
+	VOUT_COMMAND,
+	VOUT_OFFSET,
+	TOTAL_OCP,
+	OVP_1,
+	OVP_2,
+	OVP_2_ACTION,
+	DIV_EN,
+	VR_MP29816_SET_REG_MAX,
+};
+
+#define OVP2_ACTION_NO_ACTION 0x00 /* 2'b00 */
+#define OVP2_ACTION_LATCH_OFF 0x01 /* 2'b01 */
+#define OVP2_ACTION_UNKNOWN 0xFF
+
+extern vr_mapping_sensor vr_rail_table[];
+
 //  vr & ubc sensor
 bool pre_vr_read(sensor_cfg *cfg, void *args);
 bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading);
@@ -279,4 +300,12 @@ bool set_bootstrap_val_to_device(uint8_t strap, uint8_t val);
 uint8_t get_strap_index_max();
 uint8_t get_emc1413_cache_status(uint8_t idx);
 bool voltage_command_setting_get(uint8_t rail, uint16_t *vout);
+
+//VR test mode
+bool plat_set_vr_reg(uint8_t rail, uint8_t reg, uint8_t *data, uint8_t len);
+int get_vr_page(uint8_t rail);
+int get_vr_mp29816a_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg);
+int set_vr_mp29816a_reg(uint8_t rail, uint16_t *set_value, uint8_t set_reg);
+int get_vr_mp2971_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg);
+int set_vr_mp2971_reg(uint8_t rail, uint16_t *set_data, uint8_t set_reg);
 #endif
