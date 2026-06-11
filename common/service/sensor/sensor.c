@@ -152,6 +152,8 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(ads7830)
 	sensor_name_to_num(s54ss4p180pmdafc)
 	sensor_name_to_num(pex90144)
+	sensor_name_to_num(octeon)
+	sensor_name_to_num(iris_smbus)
 };
 // clang-format on
 
@@ -390,6 +392,9 @@ SENSOR_DRIVE_INIT_DECLARE(pex90144);
 #endif
 #ifdef ENABLE_OCTEON
 SENSOR_DRIVE_INIT_DECLARE(octeon);
+#endif
+#ifdef ENABLE_IRIS_SMBUS
+SENSOR_DRIVE_INIT_DECLARE(iris_smbus);
 #endif
 
 // The sequence needs to same with SENSOR_DEV ID
@@ -792,6 +797,11 @@ sensor_drive_api sensor_drive_tbl[] = {
 	SENSOR_DRIVE_TYPE_INIT_MAP(octeon),
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(octeon),
+#endif
+#ifdef ENABLE_IRIS_SMBUS
+	SENSOR_DRIVE_TYPE_INIT_MAP(iris_smbus),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(iris_smbus),
 #endif
 
 };
