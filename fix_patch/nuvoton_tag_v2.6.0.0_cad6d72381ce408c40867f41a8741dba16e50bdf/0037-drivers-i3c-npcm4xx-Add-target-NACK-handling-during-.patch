@@ -1,0 +1,57 @@
+From 6dd8cac2414c0c1ac0b335cc0b1cf840b5bc0ced Mon Sep 17 00:00:00 2001
+From: Alan Yang <tyang1@nuvoton.com>
+Date: Thu, 28 Aug 2025 14:21:14 +0800
+Subject: [PATCH 3/3] drivers: i3c: npcm4xx: Add target NACK handling during
+ buffer processing
+
+Implement proper NACK/ACK flow control in I3C slave interrupt handler
+to prevent race conditions during buffer operations.
+
+Signed-off-by: Alan Yang <tyang1@nuvoton.com>
+---
+ drivers/i3c/i3c_npcm4xx.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/i3c/i3c_npcm4xx.c b/drivers/i3c/i3c_npcm4xx.c
+index 11cb70d612..198f4dd459 100644
+--- a/drivers/i3c/i3c_npcm4xx.c
++++ b/drivers/i3c/i3c_npcm4xx.c
+@@ -3974,9 +3974,15 @@ void I3C_Slave_ISR(uint8_t I3C_IF)
+ 	}
+ 
+ 	if (intmasked & I3C_INTMASKED_CCC_MASK) {
++		/* NACK to master while processing buffer */
++		I3C_SET_REG_CONFIG(I3C_IF, I3C_GET_REG_CONFIG(I3C_IF) | I3C_CONFIG_NACK_MASK);
++
+ 		/* must handle vendor CCC here, STOP will not be triggerred when MATCHSS == 1 */
+ 		I3C_Slave_Handle_DMA((uint32_t)pDevice);
+ 
++		/* Buffer operation is done, can ACK to master */
++		I3C_SET_REG_CONFIG(I3C_IF, I3C_GET_REG_CONFIG(I3C_IF) & ~I3C_CONFIG_NACK_MASK);
++
+ 		intmasked = I3C_GET_REG_INTMASKED(I3C_IF);
+ 		if (!intmasked) {
+ 			EXIT_SLAVE_ISR();
+@@ -4124,6 +4130,9 @@ void I3C_Slave_ISR(uint8_t I3C_IF)
+ 	}
+ 
+ 	if (intmasked & I3C_INTMASKED_STOP_MASK) {
++		/* NACK to master while processing buffer */
++		I3C_SET_REG_CONFIG(I3C_IF, I3C_GET_REG_CONFIG(I3C_IF) | I3C_CONFIG_NACK_MASK);
++
+ 		I3C_SET_REG_STATUS(I3C_IF, I3C_STATUS_STOP_MASK);
+ 
+ 		pTask = pDevice->pTaskListHead;
+@@ -4199,6 +4208,9 @@ void I3C_Slave_ISR(uint8_t I3C_IF)
+ 		if (I3C_GET_REG_STATUS(I3C_IF) & (I3C_STATUS_START_MASK | I3C_STATUS_STOP_MASK)) {
+ 			LOG_DBG("\r\nRE-ENTRY\r\n");
+ 		}
++
++		/* Buffer operation is done, can ACK to master */
++		I3C_SET_REG_CONFIG(I3C_IF, I3C_GET_REG_CONFIG(I3C_IF) & ~I3C_CONFIG_NACK_MASK);
+ 	}
+ 
+ 	EXIT_SLAVE_ISR();
+-- 
+2.34.1
+
