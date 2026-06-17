@@ -39,9 +39,15 @@ LOG_MODULE_REGISTER(sensor);
 
 #define SENSOR_DRIVE_INIT_DECLARE(name) uint8_t name##_init(sensor_cfg *cfg)
 
-#define SENSOR_DRIVE_TYPE_INIT_MAP(name) { sensor_dev_##name, name##_init }
+#define SENSOR_DRIVE_TYPE_INIT_MAP(name)                                                           \
+	{                                                                                          \
+		sensor_dev_##name, name##_init                                                     \
+	}
 
-#define SENSOR_DRIVE_TYPE_UNUSE(name) { sensor_dev_##name, NULL }
+#define SENSOR_DRIVE_TYPE_UNUSE(name)                                                              \
+	{                                                                                          \
+		sensor_dev_##name, NULL                                                            \
+	}
 
 #define SENSOR_READ_RETRY_MAX 3
 
@@ -154,6 +160,7 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(pex90144)
 	sensor_name_to_num(octeon)
 	sensor_name_to_num(iris_smbus)
+	sensor_name_to_num(rsm3514e)
 };
 // clang-format on
 
@@ -395,6 +402,9 @@ SENSOR_DRIVE_INIT_DECLARE(octeon);
 #endif
 #ifdef ENABLE_IRIS_SMBUS
 SENSOR_DRIVE_INIT_DECLARE(iris_smbus);
+#endif
+#ifdef ENABLE_RSM3514E
+SENSOR_DRIVE_INIT_DECLARE(rsm3514e);
 #endif
 
 // The sequence needs to same with SENSOR_DEV ID
@@ -802,6 +812,11 @@ sensor_drive_api sensor_drive_tbl[] = {
 	SENSOR_DRIVE_TYPE_INIT_MAP(iris_smbus),
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(iris_smbus),
+#endif
+#ifdef ENABLE_RSM3514E
+	SENSOR_DRIVE_TYPE_INIT_MAP(rsm3514e),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(rsm3514e),
 #endif
 
 };
