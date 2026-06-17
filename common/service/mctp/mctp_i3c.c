@@ -149,18 +149,32 @@ static uint16_t mctp_i3c_read_smq(void *mctp_p, uint8_t *buf, uint32_t len,
 
 	if (MCTP_I3C_PEC_ENABLE) {
 		uint8_t pec = 0x0, dynamic_addr = 0x0;
+		uint8_t pec_with_addr = 0x0, pec_without_addr = 0x0;
+		uint8_t addr_byte = 0x0;
 
 		ret = i3c_target_get_dynamic_address(&i3c_msg, &dynamic_addr);
 		if (ret != 0) {
 			LOG_ERR("Failed to get dynamic address for I3C bus: %x", i3c_msg.bus);
 			return MCTP_ERROR;
 		}
-		/** pec byte use 7-degree polynomial with 0 init value and false reverse **/
-		dynamic_addr = dynamic_addr << 1;
-		pec = crc8(&dynamic_addr, 1, 0x07, 0x00, false);
-		pec = crc8(&i3c_msg.data[0], i3c_msg.rx_len - 1, 0x07, pec, false);
+
+		/** PEC with address byte **/
+		addr_byte = dynamic_addr << 1;
+		pec_with_addr = crc8(&addr_byte, 1, 0x07, 0x00, false);
+		pec_with_addr =
+			crc8(&i3c_msg.data[0], i3c_msg.rx_len - 1, 0x07, pec_with_addr, false);
+
+		/** PEC without address byte **/
+		pec_without_addr = crc8(&i3c_msg.data[0], i3c_msg.rx_len - 1, 0x07, 0x00, false);
+
+		pec = pec_with_addr;
+
 		if (pec != i3c_msg.data[i3c_msg.rx_len - 1]) {
 			gpio_set(Reserve_GPIOA6, 1);
+			LOG_ERR("I3C DA(7bit)=0x%02x, addr_byte=0x%02x, rx_len=%d", dynamic_addr, addr_byte,
+				i3c_msg.rx_len);
+			LOG_ERR("PEC compare: with_addr=0x%02x, without_addr=0x%02x, received=0x%02x",
+				pec_with_addr, pec_without_addr, i3c_msg.data[i3c_msg.rx_len - 1]);
 			LOG_ERR("mctp i3c pec error: crc8 should be 0x%02x, but got 0x%02x", pec,
 				i3c_msg.data[i3c_msg.rx_len - 1]);
 			LOG_HEXDUMP_ERR(&i3c_msg.data[0], i3c_msg.rx_len,
