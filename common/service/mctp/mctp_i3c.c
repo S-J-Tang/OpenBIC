@@ -160,12 +160,12 @@ static uint16_t mctp_i3c_read_smq(void *mctp_p, uint8_t *buf, uint32_t len,
 		pec = crc8(&dynamic_addr, 1, 0x07, 0x00, false);
 		pec = crc8(&i3c_msg.data[0], i3c_msg.rx_len - 1, 0x07, pec, false);
 		if (pec != i3c_msg.data[i3c_msg.rx_len - 1]) {
-			gpio_set(Reserve_GPIOA6, 1);
+			// gpio_set(Reserve_GPIOA6, 1);
 			LOG_ERR("mctp i3c pec error: crc8 should be 0x%02x, but got 0x%02x", pec,
 				i3c_msg.data[i3c_msg.rx_len - 1]);
 			LOG_HEXDUMP_ERR(&i3c_msg.data[0], i3c_msg.rx_len,
 					"mctp_i3c pec error raw data");
-			gpio_set(Reserve_GPIOA6, 0);
+			// gpio_set(Reserve_GPIOA6, 0);
 			return 0;
 		}
 
