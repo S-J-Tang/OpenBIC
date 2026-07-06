@@ -167,6 +167,12 @@
 
 &i3c5 {
 	status = "okay";
+	compatible = "nuvoton,npcm4-i3c";
+	reg = <0x40004a00 0x200
+		0x4000d000 0x20
+		0x40015000 0x490>;
+	reg-names = "i3c", "pmc", "pdma";
+	hj-request-timeout-ms = <1000>;
 	slave;
 	secondary;
 	assigned-address = <0x21>;
@@ -178,6 +184,7 @@
 	pinctrl-0 = <&pinctrl_i3c5_default>;
 	i2c-scl-hz = <100000>;
 	i3c-scl-hz = <12500000>;
+	hj-request-timeout-ms = <1000>;
 	i3c5_smq:i3c-slave-mqueue@21 {
 		compatible = "i3c-slave-mqueue";
 		reg = <0x21>;
