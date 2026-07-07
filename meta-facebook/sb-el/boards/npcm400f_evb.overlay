@@ -172,7 +172,6 @@
 		0x4000d000 0x20
 		0x40015000 0x490>;
 	reg-names = "i3c", "pmc", "pdma";
-	hj-request-timeout-ms = <1000>;
 	slave;
 	secondary;
 	assigned-address = <0x21>;
