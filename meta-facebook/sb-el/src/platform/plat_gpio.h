@@ -102,7 +102,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO80) \
 	gpio_name_to_num(I3C_ELECTRA_ALERT_R_N) \
 	gpio_name_to_num(LED_MMC_HEARTBEAT_R) \
-	gpio_name_to_num(Reserve_GPIO83) \
+	gpio_name_to_num(FM_INA238_PDB_BUF_R_EN) \
 	gpio_name_to_num(Reserve_GPIO84) \
 	gpio_name_to_num(Reserve_GPIO85) \
 	gpio_name_to_num(Reserve_GPIO86) \
@@ -135,7 +135,7 @@ void gpio_int_default();
 	gpio_name_to_num(NUWA0_CHIP_STRAP0_MMC) \
 	gpio_name_to_num(Reserve_GPIOB7)
 #define name_gpioC	\
-	gpio_name_to_num(Reserve_GPIOC0) \
+	gpio_name_to_num(U626_OE) \
 	gpio_name_to_num(SPI_ADC_CS1_N) \
 	gpio_name_to_num(Reserve_GPIOC2) \
 	gpio_name_to_num(Reserve_GPIOC3) \
