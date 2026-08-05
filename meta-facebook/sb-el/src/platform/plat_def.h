@@ -41,6 +41,7 @@
 #define ENABLE_LX6301
 #define ENABLE_MCTP_I3C
 #define ENABLE_INA238
+#define ENABLE_RAA229140a
 
 #define DISABLE_AST_ADC
 #define DISABLE_NVME

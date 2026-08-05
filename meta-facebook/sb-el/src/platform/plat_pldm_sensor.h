@@ -333,7 +333,13 @@ typedef struct _power_capping_time_setting {
 } power_capping_time_setting;
 
 enum TMP_ADDRESS_VIRSION { FAB1_1ND_TMP432 = 0, FAB1_2ND_EMC1413, MAX_TMP_ADDRESS_VIRSION };
-enum VR_ADDRESS_VIRSION { FAB1_1ND_MPS = 0, FAB1_2ND_RNS, MAX_VR_ADDRESS_VIRSION };
+enum VR_ADDRESS_VIRSION {
+	FAB1_1ND_MPS = 0,
+	FAB1_2ND_RNS,
+	FAB2_1ND_MPS,
+	FAB2_2ND_RNS,
+	MAX_VR_ADDRESS_VIRSION
+};
 
 int plat_pldm_sensor_get_sensor_count(int thread_id);
 sensor_cfg *get_sensor_cfg_by_sensor_id(uint8_t sensor_id);
