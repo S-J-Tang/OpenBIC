@@ -19,9 +19,13 @@
  * This driver is cloned from raa229621.c. The GEN3 DMA/HEX-mode/CRC/NVM flow is
  * identical, so most of the code is reused as-is.
  *
- * TODO(you): Two things differ for the RAA229140A and MUST be reviewed/filled in:
- *   1) PMBUS DATA FORMAT  -> see raa229140a_read() below (LSB scaling per offset).
- *   2) Config ID line index in the hex image -> see VR_RAA_CFG_ID and the CRC
+ * NOTE: Unlike the RAA229140 (Direct mode), the RAA229140A uses PMBus Linear
+ * mode (LINEAR11: X = Y * 2^N) for its P/V/I/T registers - see
+ * raa229140a_read() below, which decodes via slinear11_to_float().
+ *
+ * TODO(you): One thing still differs for the RAA229140A and MUST be
+ * reviewed/filled in:
+ *   1) Config ID line index in the hex image -> see VR_RAA_CFG_ID and the CRC
  *      line offsets below. The config table extends to 24 lines on this part.
  *
  * Search for "TODO(you)" to find every spot that needs your attention.
@@ -33,6 +37,7 @@
 #include "sensor.h"
 #include "hal_i2c.h"
 #include "pmbus.h"
+#include "util_pmbus.h"
 
 #include <logging/log.h>
 
@@ -133,23 +138,6 @@ static uint8_t ascii_to_byte(uint8_t *ascii_buf)
 	return ascii_to_val(ascii_buf[0]) << 4 | ascii_to_val(ascii_buf[1]);
 }
 
-static bool adjust_of_twos_complement(uint8_t offset, int *val)
-{
-	if (val == NULL) {
-		LOG_ERR("Input value is NULL");
-		return false;
-	}
-
-	if ((offset == PMBUS_READ_IOUT) || (offset == PMBUS_READ_POUT)) {
-		bool is_negative_val = ((*val & BIT(15)) == 0 ? false : true);
-		if (is_negative_val) {
-			*val = 0;
-		}
-		return true;
-	}
-	return false;
-}
-
 uint8_t raa229140a_read(sensor_cfg *cfg, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_UNSPECIFIED_ERROR);
@@ -177,61 +165,31 @@ uint8_t raa229140a_read(sensor_cfg *cfg, int *reading)
 
 	sensor_val *sval = (sensor_val *)reading;
 	memset(sval, 0, sizeof(sensor_val));
-	bool ret = false;
-	int val = 0;
-	val = (msg.data[1] << 8) | msg.data[0];
 
 	/*
-	 * ============================================================
-	 * TODO(you): PMBUS DATA FORMAT
-	 * ------------------------------------------------------------
-	 * The per-offset LSB scaling below is copied from the raa229621.
-	 * Verify EACH conversion against the RAA229140A datasheet and update
-	 * the LSB/scaling and signedness as needed. Common differences:
-	 *   - PMBUS_READ_VOUT      : mV/LSB (unsigned)      -> confirm LSB
-	 *   - PMBUS_READ_IOUT      : A/LSB   (2's comp)     -> confirm LSB
-	 *   - PMBUS_READ_TEMPERATURE_1 : C/LSB (2's comp)   -> confirm LSB
-	 *   - PMBUS_READ_POUT      : W/LSB   (2's comp)     -> confirm LSB
-	 * If the 229140A uses different registers/direct-format coefficients,
-	 * adjust the math here accordingly.
-	 * ============================================================
+	 * RAA229140A uses PMBus Linear mode (LINEAR11) for P/V/I/T registers:
+	 *   X = Y * 2^N
+	 * where the 16-bit read value packs a 5-bit two's complement exponent N
+	 * in the top bits and an 11-bit two's complement mantissa Y in the
+	 * bottom bits. slinear11_to_float() implements this decode.
 	 */
+	uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
+	float val;
+
 	switch (offset) {
 	case PMBUS_READ_VOUT:
-		/* TODO(you): confirm VOUT LSB (raa229621 uses 1 mV/LSB, unsigned) */
-		sval->integer = val / 1000;
-		sval->fraction = val % 1000;
-		break;
 	case PMBUS_READ_IOUT:
-		/* TODO(you): confirm IOUT LSB (raa229621 uses 0.1 A/LSB, 2's comp) */
-		ret = adjust_of_twos_complement(offset, &val);
-		if (ret == false) {
-			LOG_ERR("Adjust reading IOUT value failed - sensor number: 0x%x", cfg->num);
-			return SENSOR_UNSPECIFIED_ERROR;
-		}
-		sval->integer = (int16_t)val / 10;
-		sval->fraction = ((int16_t)val - (sval->integer * 10)) * 100;
-		break;
 	case PMBUS_READ_TEMPERATURE_1:
-		/* TODO(you): confirm TEMP LSB (raa229621 uses 1 C/LSB, 2's comp) */
-		sval->integer = val;
-		sval->fraction = 0;
-		break;
 	case PMBUS_READ_POUT:
-		/* TODO(you): confirm POUT LSB (raa229621 uses 1 W/LSB, 2's comp) */
-		ret = adjust_of_twos_complement(offset, &val);
-		if (ret == false) {
-			LOG_ERR("Adjust reading POUT value failed - sensor number: 0x%x", cfg->num);
-			return SENSOR_UNSPECIFIED_ERROR;
-		}
-		sval->integer = val;
-		sval->fraction = 0;
+		val = slinear11_to_float(read_value);
 		break;
 	default:
 		LOG_ERR("Not support offset: 0x%x", offset);
 		return SENSOR_FAIL_TO_ACCESS;
-		break;
 	}
+
+	sval->integer = (int)val;
+	sval->fraction = (val - sval->integer) * 1000;
 
 	return SENSOR_READ_SUCCESS;
 }
