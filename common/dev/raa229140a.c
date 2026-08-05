@@ -87,6 +87,9 @@ LOG_MODULE_REGISTER(raa229140a);
 
 #define VR_WARN_REMAIN_WR 3
 
+/* READ_VOUT (0x8B) is L16U: 16-bit unsigned mantissa, fixed exponent 2^-9 */
+#define RAA229140A_READ_VOUT_EXP_VALUE (1.0 / (1 << 9)) //2^(-9)
+
 #ifdef RAA229140A_MAX_CMD_LINE
 #define MAX_CMD_LINE RAA229140A_MAX_CMD_LINE
 #else
@@ -167,17 +170,21 @@ uint8_t raa229140a_read(sensor_cfg *cfg, int *reading)
 	memset(sval, 0, sizeof(sensor_val));
 
 	/*
-	 * RAA229140A uses PMBus Linear mode (LINEAR11) for P/V/I/T registers:
-	 *   X = Y * 2^N
-	 * where the 16-bit read value packs a 5-bit two's complement exponent N
-	 * in the top bits and an 11-bit two's complement mantissa Y in the
-	 * bottom bits. slinear11_to_float() implements this decode.
+	 * RAA229140A PMBus data formats:
+	 *   - READ_VOUT: L16U, a 16-bit UNSIGNED mantissa with a fixed exponent
+	 *     of 2^-9 (VOUT = mantissa * 2^-9), no VOUT_MODE lookup needed.
+	 *   - READ_IOUT / READ_TEMPERATURE_1 / READ_POUT: LINEAR11
+	 *     (X = Y * 2^N), a 16-bit value packing a 5-bit two's complement
+	 *     exponent N in the top bits and an 11-bit two's complement
+	 *     mantissa Y in the bottom bits, decoded via slinear11_to_float().
 	 */
 	uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
 	float val;
 
 	switch (offset) {
 	case PMBUS_READ_VOUT:
+		val = (float)read_value * RAA229140A_READ_VOUT_EXP_VALUE;
+		break;
 	case PMBUS_READ_IOUT:
 	case PMBUS_READ_TEMPERATURE_1:
 	case PMBUS_READ_POUT:
