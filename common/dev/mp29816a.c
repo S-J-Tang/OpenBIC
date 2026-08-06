@@ -1237,7 +1237,11 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 		read_value = read_value & BIT_MASK(10);
 		val = slinear11_to_float(read_value);
 		val *= 0.03125; // 31.25mV/LSB
-	} else {
+	} else if (cfg->offset == PMBUS_READ_PIN) {
+		uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
+		read_value = read_value & BIT_MASK(10);
+		val = slinear11_to_float(read_value);
+	}else {
 		LOG_ERR("Sensor num 0x%x, offset 0x%x not supported.", cfg->num, cfg->offset);
 		return SENSOR_FAIL_TO_ACCESS;
 	}

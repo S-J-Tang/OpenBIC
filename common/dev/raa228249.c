@@ -737,7 +737,8 @@ uint8_t raa228249_read(sensor_cfg *cfg, int *reading)
 		uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = read_value * raa228249_READ_VOUT_RESOLUTION;
 
-	} else if (cfg->offset == PMBUS_READ_TEMPERATURE_1 || cfg->offset == PMBUS_READ_POUT) {
+	} else if (cfg->offset == PMBUS_READ_TEMPERATURE_1 || cfg->offset == PMBUS_READ_POUT ||
+		   cfg->offset == PMBUS_READ_PIN) {
 		/* 2's complement */
 		int16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = read_value;
