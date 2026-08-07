@@ -33,6 +33,7 @@
 #define DELAY_MODULE_PG_USER_SETTINGS_OFFSET 0x8800
 #define SVS_FLAG_USER_SETTINGS_OFFSET 0x8900
 #define VR_VOFFSET_MMC_USER_SETTINGS_OFFSET 0x8A00
+#define SVS_VOLTAGE_RANGE_USER_SETTINGS_OFFSET 0x8C00
 
 #define CPLD_THROTTLE_SWITCH_ADDR 0x25
 #define CPLD_THERMALTRIP_SWITCH_ADDR 0x3A
@@ -185,4 +186,6 @@ void set_clock_u87_u88_lphcsl_amp_ctrl_to_1v();
 bool vr_vout_user_settings_init(void);
 bool set_user_settings_vr_voffset_mmc_to_eeprom(void *user_settings, uint8_t data_length);
 bool get_user_settings_vr_voffset_mmc_from_eeprom(void *user_settings, uint8_t data_length);
+bool set_user_settings_svs_voltage_range_to_eeprom(void *user_settings, uint8_t data_length);
+bool get_user_settings_svs_voltage_range_from_eeprom(void *user_settings, uint8_t data_length);
 #endif

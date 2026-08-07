@@ -783,6 +783,8 @@ vr_vout_user_settings_struct vr_vout_user_settings = { 0 };
 vr_vout_range_user_settings_struct vout_range_user_settings = { 0 };
 vr_voffset_mmc_command_get_struct vr_voffset_mmc_command_get = { 0 };
 vr_voffset_mmc_user_settings_struct vr_voffset_mmc_user_settings = { 0 };
+svs_voltage_range_user_settings_struct svs_voltage_range_command_get = { 0 };
+svs_voltage_range_user_settings_struct svs_voltage_range_user_settings = { 0 };
 bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm)
 {
 	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);

@@ -25,6 +25,7 @@
 #include "plat_hook.h"
 #include "plat_cpld.h"
 #include "plat_vr_test_mode.h"
+#include "plat_user_setting.h"
 
 LOG_MODULE_REGISTER(plat_voltage_shell, LOG_LEVEL_DBG);
 
@@ -286,6 +287,24 @@ static bool ovp_uvp_check(const struct shell *shell, const char *rail_str, enum 
 	return true;
 }
 
+static bool svs_voltage_range_check(const struct shell *shell, const char *rail_str,
+				    enum VR_RAIL_E *rail)
+{
+	if (!(get_is_ubc_enabled() && is_ubc_enabled_delayed_enabled())) {
+		shell_error(shell, "VR no power");
+		return false;
+	}
+	if (!vr_rail_enum_get((uint8_t *)rail_str, (uint8_t *)rail)) {
+		shell_error(shell, "Invalid rail: %s", rail_str);
+		return false;
+	}
+	if (*rail != VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD && *rail != VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD) {
+		shell_error(shell, "Please input medha0/1 voltage rail");
+		return false;
+	}
+	return true;
+}
+
 static int cmd_ovp_get(const struct shell *shell, size_t argc, char **argv)
 {
 	enum VR_RAIL_E rail;
@@ -427,6 +446,72 @@ static int cmd_voffset_mmc_set(const struct shell *shell, size_t argc, char **ar
 	return 0;
 }
 
+static int cmd_svs_voltage_range_get(const struct shell *shell, size_t argc, char **argv)
+{
+	for (int i = VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD; i <= VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD; i++) {
+		uint8_t *rail_name = NULL;
+		if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
+			shell_print(shell, "Can't find vr_rail_name by rail index: %d", i);
+			continue;
+		}
+
+		uint16_t vmin = svs_voltage_range_command_get.vout_min[i];
+		uint16_t vmax = svs_voltage_range_command_get.vout_max[i];
+		shell_print(shell, "%4d|%-40s|min:%4dmV max:%4dmV", i, rail_name, vmin, vmax);
+	}
+	return 0;
+}
+
+static int cmd_svs_voltage_range_set(const struct shell *shell, size_t argc, char **argv)
+{
+	bool is_perm = false;
+
+	if (argc >= 5) {
+		if (!strcmp(argv[4], "perm")) {
+			is_perm = true;
+		} else {
+			shell_error(shell, "The last argument must be <perm>");
+			return -1;
+		}
+	}
+
+	if (argc < 3) {
+		shell_error(shell, "Usage: svs_voltage_range set <rail> <min-mV> <max-mV> [perm]");
+		return -1;
+	}
+
+	enum VR_RAIL_E rail;
+	if (!svs_voltage_range_check(shell, argv[1], &rail))
+		return -1;
+
+	uint16_t set_value_min = strtol(argv[2], NULL, 10);
+	uint16_t set_value_max = strtol(argv[3], NULL, 10);
+
+	if (set_value_min > set_value_max) {
+		shell_error(shell, "min value should be less than max value");
+		return -1;
+	}
+
+	svs_voltage_range_command_get.vout_min[rail] = set_value_min;
+	svs_voltage_range_command_get.vout_max[rail] = set_value_max;
+
+	if (is_perm) {
+		svs_voltage_range_user_settings.vout_min[rail] = set_value_min;
+		svs_voltage_range_user_settings.vout_max[rail] = set_value_max;
+		if (!set_user_settings_svs_voltage_range_to_eeprom(
+			    &svs_voltage_range_user_settings,
+			    sizeof(svs_voltage_range_user_settings))) {
+			shell_error(shell, "Can't set svs_voltage_range user settings");
+			return -1;
+		}
+	}
+
+	shell_info(shell, "Set %s min:%4dmV max:%4dmV ,%svolatile\n", argv[1], set_value_min,
+		   set_value_max, (argc == 5) ? "non-" : "");
+
+	return 0;
+}
+
 SHELL_DYNAMIC_CMD_CREATE(voltage_rname, voltage_rname_get);
 
 /* OVP/UVP level 2 */
@@ -465,6 +550,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_voffset_mmc_cmds,
 			       SHELL_CMD(get, NULL, "voffset_mmc get", cmd_voffset_mmc_get),
 			       SHELL_SUBCMD_SET_END);
 
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_svs_voltage_range_cmds,
+	SHELL_CMD(get, &voltage_rname, "svs_voltage_range get", cmd_svs_voltage_range_get),
+	SHELL_CMD_ARG(set, &voltage_rname, "svs_voltage_range set <rail> <min-mV> <max-mV> [perm]",
+		      cmd_svs_voltage_range_set, 4, 1),
+	SHELL_SUBCMD_SET_END);
+
 /* level 1 */
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_voltage_cmds, SHELL_CMD(get, &sub_voltage_get_cmds, "get voltage all", NULL),
@@ -477,6 +569,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(voffset_mmc, &sub_voffset_mmc_cmds, "Voffset_mmc set/get commands", NULL),
 	SHELL_CMD(ovp, &sub_ovp_cmds, "OVP get/set commands (MPS medha0/1 only)", NULL),
 	SHELL_CMD(uvp, &sub_uvp_cmds, "UVP get/set commands (MPS medha0/1 only)", NULL),
+	SHELL_CMD(svs_voltage_range, &sub_svs_voltage_range_cmds,
+		  "svs_voltage_range get/set commands (MPS medha0/1 only)", NULL),
 	SHELL_SUBCMD_SET_END);
 
 /* Root of command test */

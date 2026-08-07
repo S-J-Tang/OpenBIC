@@ -253,6 +253,11 @@ typedef struct bootstrap_user_settings_struct {
 	uint16_t user_setting_value[STRAP_INDEX_MAX];
 } bootstrap_user_settings_struct;
 
+typedef struct svs_voltage_range_user_settings_struct {
+	uint16_t vout_max[2];
+	uint16_t vout_min[2];
+} svs_voltage_range_user_settings_struct;
+
 #define OVP2_ACTION_NO_ACTION 0x00 /* 2'b00 */
 #define OVP2_ACTION_LATCH_OFF 0x01 /* 2'b01 */
 #define OVP2_ACTION_UNKNOWN 0xFF
@@ -266,6 +271,8 @@ extern vr_mapping_sensor vr_rail_table[];
 extern bootstrap_mapping_register bootstrap_table[];
 extern vr_voffset_mmc_command_get_struct vr_voffset_mmc_command_get;
 extern vr_voffset_mmc_user_settings_struct vr_voffset_mmc_user_settings;
+extern svs_voltage_range_user_settings_struct svs_voltage_range_command_get;
+extern svs_voltage_range_user_settings_struct svs_voltage_range_user_settings;
 void set_bootstrap_table_change_setting_value(uint8_t index, uint8_t value);
 bool pre_vr_read(sensor_cfg *cfg, void *args);
 bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading);

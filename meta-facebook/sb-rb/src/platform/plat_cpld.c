@@ -425,19 +425,6 @@ bool asic_temp_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value)
 			error_log_event(error_code, LOG_ASSERT);
 			// send log to bmc
 			packaged_bmc_log(IRIS_FAULT, error_asic_temp_code, asic_send_data, 0);
-		} else {
-			uint8_t check_lv2_data = 0;
-			switch (bit) {
-			case 6:
-			case 3:
-			case 1:
-				// check cpld 0xA8 bit6/3/1 all clear
-				if (!plat_read_cpld(MFIO_FOR_RAINBOW, &check_lv2_data, 1)) {
-					LOG_ERR("Failed to read ASIC_VR_HOT_SWITCH");
-				}
-				if ((check_lv2_data & CHECK_BITS_631) == 0)
-					restore_vr_hot();
-			}
 		}
 	}
 
