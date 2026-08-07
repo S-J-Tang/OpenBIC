@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -29,7 +29,10 @@
 #define I2C_BUS_BMC I2C_BUS6
 
 /* i3c vendor-def-id */
-#define DEFAULT_VENDOR_DEF_ID 0x567
+#define DEFAULT_VENDOR_DEF_ID_1 0x510
+#define DEFAULT_VENDOR_DEF_ID_2 0x520
+#define DEFAULT_VENDOR_DEF_ID_3 0x530
+#define DEFAULT_VENDOR_DEF_ID_4 0x540
 
 /* mctp endpoint */
 #define MCTP_EID_BMC 0x08
