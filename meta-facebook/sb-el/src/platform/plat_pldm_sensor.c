@@ -13461,7 +13461,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		}
 		if (vr_module == VR_MODULE_RNS) {
 			LOG_WRN("change VR address to RNS");
-			if(board_rev_id == REV_ID_EVT1B)
+			if(board_rev_id >= REV_ID_EVT2)
 				vr_change_mode = FAB2_2ND_RNS;
 			else
 				vr_change_mode = FAB1_2ND_RNS;
@@ -13475,7 +13475,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		}
 		if (vr_module == VR_MODULE_RNS) {
 			LOG_WRN("change VR address to RNS");
-			if(board_rev_id == REV_ID_EVT1B)
+			if(board_rev_id >= REV_ID_EVT2)
 				vr_change_mode = FAB2_2ND_RNS;
 			else
 				vr_change_mode = FAB1_2ND_RNS;
