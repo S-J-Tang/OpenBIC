@@ -27,4 +27,10 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N();
 void ISR_ASIC_THERMTRIP_TRIGGER();
 void plat_switch_pin_a12(bool use_gpio73);
 bool ubc_en_changed_callback(cpld_info *info, uint8_t *data);
+void ISR_PWR_CAP_LV1_MEDHA0();
+void ISR_PWR_CAP_LV1_MEDHA1();
+void clear_pwr_cap_lv1_medha0_count();
+void clear_pwr_cap_lv1_medha1_count();
+uint32_t get_pwr_cap_lv1_medha0_count();
+uint32_t get_pwr_cap_lv1_medha1_count();
 #endif

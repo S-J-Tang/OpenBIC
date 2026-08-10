@@ -23,6 +23,7 @@
 #include "plat_power_capping.h"
 #include "plat_pldm_sensor.h"
 #include "shell_adc.h"
+#include "plat_isr.h"
 
 typedef struct {
 	const char *name;
@@ -280,6 +281,33 @@ static void power_capping_name_get_for_set_cmd(size_t idx, struct shell_static_e
 	}
 }
 
+static int cmd_power_capping_trigger_times_count_get(const struct shell *shell, size_t argc,
+						     char **argv)
+{
+	shell_print(shell, "Level 1 MEDHA0 trigger count = %d", get_pwr_cap_lv1_medha0_count());
+	shell_print(shell, "Level 2 MEDHA0 trigger count = %d", get_pwr_cap_lv2_medha0_count());
+	shell_print(shell, "Level 3 MEDHA0 trigger count = %d", get_pwr_cap_lv3_medha0_count());
+	shell_print(shell, "Level 1 MEDHA1 trigger count = %d", get_pwr_cap_lv1_medha1_count());
+	shell_print(shell, "Level 2 MEDHA1 trigger count = %d", get_pwr_cap_lv2_medha1_count());
+	shell_print(shell, "Level 3 MEDHA1 trigger count = %d", get_pwr_cap_lv3_medha1_count());
+
+	return 0;
+}
+
+static int cmd_power_capping_trigger_times_count_clear(const struct shell *shell, size_t argc,
+						       char **argv)
+{
+	clear_pwr_cap_lv1_medha0_count();
+	clear_pwr_cap_lv2_medha0_count();
+	clear_pwr_cap_lv3_medha0_count();
+	clear_pwr_cap_lv1_medha1_count();
+	clear_pwr_cap_lv2_medha1_count();
+	clear_pwr_cap_lv3_medha1_count();
+
+	shell_print(shell, "power capping trigger times count cleared");
+
+	return 0;
+}
 SHELL_DYNAMIC_CMD_CREATE(power_capping_name, power_capping_name_get_for_set_cmd);
 
 /* level 3 */
@@ -302,6 +330,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(set_source_subcmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(get_subcmds,
 			       SHELL_CMD(all, NULL, "power_capping get all",
 					 cmd_power_capping_get_all),
+			       SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(trigger_times_count_subcmds,
+			       SHELL_CMD(get, NULL, "power_capping trigger get",
+					 cmd_power_capping_trigger_times_count_get),
+			       SHELL_CMD(clear, NULL, "power_capping trigger clear",
+					 cmd_power_capping_trigger_times_count_clear),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -328,6 +363,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  NULL),
 	SHELL_CMD_ARG(debug, &power_capping_name, "power_capping debug <MEDHA[X]_LV[Y]>",
 		      cmd_power_capping_debug, 2, 0),
+	SHELL_CMD(trigger_count, &trigger_times_count_subcmds,
+		  "power_capping trigger_times_count <get | clear>", NULL),
 	SHELL_SUBCMD_SET_END);
 /* Root level */
 SHELL_CMD_REGISTER(

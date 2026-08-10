@@ -433,3 +433,35 @@ bool plat_gpio_immediate_int_cb(uint8_t gpio_num)
 
 	return ret;
 }
+
+static uint32_t pwr_cap_lv1_medha0_count = 0;
+static uint32_t pwr_cap_lv1_medha1_count = 0;
+void ISR_PWR_CAP_LV1_MEDHA0()
+{
+	pwr_cap_lv1_medha0_count++;
+}
+
+void ISR_PWR_CAP_LV1_MEDHA1()
+{
+	pwr_cap_lv1_medha1_count++;
+}
+
+void clear_pwr_cap_lv1_medha0_count()
+{
+	pwr_cap_lv1_medha0_count = 0;
+}
+
+void clear_pwr_cap_lv1_medha1_count()
+{
+	pwr_cap_lv1_medha1_count = 0;
+}
+
+uint32_t get_pwr_cap_lv1_medha0_count()
+{
+	return pwr_cap_lv1_medha0_count;
+}
+
+uint32_t get_pwr_cap_lv1_medha1_count()
+{
+	return pwr_cap_lv1_medha1_count;
+}

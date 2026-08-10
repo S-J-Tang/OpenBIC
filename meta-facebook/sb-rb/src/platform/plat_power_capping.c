@@ -49,6 +49,18 @@ const static uint8_t volt_sensor_id_list[2] = { SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD
 // only record bit 0-3, lv_switch_en
 static uint8_t lv_switch_en_val = 0;
 
+// CPLD_OFFSET_POWER_CLAMP(0x25) bit definition for LV2/LV3 trigger status
+#define MEDHA0_PWR_CAP_LV2_CPLD_BIT 7
+#define MEDHA1_PWR_CAP_LV2_CPLD_BIT 6
+#define MEDHA0_PWR_CAP_LV3_CPLD_BIT 5
+#define MEDHA1_PWR_CAP_LV3_CPLD_BIT 4
+
+static uint8_t prev_lv2_lv3_cpld_status = 0;
+static uint32_t pwr_cap_lv2_medha0_count = 0;
+static uint32_t pwr_cap_lv2_medha1_count = 0;
+static uint32_t pwr_cap_lv3_medha0_count = 0;
+static uint32_t pwr_cap_lv3_medha1_count = 0;
+
 K_WORK_DELAYABLE_DEFINE(sync_vr_oc_work, power_capping_syn_vr_oc_warn_limit);
 
 void set_power_capping_lv_switch_en_val(uint8_t val)
@@ -475,10 +487,88 @@ void set_power_capping_threshold(uint8_t vr_idx, uint8_t lv, uint16_t value)
 	power_capping_info.threshold[vr_idx][lv] = value;
 }
 
+uint32_t get_pwr_cap_lv2_medha0_count()
+{
+	return pwr_cap_lv2_medha0_count;
+}
+
+uint32_t get_pwr_cap_lv2_medha1_count()
+{
+	return pwr_cap_lv2_medha1_count;
+}
+
+uint32_t get_pwr_cap_lv3_medha0_count()
+{
+	return pwr_cap_lv3_medha0_count;
+}
+
+uint32_t get_pwr_cap_lv3_medha1_count()
+{
+	return pwr_cap_lv3_medha1_count;
+}
+
+void clear_pwr_cap_lv2_medha0_count()
+{
+	pwr_cap_lv2_medha0_count = 0;
+}
+
+void clear_pwr_cap_lv2_medha1_count()
+{
+	pwr_cap_lv2_medha1_count = 0;
+}
+
+void clear_pwr_cap_lv3_medha0_count()
+{
+	pwr_cap_lv3_medha0_count = 0;
+}
+
+void clear_pwr_cap_lv3_medha1_count()
+{
+	pwr_cap_lv3_medha1_count = 0;
+}
+
+static bool is_bit_rising_edge(uint8_t prev_val, uint8_t cur_val, uint8_t bit)
+{
+	bool prev_bit = !!(prev_val & (1u << bit));
+	bool cur_bit = !!(cur_val & (1u << bit));
+
+	return (!prev_bit && cur_bit);
+}
+
+/* Read CPLD_OFFSET_POWER_CLAMP(0x25) and count each 0->1 transition on the
+ * LV2/LV3 trigger bits separately for MEDHA0/MEDHA1.
+ */
+static void check_pwr_cap_lv2_lv3_trigger_count()
+{
+	uint8_t data = 0;
+
+	if (!plat_read_cpld(CPLD_OFFSET_POWER_CLAMP, &data, 1)) {
+		LOG_ERR("Can't r cpld offset 0x%02x", CPLD_OFFSET_POWER_CLAMP);
+		return;
+	}
+
+	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA0_PWR_CAP_LV2_CPLD_BIT)) {
+		pwr_cap_lv2_medha0_count++;
+	}
+	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA1_PWR_CAP_LV2_CPLD_BIT)) {
+		pwr_cap_lv2_medha1_count++;
+	}
+	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA0_PWR_CAP_LV3_CPLD_BIT)) {
+		pwr_cap_lv3_medha0_count++;
+	}
+	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA1_PWR_CAP_LV3_CPLD_BIT)) {
+		pwr_cap_lv3_medha1_count++;
+	}
+
+	prev_lv2_lv3_cpld_status = data;
+}
+
 void power_capping_handler(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		k_sem_take(&power_capping_sem, K_FOREVER);
+
+		check_pwr_cap_lv2_lv3_trigger_count();
 
 		if (get_power_capping_method() == CAPPING_M_LOOK_UP_TABLE) {
 			uint8_t final_ucr_status = get_final_ucr_status();
