@@ -40,6 +40,7 @@ static bool plat_sensor_ina238_polling_enable_flag = true;
 static uint8_t plat_sensor_one_step_power_enable_flag = 0;
 uint8_t pwr_capping_pollng_rate_type = 0;
 static uint8_t ina238_polling_rate_type = 0;
+static uint8_t nuwa_input_pwr_polling_rate_type = 0;
 
 static ina238_init_arg ina238_pwr_w_init_args = {
 	.is_init = false,
@@ -14180,6 +14181,39 @@ void set_ina238_polling_rate_type(uint8_t type)
 uint8_t get_ina238_polling_rate_type()
 {
 	return ina238_polling_rate_type;
+}
+
+void set_nuwa_input_pwr_polling_rate_type(uint8_t type)
+{
+	static const uint16_t polling_interval_ms[] = { 10, 5, 1 };
+
+	if (type >= ARRAY_SIZE(polling_interval_ms)) {
+		LOG_ERR("NUWA input power polling rate type should be 0-2");
+		return;
+	}
+
+	pldm_sensor_info *vr_table = plat_pldm_sensor_load(QUICK_VR_SENSOR_THREAD_ID);
+	int count = plat_pldm_sensor_get_sensor_count(QUICK_VR_SENSOR_THREAD_ID);
+	if (vr_table == NULL || count < 0) {
+		LOG_ERR("Cannot get quick VR table for NUWA input power polling rate");
+		return;
+	}
+
+	for (uint8_t i = 0; i < count; i++) {
+		if (vr_table[i].pldm_sensor_cfg.num == SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_INPUT_W ||
+		    vr_table[i].pldm_sensor_cfg.num == SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_INPUT_W) {
+			vr_table[i].poll_interval_ms = polling_interval_ms[type];
+			nuwa_input_pwr_polling_rate_type = type;
+			LOG_INF("NUWA%s input power polling rate set successfully: type=%u, interval=%u ms", 
+				vr_table[i].pldm_sensor_cfg.num == SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_INPUT_W ? "0" : "1",
+				type, polling_interval_ms[type]);
+		}
+	}
+}
+
+uint8_t get_nuwa_input_pwr_polling_rate_type()
+{
+	return nuwa_input_pwr_polling_rate_type;
 }
 
 void leak_sensor_handler(void)

@@ -1096,6 +1096,20 @@ void plat_master_write_thread_handler()
 
 				set_ina238_polling_rate_type(rdata[1]);
 			} break;
+			case NUWA_INPUT_PWR_POLLING_RATE_REG: {
+				if (rlen != 2) {
+					LOG_ERR("Invalid length for offset(write): 0x%02x",
+						reg_offset);
+					break;
+				}
+
+				if (rdata[1] > 2) {
+					LOG_ERR("INA238 polling rate type should be 0-2");
+					break;
+				}
+
+				set_nuwa_input_pwr_polling_rate_type(rdata[1]);
+			} break;
 			case SET_SENSOR_POLLING_COMMAND_REG: {
 				if (rlen != 10) {
 					LOG_ERR("Invalid length for offset: 0x%02x", reg_offset);
@@ -1426,16 +1440,18 @@ static bool command_reply_data_handle(void *arg)
 				data->target_rd_msg.msg_length = 6;
 				sensor_value =
 					(get_cached_sensor_reading_by_sensor_number(
-							SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_INPUT_W) +
-						500) / 1000;
+						 SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_INPUT_W) +
+					 500) /
+					1000;
 				memcpy(&data->target_rd_msg.msg[0], &sensor_value,
-						sizeof(sensor_value));
+				       sizeof(sensor_value));
 				sensor_value =
 					(get_cached_sensor_reading_by_sensor_number(
-							SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_INPUT_W) +
-						500) / 1000;
+						 SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_INPUT_W) +
+					 500) /
+					1000;
 				memcpy(&data->target_rd_msg.msg[2], &sensor_value,
-						sizeof(sensor_value));
+				       sizeof(sensor_value));
 				/* EVT1A PDB1 power comes from BMC through CPLD */
 				if (get_board_rev_id() == REV_ID_EVT1A) {
 					int reading = 0;
@@ -1444,10 +1460,18 @@ static bool command_reply_data_handle(void *arg)
 					memcpy(&data->target_rd_msg.msg[4], &val, sizeof(val));
 				} else {
 					/* EVT1B and later PDB1 power comes from INA238 sensor cache */
-					int milivolt = get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_INA238_PWR_W);
+					int milivolt = get_cached_sensor_reading_by_sensor_number(
+						SENSOR_NUM_INA238_PWR_W);
 					uint16_t val = (milivolt + 500) / 1000;
 					memcpy(&data->target_rd_msg.msg[4], &val, sizeof(val));
 				}
+			} break;
+			case NUWA_INPUT_PWR_POLLING_RATE_REG: {
+				uint8_t type = get_nuwa_input_pwr_polling_rate_type();
+				data->target_rd_msg.msg[0] = type;
+				data->target_rd_msg.msg_length = 1;
+				LOG_INF("NUWA input power polling rate read successfully: type=%u",
+					type);
 			} break;
 			default:
 				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
