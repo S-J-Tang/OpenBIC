@@ -173,7 +173,7 @@ uint8_t raa229140a_read(sensor_cfg *cfg, int *reading)
 	 * RAA229140A PMBus data formats:
 	 *   - READ_VOUT: L16U, a 16-bit UNSIGNED mantissa with a fixed exponent
 	 *     of 2^-9 (VOUT = mantissa * 2^-9), no VOUT_MODE lookup needed.
-	 *   - READ_IOUT / READ_TEMPERATURE_1 / READ_POUT: LINEAR11
+	 *   - READ_VIN / READ_IOUT / READ_TEMPERATURE_1 / READ_POUT: LINEAR11
 	 *     (X = Y * 2^N), a 16-bit value packing a 5-bit two's complement
 	 *     exponent N in the top bits and an 11-bit two's complement
 	 *     mantissa Y in the bottom bits, decoded via slinear11_to_float().
@@ -188,6 +188,7 @@ uint8_t raa229140a_read(sensor_cfg *cfg, int *reading)
 	case PMBUS_READ_IOUT:
 	case PMBUS_READ_TEMPERATURE_1:
 	case PMBUS_READ_POUT:
+	case PMBUS_READ_VIN:
 		val = slinear11_to_float(read_value);
 		break;
 	default:
