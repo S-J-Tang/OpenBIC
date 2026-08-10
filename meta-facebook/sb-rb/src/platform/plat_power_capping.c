@@ -55,13 +55,17 @@ static uint8_t lv_switch_en_val = 0;
 #define MEDHA0_PWR_CAP_LV3_CPLD_BIT 5
 #define MEDHA1_PWR_CAP_LV3_CPLD_BIT 4
 
-static uint8_t prev_lv2_lv3_cpld_status = 0;
+static uint8_t prev_lv2_lv3_ucr_status = 0;
 static uint32_t pwr_cap_lv2_medha0_count = 0;
 static uint32_t pwr_cap_lv2_medha1_count = 0;
 static uint32_t pwr_cap_lv3_medha0_count = 0;
 static uint32_t pwr_cap_lv3_medha1_count = 0;
 
 K_WORK_DELAYABLE_DEFINE(sync_vr_oc_work, power_capping_syn_vr_oc_warn_limit);
+
+#define PWR_CAP_LV2_LV3_POLL_INTERVAL_MS 1000
+static void pwr_cap_lv2_lv3_poll_handler(struct k_work *work);
+K_WORK_DELAYABLE_DEFINE(pwr_cap_lv2_lv3_poll_work, pwr_cap_lv2_lv3_poll_handler);
 
 void set_power_capping_lv_switch_en_val(uint8_t val)
 {
@@ -535,32 +539,41 @@ static bool is_bit_rising_edge(uint8_t prev_val, uint8_t cur_val, uint8_t bit)
 	return (!prev_bit && cur_bit);
 }
 
-/* Read CPLD_OFFSET_POWER_CLAMP(0x25) and count each 0->1 transition on the
- * LV2/LV3 trigger bits separately for MEDHA0/MEDHA1.
+/* Compare current final_ucr_status (bits 7/6/5/4 = MEDHA0_LV2/MEDHA1_LV2/
+ * MEDHA0_LV3/MEDHA1_LV3, same layout as CPLD_OFFSET_POWER_CLAMP) against the
+ * previous status and count each 0->1 transition separately for MEDHA0/MEDHA1.
  */
-static void check_pwr_cap_lv2_lv3_trigger_count()
+static void check_pwr_cap_lv2_lv3_trigger_count(uint8_t cur_status)
 {
-	uint8_t data = 0;
-
-	if (!plat_read_cpld(CPLD_OFFSET_POWER_CLAMP, &data, 1)) {
-		LOG_ERR("Can't r cpld offset 0x%02x", CPLD_OFFSET_POWER_CLAMP);
-		return;
-	}
-
-	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA0_PWR_CAP_LV2_CPLD_BIT)) {
+	if (is_bit_rising_edge(prev_lv2_lv3_ucr_status, cur_status, MEDHA0_PWR_CAP_LV2_CPLD_BIT)) {
 		pwr_cap_lv2_medha0_count++;
 	}
-	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA1_PWR_CAP_LV2_CPLD_BIT)) {
+	if (is_bit_rising_edge(prev_lv2_lv3_ucr_status, cur_status, MEDHA1_PWR_CAP_LV2_CPLD_BIT)) {
 		pwr_cap_lv2_medha1_count++;
 	}
-	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA0_PWR_CAP_LV3_CPLD_BIT)) {
+	if (is_bit_rising_edge(prev_lv2_lv3_ucr_status, cur_status, MEDHA0_PWR_CAP_LV3_CPLD_BIT)) {
 		pwr_cap_lv3_medha0_count++;
 	}
-	if (is_bit_rising_edge(prev_lv2_lv3_cpld_status, data, MEDHA1_PWR_CAP_LV3_CPLD_BIT)) {
+	if (is_bit_rising_edge(prev_lv2_lv3_ucr_status, cur_status, MEDHA1_PWR_CAP_LV3_CPLD_BIT)) {
 		pwr_cap_lv3_medha1_count++;
 	}
 
-	prev_lv2_lv3_cpld_status = data;
+	prev_lv2_lv3_ucr_status = cur_status;
+}
+
+/* Runs once every PWR_CAP_LV2_LV3_POLL_INTERVAL_MS (1s), independent of the
+ * ADC/VR polling thread's own (fast, variable) cadence. Only checks the
+ * trigger status while DC is on; always reschedules itself so it keeps
+ * ticking at a fixed 1s rate.
+ */
+static void pwr_cap_lv2_lv3_poll_handler(struct k_work *work)
+{
+	if (is_mb_dc_on()) {
+		check_pwr_cap_lv2_lv3_trigger_count(get_final_ucr_status());
+	}
+
+	k_work_reschedule(k_work_delayable_from_work(work),
+			  K_MSEC(PWR_CAP_LV2_LV3_POLL_INTERVAL_MS));
 }
 
 void power_capping_handler(void *p1, void *p2, void *p3)
@@ -568,10 +581,9 @@ void power_capping_handler(void *p1, void *p2, void *p3)
 	while (1) {
 		k_sem_take(&power_capping_sem, K_FOREVER);
 
-		check_pwr_cap_lv2_lv3_trigger_count();
+		uint8_t final_ucr_status = get_final_ucr_status();
 
 		if (get_power_capping_method() == CAPPING_M_LOOK_UP_TABLE) {
-			uint8_t final_ucr_status = get_final_ucr_status();
 			if (prev_set_ucr_status != final_ucr_status) {
 				uint8_t data = 0;
 				data = (lv_switch_en_val & 0x0F) | final_ucr_status;
@@ -648,6 +660,8 @@ void plat_power_capping_init()
 
 	set_power_capping_source(CAPPING_SOURCE_ADC);
 	set_power_capping_method(CAPPING_M_CREDIT_BASE);
+
+	k_work_schedule(&pwr_cap_lv2_lv3_poll_work, K_MSEC(PWR_CAP_LV2_LV3_POLL_INTERVAL_MS));
 
 	k_thread_create(&power_capping_thread, power_capping_thread_stack, POWER_CAPPING_STACK_SIZE,
 			power_capping_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0,

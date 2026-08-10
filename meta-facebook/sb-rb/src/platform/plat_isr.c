@@ -427,6 +427,12 @@ bool plat_gpio_immediate_int_cb(uint8_t gpio_num)
 	case ALL_VR_PM_ALERT_R_N:
 		ret = true;
 		break;
+	case MEDHA0_PWR_CAP_LV1_LVC33:
+		ret = true;
+		break;
+	case MEDHA1_PWR_CAP_LV1_LVC33:
+		ret = true;
+		break;
 	default:
 		break;
 	}
