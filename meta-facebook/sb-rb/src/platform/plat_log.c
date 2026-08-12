@@ -1202,11 +1202,9 @@ bool check_temp_status_bit(uint8_t bit_num)
 	return true;
 }
 
-void check_rns_vr_cml_status(void)
+static void rns_vr_cml_check_work_handler(struct k_work *work)
 {
-	if (get_vr_module() != VR_MODULE_RNS)
-		return;
-	k_msleep(2000);
+	ARG_UNUSED(work);
 
 	for (uint8_t rail = 0; rail < VR_RAIL_E_P3V3_OSFP_VOLT_V; rail++) {
 		uint16_t cml_status = 0;
@@ -1251,6 +1249,17 @@ void check_rns_vr_cml_status(void)
 			LOG_INF("VR[%d] CML status(0x7E) cleared successfully", rail);
 		}
 	}
+}
+static K_WORK_DELAYABLE_DEFINE(rns_vr_cml_check_work, rns_vr_cml_check_work_handler);
+
+void check_rns_vr_cml_status(void)
+{
+	if (get_vr_module() != VR_MODULE_RNS)
+		return;
+
+	// Defer the check by 2s instead of blocking the caller's workqueue with k_msleep,
+	// so other queued work (e.g. other GPIO ISR callbacks) can run in the meantime.
+	k_work_schedule(&rns_vr_cml_check_work, K_SECONDS(2));
 }
 
 void packaged_bmc_log(uint8_t event_type, uint8_t event_data_1, uint8_t event_data_2,

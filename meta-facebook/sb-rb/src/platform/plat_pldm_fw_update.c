@@ -827,7 +827,17 @@ void load_pldmupdate_comp_config(void)
 		return;
 	}
 
-	memcpy(comp_config, PLDMUPDATE_FW_CONFIG_TABLE, sizeof(PLDMUPDATE_FW_CONFIG_TABLE));
+	size_t filtered_count = 0;
+	for (size_t i = 0; i < comp_config_count; i++) {
+		// Skip the COMPNT_P3V3 for RB
+		if ((get_asic_board_id() == ASIC_BOARD_ID_RAINBOW) &&
+		    PLDMUPDATE_FW_CONFIG_TABLE[i].comp_identifier == COMPNT_VR_3V3)
+			continue;
+
+		comp_config[filtered_count++] = PLDMUPDATE_FW_CONFIG_TABLE[i];
+	}
+
+	comp_config_count = filtered_count;
 }
 
 // vr update
