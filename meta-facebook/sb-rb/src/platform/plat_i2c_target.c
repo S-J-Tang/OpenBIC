@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(plat_i2c_target);
 #define CPLD_VERSION_GET_REG 0x32
 #define CPLD_VERSION_GET_REG_LEN 4
 #define STRAP_SET_TYPE 0x44 // 01000100
-#define VR_PWR_BUF_SIZE 38
+#define VR_PWR_BUF_SIZE 52
 #define I2C_TARGET_BUS_ASIC I2C_BUS7 // asic HAMSA
 #define I2C_TARGET_BUS_ASIC_MEDHA0 I2C_BUS4 // asic medha0
 #define I2C_TARGET_BUS_ASIC_MEDHA1 I2C_BUS5 // asic medha1
@@ -527,6 +527,13 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 	[34:35] - P0V75_OWL_W_VDD (Unit: W)
 	[36:37] - PDB1_P52V_ASIC_SENSE_PWR (Unit: W) (Need BMC support)
 	each data is 2 bytes
+	[38:39] - P0V9_OWL_E_TRVDD (Unit: W)
+	[40:41] - P0V75_OWL_E_TRVDD (Unit: W)
+	[42:43] - P0V9_OWL_W_TRVDD_PWR_W (Unit: W)
+	[44:45] - P0V75_OWL_W_TRVDD_PWR_W (Unit: W)
+	[46:47] - P0V8_HAMSA_AVDD_PCIE_PWR_W (Unit: W)
+	[48:49] - P1V2_HAMSA_VDDHRXTX_PCIE_PWR_W (Unit: W)
+	[50:51] - P0V85_HAMSA_VDD_PWR_W (Unit: W)
 	*/
 	float x = 0;
 	float chiplet0 = 0;
@@ -611,6 +618,27 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 			break;
 		case SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_PWR_W:
 			memcpy(&buffer[34], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V9_OWL_E_TRVDD_PWR_W:
+			memcpy(&buffer[38], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V75_OWL_E_TRVDD_PWR_W:
+			memcpy(&buffer[40], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_PWR_W:
+			memcpy(&buffer[42], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_PWR_W:
+			memcpy(&buffer[44], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V8_HAMSA_AVDD_PCIE_PWR_W:
+			memcpy(&buffer[46], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_PWR_W:
+			memcpy(&buffer[48], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W:
+			memcpy(&buffer[50], &val, 2);
 			break;
 		default:
 			// do nothing
