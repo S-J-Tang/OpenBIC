@@ -161,4 +161,5 @@ void packaged_bmc_log(uint8_t event_type, uint8_t event_data_1, uint8_t event_da
 uint8_t clk_100mhz_get_lock_status();
 uint8_t clk_312_5mhz_get_lock_status();
 void check_312_5MHz_init_status();
+void check_rns_vr_cml_status(void);
 #endif

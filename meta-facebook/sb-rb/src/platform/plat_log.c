@@ -1176,6 +1176,57 @@ bool check_temp_status_bit(uint8_t bit_num)
 	return true;
 }
 
+void check_rns_vr_cml_status(void)
+{
+	if (get_vr_module() != VR_MODULE_RNS)
+		return;
+	k_msleep(2000);
+
+	for (uint8_t rail = 0; rail < VR_RAIL_E_P3V3_OSFP_VOLT_V; rail++) {
+		uint16_t cml_status = 0;
+		uint16_t status_word = 0;
+
+		if (!plat_get_vr_status(rail, VR_STAUS_E_STATUS_CML, &cml_status)) {
+			LOG_ERR("Failed to get VR[%d] CML status(0x7E)", rail);
+			continue;
+		}
+
+		// 0x7E CML status is 0, nothing to do
+		if (cml_status == 0)
+			continue;
+
+		LOG_WRN("VR[%d] CML status(0x7E) asserted: 0x%02x", rail, cml_status);
+		// may check 0x79 status word only trigger CML or not
+		if (!plat_get_vr_status(rail, VR_STAUS_E_STATUS_WORD, &status_word)) {
+			LOG_ERR("Failed to get VR[%d] status word(0x79)", rail);
+			continue;
+		}
+		//check bit except 6,7,9,10,11 don't care and if only bit-1 is 1 then clear status
+		if ((status_word & 0xF13F) != 0x0002) {
+			// have other error, no need to clear status
+			continue;
+		}
+
+		if (!plat_clear_vr_status(rail)) {
+			LOG_ERR("Failed to clear VR[%d] status", rail);
+			continue;
+		}
+
+		uint16_t cml_status_after_clear = 0;
+		if (!plat_get_vr_status(rail, VR_STAUS_E_STATUS_CML, &cml_status_after_clear)) {
+			LOG_ERR("Failed to read back VR[%d] CML status(0x7E) after clear", rail);
+			continue;
+		}
+
+		if (cml_status_after_clear != 0) {
+			LOG_WRN("VR[%d] CML status(0x7E) still asserted after clear: 0x%02x", rail,
+				cml_status_after_clear);
+		} else {
+			LOG_INF("VR[%d] CML status(0x7E) cleared successfully", rail);
+		}
+	}
+}
+
 void packaged_bmc_log(uint8_t event_type, uint8_t event_data_1, uint8_t event_data_2,
 		      uint8_t event_data_3)
 {
