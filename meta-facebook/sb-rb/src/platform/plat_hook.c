@@ -34,6 +34,7 @@
 #include "plat_util.h"
 #include "iris_smbus.h"
 #include "plat_adc.h"
+#include "plat_log.h"
 
 LOG_MODULE_REGISTER(plat_hook);
 
@@ -138,6 +139,41 @@ bool emc1413_check_open_status(sensor_cfg *cfg, uint8_t status)
 	return true;
 }
 
+const uint16_t tmp432_monitor_sensors[] = {
+	SENSOR_NUM_ASIC_MEDHA0_SENSOR0_TEMP_C, SENSOR_NUM_ASIC_MEDHA0_SENSOR1_TEMP_C,
+	SENSOR_NUM_ASIC_OWL_W_TEMP_C,	       SENSOR_NUM_ASIC_OWL_E_TEMP_C,
+	SENSOR_NUM_ASIC_MEDHA1_SENSOR0_TEMP_C, SENSOR_NUM_ASIC_MEDHA1_SENSOR1_TEMP_C,
+	SENSOR_NUM_ASIC_HAMSA_CRM_TEMP_C,      SENSOR_NUM_ASIC_HAMSA_LS_TEMP_C,
+};
+
+typedef struct {
+	uint8_t sensor_num;
+	uint8_t ucr_alert;
+} tmp432_ucr_alert_status;
+
+tmp432_ucr_alert_status tmp432_ucr_alert_table[TMP432_UCR_ALERT_EVENT_COUNT] = { 0 };
+static uint8_t tmp432_ucr_alert_table_count;
+
+void init_tmp432_ucr_alert_table(void)
+{
+	tmp432_ucr_alert_table_count = 0;
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(tmp432_monitor_sensors); i++) {
+		sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(tmp432_monitor_sensors[i]);
+
+		if (cfg == NULL)
+			continue;
+
+		tmp432_ucr_alert_table[tmp432_ucr_alert_table_count].sensor_num = cfg->num;
+
+		tmp432_ucr_alert_table[tmp432_ucr_alert_table_count].ucr_alert = 0;
+
+		tmp432_ucr_alert_table_count++;
+	}
+
+	LOG_INF("tmp432 ucr monitor sensor count: %d", tmp432_ucr_alert_table_count);
+}
+
 bool post_tmp432_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
@@ -217,6 +253,37 @@ bool post_tmp432_read(sensor_cfg *cfg, void *args, int *reading)
 			break;
 		default:
 			break;
+		}
+	}
+
+	if (reading != NULL) {
+		PDR_numeric_sensor *pdr_sensor = get_pdr_numeric_sensor_by_sensor_id(cfg->num);
+
+		if (pdr_sensor != NULL) {
+			int critical_high = pdr_sensor->critical_high / 1000;
+
+			bool ucr_alert = (*reading > critical_high);
+
+			for (uint8_t i = 0; i < TMP432_UCR_ALERT_EVENT_COUNT; i++) {
+				if (tmp432_ucr_alert_table[i].sensor_num != cfg->num)
+					continue;
+
+				uint16_t error_code = TMP432_UCR_ALERT_EVENT_CAUSE_BASE + i;
+
+				if (!tmp432_ucr_alert_table[i].ucr_alert && ucr_alert) {
+					tmp432_ucr_alert_table[i].ucr_alert = 1;
+					LOG_ERR("tmp432 ucr alert detected on sensor 0x%02X",
+						cfg->num);
+					trigger_vr_hot();
+					error_log_event(error_code, LOG_ASSERT);
+				} else if (tmp432_ucr_alert_table[i].ucr_alert && !ucr_alert) {
+					tmp432_ucr_alert_table[i].ucr_alert = 0;
+					LOG_INF("tmp432 ucr alert cleared on sensor 0x%02X",
+						cfg->num);
+					error_log_event(error_code, LOG_DEASSERT);
+				}
+				break;
+			}
 		}
 	}
 

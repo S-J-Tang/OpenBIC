@@ -12559,6 +12559,7 @@ void quick_sensor_poll_handler(void *arug0, void *arug1, void *arug2)
 void quick_sensor_poll_init()
 {
 	init_ot_warning_table();
+	init_tmp432_ucr_alert_table();
 
 	quick_sensor_tid = k_thread_create(&quick_sensor_poll, quick_sensor_poll_stack,
 					   K_THREAD_STACK_SIZEOF(quick_sensor_poll_stack),

@@ -273,6 +273,7 @@ extern vr_voffset_mmc_command_get_struct vr_voffset_mmc_command_get;
 extern vr_voffset_mmc_user_settings_struct vr_voffset_mmc_user_settings;
 extern svs_voltage_range_user_settings_struct svs_voltage_range_command_get;
 extern svs_voltage_range_user_settings_struct svs_voltage_range_user_settings;
+extern const uint16_t tmp432_monitor_sensors[];
 void set_bootstrap_table_change_setting_value(uint8_t index, uint8_t value);
 bool pre_vr_read(sensor_cfg *cfg, void *args);
 bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading);
@@ -337,4 +338,5 @@ bool post_iris_sensor_read(sensor_cfg *cfg, void *args, int *const reading);
 bool post_adc_sensor_read(sensor_cfg *cfg, void *args, int *const reading);
 bool plat_ubc_otw_otp_init(void);
 bool plat_set_voffset_mmc_command(uint8_t rail, int16_t *millivolt, bool is_perm);
+void init_tmp432_ucr_alert_table(void);
 #endif

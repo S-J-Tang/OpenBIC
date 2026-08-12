@@ -69,6 +69,14 @@
 #define SMBUS_ALRT_MAX_VR_NUM 4
 #define SMBUS_ALRT_ENTRY_SIZE 9
 
+#define TMP432_UCR_ALERT_EVENT_COUNT 8
+
+#define TMP432_UCR_ALERT_EVENT_CAUSE_BASE                                                          \
+	(VR_OT_WARNING_EVENT_CAUSE + vr_temp_monitor_sensors_count)
+
+#define TMP432_UCR_ALERT_EVENT_CAUSE_END                                                           \
+	(TMP432_UCR_ALERT_EVENT_CAUSE_BASE + TMP432_UCR_ALERT_EVENT_COUNT - 1)
+
 enum VR_ERR_LOG_DEVICE_INDEX_E {
 	//pwr fault reg 1
 	PWRGD_OWL_E_TRVDD0P9_R_FAULT = 1,
