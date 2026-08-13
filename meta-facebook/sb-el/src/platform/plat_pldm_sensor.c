@@ -187,6 +187,8 @@ uint8_t convert_tmp_addr(uint8_t bus, uint8_t addr, uint8_t tmp_change_mode)
 	return addr;
 }
 
+bool fab2_mps_ic_second_source = false;
+
 uint8_t convert_vr_addr(uint8_t bus, uint8_t addr, uint8_t vr_change_mode)
 {
 	for (int i = 0; i < ARRAY_SIZE(vr_addr_map_table); i++) {
@@ -204,9 +206,10 @@ uint8_t convert_vr_addr(uint8_t bus, uint8_t addr, uint8_t vr_change_mode)
 				};
 				msg.data[0] = PMBUS_REVISION;
 
-				if (i2c_master_read_without_error_log(&msg, 0) == 0)
+				if (i2c_master_read_without_error_log(&msg, 0) == 0){
+					fab2_mps_ic_second_source = true;
 					return vr_addr_map_table[i].fab2_1nd_addr;
-
+				}
 				return vr_addr_map_table[i].fab1_1nd_addr;
 			} else if (vr_change_mode == FAB1_1ND_MPS || vr_change_mode == FAB2_1ND_MPS)
 				LOG_DBG("don't need to change VR address");
@@ -13658,7 +13661,14 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 			bus = vr_table[j].pldm_sensor_cfg.port;
 			vr_table[j].pldm_sensor_cfg.target_addr = convert_vr_addr(
 				bus, vr_table[j].pldm_sensor_cfg.target_addr, vr_change_mode);
-			LOG_DBG("change VR sensors 0x%x address to 0x%x",
+			if (fab2_mps_ic_second_source == true &&
+			    ((num >= SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_TEMP_C &&
+			      num <= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W) ||
+			     num == SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_INPUT_VOLT_V ||
+			     num == SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_INPUT_VOLT_V)) {
+				vr_table[j].pldm_sensor_cfg.type = sensor_dev_mp29526;
+			}
+			LOG_INF("change VR sensors 0x%x address to 0x%x",
 				vr_table[j].pldm_sensor_cfg.num, vr_table[j].pldm_sensor_cfg.target_addr);
 		}
 	}
@@ -13745,10 +13755,16 @@ void refresh_fab2_mps_nuwa_addr(void)
 			     num <= SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W) ||
 			    num == SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_INPUT_VOLT_V) {
 				table[i].pldm_sensor_cfg.target_addr = nuwa0_addr;
+				if (fab2_mps_ic_second_source == true) {
+					table[i].pldm_sensor_cfg.type = sensor_dev_mp29526;
+				}
 			} else if ((num >= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_TEMP_C &&
 				    num <= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W) ||
 				   num == SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_INPUT_VOLT_V) {
 				table[i].pldm_sensor_cfg.target_addr = nuwa1_addr;
+				if (fab2_mps_ic_second_source == true) {
+					table[i].pldm_sensor_cfg.type = sensor_dev_mp29526;
+				}
 			}
 		}
 	}
