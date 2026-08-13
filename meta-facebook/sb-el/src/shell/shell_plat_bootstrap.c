@@ -96,23 +96,36 @@ static int cmd_bootstrap_get_all(const struct shell *shell, size_t argc, char **
 static int bootstrap_set_all_default(const struct shell *shell)
 {
 	uint8_t change_setting_value;
+	uint8_t resolved_drive_index_level;
 	uint8_t drive_index_level = 0;
 	bootstrap_mapping_register bootstrap_item;
 	bool all_success = true;
 
 	for (int i = 0; i < get_strap_index_max(); i++) {
-		if (!set_bootstrap_table_and_user_settings(i, &change_setting_value,
-							   drive_index_level, false, true)) {
+		if (!compute_bootstrap_change_value(i, &change_setting_value,
+						    &resolved_drive_index_level,
+						    drive_index_level, true)) {
 			shell_print(shell, "plat bootstrap[%2d] set failed", i);
 			all_success = false;
+			continue;
 		}
 		if (!find_bootstrap_by_rail((uint8_t)i, &bootstrap_item)) {
 			shell_print(shell, "Can't find bootstrap_item by rail index: %d", i);
+			all_success = false;
 			continue;
 		}
-		// write change_setting_value to cpld or io-exp
-		if (!set_bootstrap_val_to_device(i, change_setting_value))
+		// write change_setting_value to cpld or io-exp, then verify by reading it back
+		if (!set_bootstrap_val_to_device(i, change_setting_value)) {
 			shell_print(shell, "Can't set bootstrap[0x%02x] to default", i);
+			all_success = false;
+			continue;
+		}
+		// only cache the new value once the device write is confirmed
+		if (!commit_bootstrap_table_and_user_settings(i, resolved_drive_index_level,
+							      false)) {
+			shell_print(shell, "Can't commit bootstrap[0x%02x] to default", i);
+			all_success = false;
+		}
 	}
 
 	if (all_success) {
@@ -126,6 +139,7 @@ static int cmd_bootstrap_set(const struct shell *shell, size_t argc, char **argv
 {
 	bool is_perm = false;
 	uint8_t change_setting_value;
+	uint8_t resolved_drive_index_level;
 	uint8_t drive_index_level = 0;
 	bootstrap_mapping_register bootstrap_item;
 
@@ -194,8 +208,8 @@ static int cmd_bootstrap_set(const struct shell *shell, size_t argc, char **argv
 	else
 		drive_index_level = strtol(argv[2], NULL, 16);
 
-	if (!set_bootstrap_table_and_user_settings(rail, &change_setting_value, drive_index_level,
-						   is_perm, is_default)) {
+	if (!compute_bootstrap_change_value(rail, &change_setting_value, &resolved_drive_index_level,
+					    drive_index_level, is_default)) {
 		shell_error(shell, "plat bootstrap set failed");
 		return -1;
 	}
@@ -204,10 +218,17 @@ static int cmd_bootstrap_set(const struct shell *shell, size_t argc, char **argv
 		return -1;
 	}
 
-	// write change_setting_value to cpld or io-exp
+	// write change_setting_value to cpld or io-exp, then verify by reading it back
 	if (!set_bootstrap_val_to_device(bootstrap_item.index, change_setting_value)) {
 		LOG_ERR("Can't set bootstrap[%2d]=%02x", bootstrap_item.index,
 			change_setting_value);
+		return -1;
+	}
+
+	// only cache the new value once the device write is confirmed
+	if (!commit_bootstrap_table_and_user_settings(rail, resolved_drive_index_level, is_perm)) {
+		shell_error(shell, "Can't commit bootstrap[%2d]=%02x", bootstrap_item.index,
+			    change_setting_value);
 		return -1;
 	}
 

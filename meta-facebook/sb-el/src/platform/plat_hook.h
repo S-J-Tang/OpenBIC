@@ -325,9 +325,11 @@ bool plat_get_alert_level_is_assert(void);
 bool bootstrap_default_settings_init(void);
 bool bootstrap_user_settings_init(void);
 bool temp_threshold_user_settings_get(void *temp_threshold_user_settings);
-bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting_value,
-					   uint8_t drive_index_level, bool is_perm,
-					   bool is_default);
+bool compute_bootstrap_change_value(uint8_t rail, uint8_t *change_setting_value,
+				    uint8_t *resolved_drive_index_level, uint8_t drive_index_level,
+				    bool is_default);
+bool commit_bootstrap_table_and_user_settings(uint8_t rail, uint8_t drive_index_level,
+					      bool is_perm);
 bool strap_name_get(uint8_t rail, uint8_t **name);
 bool strap_enum_get(uint8_t *name, uint8_t *num);
 bool get_bootstrap_change_drive_level(int rail, int *drive_level);

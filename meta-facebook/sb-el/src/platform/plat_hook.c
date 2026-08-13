@@ -2080,8 +2080,16 @@ bool strap_enum_get(uint8_t *name, uint8_t *num)
 	return false;
 }
 
-bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting_value,
-					   uint8_t drive_index_level, bool is_perm, bool is_default)
+/*
+ * Only computes the register-level byte to write for `rail`; does not touch
+ * bootstrap_table or NVRAM. Caller must write it to the device and verify the
+ * write (see set_bootstrap_val_to_device) before calling
+ * commit_bootstrap_table_and_user_settings, so bootstrap_table never records a
+ * value that wasn't actually confirmed on hardware.
+ */
+bool compute_bootstrap_change_value(uint8_t rail, uint8_t *change_setting_value,
+				    uint8_t *resolved_drive_index_level, uint8_t drive_index_level,
+				    bool is_default)
 {
 	if (rail >= get_strap_index_max())
 		return false;
@@ -2100,10 +2108,10 @@ bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting
 			return false;
 		}
 
-		bootstrap_table[i].change_setting_value = drive_index_level;
+		*resolved_drive_index_level = drive_index_level;
 
 		if (bootstrap_table[i].type == STRAP_TYPE_GPIO) {
-			*change_setting_value = bootstrap_table[i].change_setting_value;
+			*change_setting_value = drive_index_level;
 		} else {
 			for (int j = 0; j < get_strap_index_max(); j++) {
 				if ((bootstrap_table[j].cpld_offsets !=
@@ -2112,7 +2120,8 @@ bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting
 					continue;
 				}
 
-				uint8_t value = bootstrap_table[j].change_setting_value;
+				uint8_t value = (j == i) ? drive_index_level :
+							    bootstrap_table[j].change_setting_value;
 
 				if (bootstrap_table[j].reverse) {
 					value = reverse_bits(value, bootstrap_table[j].bit_count);
@@ -2127,17 +2136,34 @@ bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting
 			}
 		}
 
+		return true;
+	}
+
+	return false;
+}
+
+/*
+ * Commits `drive_index_level` into bootstrap_table[rail].change_setting_value
+ * (and, if is_perm, persists it to NVRAM). Call only after the device write
+ * computed by compute_bootstrap_change_value has been confirmed via
+ * set_bootstrap_val_to_device's read-back, so the cache and hardware stay in
+ * sync.
+ */
+bool commit_bootstrap_table_and_user_settings(uint8_t rail, uint8_t drive_index_level,
+					      bool is_perm)
+{
+	if (rail >= get_strap_index_max())
+		return false;
+
+	for (int i = 0; i < get_strap_index_max(); i++) {
+		if (bootstrap_table[i].index != rail)
+			continue;
+
+		bootstrap_table[i].change_setting_value = drive_index_level;
+
 		if (is_perm) {
-			int drive_level = -1;
-
-			if (!get_bootstrap_change_drive_level(i, &drive_level)) {
-				LOG_ERR("Can't get_bootstrap_change_drive_level by rail index: %x",
-					i);
-				return false;
-			}
-
 			bootstrap_user_settings.user_setting_value[i] =
-				((drive_level & 0x00FF) | 0x0100);
+				((drive_index_level & 0x00FF) | 0x0100);
 
 			bootstrap_user_settings_set(&bootstrap_user_settings);
 		}
@@ -2148,13 +2174,32 @@ bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting
 	return false;
 }
 
+static bool verify_bootstrap_val_written(uint8_t strap, uint8_t val, uint8_t readback)
+{
+	if (readback != val) {
+		LOG_ERR("bootstrap[%2d] write verify mismatch: wrote 0x%02x, read back 0x%02x",
+			strap, val, readback);
+		return false;
+	}
+	return true;
+}
+
 bool set_bootstrap_val_to_device(uint8_t strap, uint8_t val)
 {
 	uint8_t type = bootstrap_table[strap].type;
+	uint8_t readback = 0;
 
 	switch (type) {
 	case STRAP_TYPE_CPLD:
 		if (!plat_write_cpld(bootstrap_table[strap].cpld_offsets, &val)) {
+			return false;
+		}
+		if (!plat_read_cpld(bootstrap_table[strap].cpld_offsets, &readback, 1)) {
+			LOG_ERR("Can't read back bootstrap[%2d] cpld offset 0x%02x for verify",
+				strap, bootstrap_table[strap].cpld_offsets);
+			return false;
+		}
+		if (!verify_bootstrap_val_written(strap, val, readback)) {
 			return false;
 		}
 		/* when TEST_STRAP to 0, change MFIO 6 8 10 to INPUT  */
@@ -2184,26 +2229,63 @@ bool set_bootstrap_val_to_device(uint8_t strap, uint8_t val)
 			}
 		}
 		break;
-	case STRAP_TYPE_GPIO:
+	case STRAP_TYPE_GPIO: {
 		if (gpio_set(bootstrap_table[strap].cpld_offsets, val) < 0)
 			return false;
+		int gpio_val = gpio_get(bootstrap_table[strap].cpld_offsets);
+		if (gpio_val < 0) {
+			LOG_ERR("Can't read back bootstrap[%2d] gpio %d for verify", strap,
+				bootstrap_table[strap].cpld_offsets);
+			return false;
+		}
+		if (!verify_bootstrap_val_written(strap, val, (uint8_t)gpio_val)) {
+			return false;
+		}
 		break;
+	}
 	case STRAP_TYPE_IOEXP_PCA6416A:
 		if (is_mb_dc_on()) {
 			if (!pca6416a_i2c_write(bootstrap_table[strap].cpld_offsets, &val, 1))
 				return false;
+			if (!pca6416a_i2c_read(bootstrap_table[strap].cpld_offsets, &readback,
+					       1)) {
+				LOG_ERR("Can't read back bootstrap[%2d] pca6416a offset 0x%02x for verify",
+					strap, bootstrap_table[strap].cpld_offsets);
+				return false;
+			}
+			if (!verify_bootstrap_val_written(strap, val, readback)) {
+				return false;
+			}
 		}
 		break;
 	case STRAP_TYPE_IOEXP_TCA6424A:
 		if (is_evb_ioe_accessible()) {
 			if (!tca6424a_i2c_write(bootstrap_table[strap].cpld_offsets, &val, 1))
 				return false;
+			if (!tca6424a_i2c_read(bootstrap_table[strap].cpld_offsets, &readback,
+					       1)) {
+				LOG_ERR("Can't read back bootstrap[%2d] tca6424a offset 0x%02x for verify",
+					strap, bootstrap_table[strap].cpld_offsets);
+				return false;
+			}
+			if (!verify_bootstrap_val_written(strap, val, readback)) {
+				return false;
+			}
 		}
 		break;
 	case STRAP_TYPE_IOEXP_TCAL6408R:
 		if (is_evb_ioe_accessible()) {
 			if (!tcal6408r_i2c_write(bootstrap_table[strap].cpld_offsets, &val, 1))
 				return false;
+			if (!tcal6408r_i2c_read(bootstrap_table[strap].cpld_offsets, &readback,
+						1)) {
+				LOG_ERR("Can't read back bootstrap[%2d] tcal6408r offset 0x%02x for verify",
+					strap, bootstrap_table[strap].cpld_offsets);
+				return false;
+			}
+			if (!verify_bootstrap_val_written(strap, val, readback)) {
+				return false;
+			}
 		}
 		break;
 	default:
@@ -2226,20 +2308,32 @@ bool bootstrap_user_settings_init(void)
 					  true :
 					  false;
 		if (is_perm) {
-			// write bootstrap_table
 			uint8_t change_setting_value;
+			uint8_t resolved_drive_index_level;
 			uint8_t drive_index_level =
 				bootstrap_user_settings.user_setting_value[i] & 0xFF;
-			if (!set_bootstrap_table_and_user_settings(
-				    i, &change_setting_value, drive_index_level, false, false)) {
-				LOG_ERR("set bootstrap_table[%2d]:%d failed", i, drive_index_level);
+			if (!compute_bootstrap_change_value(i, &change_setting_value,
+							    &resolved_drive_index_level,
+							    drive_index_level, false)) {
+				LOG_ERR("compute bootstrap_table[%2d]:%d failed", i,
+					drive_index_level);
 				return false;
 			}
 
-			// write cpld or GPIO or io-exp
-			if (!set_bootstrap_val_to_device(i, change_setting_value))
+			// write cpld or GPIO or io-exp, then verify by reading it back
+			if (!set_bootstrap_val_to_device(i, change_setting_value)) {
 				LOG_ERR("Can't set bootstrap[%2d]=%02x by user settings", i,
 					change_setting_value);
+				continue;
+			}
+
+			// only cache the new value once the device write is confirmed
+			if (!commit_bootstrap_table_and_user_settings(
+				    i, resolved_drive_index_level, false)) {
+				LOG_ERR("Can't commit bootstrap[%2d]=%02x by user settings", i,
+					change_setting_value);
+				continue;
+			}
 
 			LOG_INF("set [%2d]%s: %02x", i, bootstrap_table[i].strap_name,
 				change_setting_value);

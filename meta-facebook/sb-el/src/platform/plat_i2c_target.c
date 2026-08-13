@@ -689,11 +689,14 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 bool set_bootstrap_element(uint8_t bootstrap_pin, uint8_t user_setting_level)
 {
 	uint8_t change_setting_value;
+	uint8_t resolved_drive_index_level;
 	uint8_t drive_index_level = user_setting_level;
 	bootstrap_mapping_register bootstrap_item;
-	if (!set_bootstrap_table_and_user_settings(bootstrap_pin, &change_setting_value,
-						   drive_index_level, false, false)) {
-		LOG_ERR("set bootstrap_table[%02x]:%d failed", bootstrap_pin, drive_index_level);
+	if (!compute_bootstrap_change_value(bootstrap_pin, &change_setting_value,
+					    &resolved_drive_index_level, drive_index_level,
+					    false)) {
+		LOG_ERR("compute bootstrap_table[%02x]:%d failed", bootstrap_pin,
+			drive_index_level);
 		return false;
 	}
 	if (!find_bootstrap_by_rail(bootstrap_pin, &bootstrap_item)) {
@@ -703,8 +706,17 @@ bool set_bootstrap_element(uint8_t bootstrap_pin, uint8_t user_setting_level)
 	// LOG_DBG("set bootstrap_table[%2x]=%x, cpld_offsets 0x%02x change_setting_value 0x%02x",
 	// 	bootstrap_pin, drive_index_level, bootstrap_item.cpld_offsets,
 	// 	change_setting_value);
-	if (!set_bootstrap_val_to_device(bootstrap_pin, change_setting_value))
+	if (!set_bootstrap_val_to_device(bootstrap_pin, change_setting_value)) {
 		LOG_ERR("Can't write bootstrap[%2d]=%02x", bootstrap_pin, change_setting_value);
+		return false;
+	}
+
+	// only cache the new value once the device write is confirmed
+	if (!commit_bootstrap_table_and_user_settings(bootstrap_pin, resolved_drive_index_level,
+						      false)) {
+		LOG_ERR("Can't commit bootstrap[%2d]=%02x", bootstrap_pin, change_setting_value);
+		return false;
+	}
 
 	return true;
 }
