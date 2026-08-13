@@ -120,6 +120,8 @@ void cmd_info(const struct shell *shell, size_t argc, char **argv)
 	uint8_t board_rev = get_board_rev_id();
 	uint8_t adc_idx = get_adc_type();
 	uint8_t tray_loc = get_tray_location();
+	sensor_cfg *ina238_cfg = get_sensor_cfg_by_sensor_id(SENSOR_NUM_INA238_PWR_W);
+	uint8_t ina238_addr = (ina238_cfg != NULL) ? ina238_cfg->target_addr : 0;
 
 	shell_warn(shell, "vr module: %s",
 		   (vr < VR_MODULE_UNKNOWN) ? vr_module_str[vr] : "UNKNOWN");
@@ -131,6 +133,7 @@ void cmd_info(const struct shell *shell, size_t argc, char **argv)
 	shell_warn(shell, "asic board rev id: %d", board_rev);
 	shell_warn(shell, "adc idx: %d (0:ADI, 1:TI)", adc_idx);
 	shell_warn(shell, "tray location: %d", tray_loc);
+	shell_warn(shell, "ina238 addr: 0x%x (8-bit: 0x%x)", ina238_addr, (ina238_addr << 1));
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cpld_cmds, SHELL_CMD(dump, NULL, "cpld dump", cmd_cpld_dump),
