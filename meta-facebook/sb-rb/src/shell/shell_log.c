@@ -244,30 +244,6 @@ static const char *get_vr_ot_warning_rail_name(uint8_t sensor_num)
 	}
 }
 
-static const char *get_tmp432_warning_rail_name(uint8_t sensor_num)
-{
-	switch (sensor_num) {
-	case SENSOR_NUM_ASIC_MEDHA0_SENSOR0_TEMP_C:
-		return "ASIC_MEDHA0_SENSOR0_TEMP_C";
-	case SENSOR_NUM_ASIC_MEDHA0_SENSOR1_TEMP_C:
-		return "ASIC_MEDHA0_SENSOR1_TEMP_C";
-	case SENSOR_NUM_ASIC_OWL_W_TEMP_C:
-		return "ASIC_OWL_W_TEMP_C";
-	case SENSOR_NUM_ASIC_OWL_E_TEMP_C:
-		return "ASIC_OWL_E_TEMP_C";
-	case SENSOR_NUM_ASIC_MEDHA1_SENSOR0_TEMP_C:
-		return "ASIC_MEDHA1_SENSOR0_TEMP_C";
-	case SENSOR_NUM_ASIC_MEDHA1_SENSOR1_TEMP_C:
-		return "ASIC_MEDHA1_SENSOR1_TEMP_C";
-	case SENSOR_NUM_ASIC_HAMSA_CRM_TEMP_C:
-		return "ASIC_HAMSA_CRM_TEMP_C";
-	case SENSOR_NUM_ASIC_HAMSA_LS_TEMP_C:
-		return "ASIC_HAMSA_LS_TEMP_C";
-	default:
-		return "UNKNOWN_RAIL";
-	}
-}
-
 void cmd_set_event(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc != 3) {
@@ -382,21 +358,11 @@ void cmd_log_dump(const struct shell *shell, size_t argc, char **argv)
 					break;
 				}
 			} else if (extend_case == VR_OT_WARNING_EVENT_CAUSE) {
-				if (log.err_code < TMP432_UCR_ALERT_EVENT_CAUSE_BASE) {
-					const char *rail_name =
-						get_vr_ot_warning_rail_name(log.error_data[1]);
-					shell_print(shell, "\t%s OT_WARNING", rail_name);
-					shell_print(shell, "read status(0x7D): 0x%02x",
-						    log.error_data[0]);
-					err_data_len = 1;
-				} else {
-					int rail_idx =
-						log.err_code - TMP432_UCR_ALERT_EVENT_CAUSE_BASE;
-					const char *rail_name = get_tmp432_warning_rail_name(
-						tmp432_monitor_sensors[rail_idx]);
-					shell_print(shell, "\t%s ASIC LV2 WARNING", rail_name);
-					err_data_len = 0;
-				}
+				const char *rail_name =
+					get_vr_ot_warning_rail_name(log.error_data[1]);
+				shell_print(shell, "\t%s OT_WARNING", rail_name);
+				shell_print(shell, "read status(0x7D): 0x%02x", log.error_data[0]);
+				err_data_len = 1;
 			} else if (cpld_offset == MFIO_FOR_RAINBOW) {
 				shell_print(shell, "\tASIC_REMOTE_TEMP_ERROR");
 				switch (bit_position) {

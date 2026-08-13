@@ -757,28 +757,24 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 			}
 			break;
 		case VR_OT_WARNING_EVENT_CAUSE: {
-			if (error_code < TMP432_UCR_ALERT_EVENT_CAUSE_BASE) {
-				uint8_t rail_index = error_code & 0xFF;
-				uint8_t sensor_num = 0;
-				uint8_t reg_val = 0;
+			uint8_t rail_index = error_code & 0xFF;
+			uint8_t sensor_num = 0;
+			uint8_t reg_val = 0;
 
-				if (!get_vr_ot_warning_sensor_num_by_index(rail_index,
-									   &sensor_num)) {
-					LOG_ERR("Failed to map VR OT warning rail index: 0x%02x",
-						rail_index);
-					return false;
-				}
-
-				if (!get_raw_data_from_sensor_id(sensor_num, OT_WARNING_REG,
-								 &reg_val, 1)) {
-					LOG_ERR("Failed to read OT warning register for sensor: 0x%02x",
-						sensor_num);
-					return false;
-				}
-
-				data[0] = reg_val;
-				data[1] = sensor_num;
+			if (!get_vr_ot_warning_sensor_num_by_index(rail_index, &sensor_num)) {
+				LOG_ERR("Failed to map VR OT warning rail index: 0x%02x",
+					rail_index);
+				return false;
 			}
+
+			if (!get_raw_data_from_sensor_id(sensor_num, OT_WARNING_REG, &reg_val, 1)) {
+				LOG_ERR("Failed to read OT warning register for sensor: 0x%02x",
+					sensor_num);
+				return false;
+			}
+
+			data[0] = reg_val;
+			data[1] = sensor_num;
 			return true;
 			break;
 		}
@@ -898,7 +894,6 @@ void error_log_event(uint16_t error_code, bool log_status)
 	static uint64_t hamsa_remote_err_last_time_stamp = 0;
 	static uint64_t medha0_remote_err_last_time_stamp = 0;
 	static uint64_t medha1_remote_err_last_time_stamp = 0;
-	static uint64_t tmp432_ucr_last_timestamp[TMP432_UCR_ALERT_EVENT_COUNT] = { 0 };
 	// Check if the error_code is already logged
 	for (uint8_t i = 1; i < ARRAY_SIZE(err_code_caches); i++) {
 		if (err_code_caches[i] == error_code) {
@@ -910,9 +905,6 @@ void error_log_event(uint16_t error_code, bool log_status)
 					medha0_remote_err_last_time_stamp = k_uptime_get();
 				} else if (error_code == MEDHA1_MFIO24_ERROR_CODE) {
 					medha1_remote_err_last_time_stamp = k_uptime_get();
-				} else if (error_code >= TMP432_UCR_ALERT_EVENT_CAUSE_BASE &&
-					   error_code <= TMP432_UCR_ALERT_EVENT_CAUSE_END) {
-					/* allow re-log check below */
 				} else {
 					//other case
 					log_todo = false; // Duplicate error, no need to log again
@@ -980,24 +972,6 @@ void error_log_event(uint16_t error_code, bool log_status)
 		} else {
 			LOG_INF("same asic remote temp error within 10s, current_time_get: %lld, medha1_remote_err_last_time_stamp: %lld",
 				current_time_get, medha1_remote_err_last_time_stamp);
-			return;
-		}
-	} else if (error_code >= TMP432_UCR_ALERT_EVENT_CAUSE_BASE &&
-		   error_code <= TMP432_UCR_ALERT_EVENT_CAUSE_END) {
-		uint8_t idx = error_code - TMP432_UCR_ALERT_EVENT_CAUSE_BASE;
-
-		uint64_t current_time_get = k_uptime_get();
-
-		if (current_time_get < tmp432_ucr_last_timestamp[idx]) {
-			log_todo = false;
-			tmp432_ucr_last_timestamp[idx] = current_time_get;
-		}
-
-		if ((current_time_get - tmp432_ucr_last_timestamp[idx]) > 10000) {
-			log_todo = true;
-			tmp432_ucr_last_timestamp[idx] = current_time_get;
-		} else {
-			LOG_INF("same tmp432 ucr error within 10s, error_code=0x%x", error_code);
 			return;
 		}
 	}
