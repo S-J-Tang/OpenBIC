@@ -12506,7 +12506,8 @@ void quick_sensor_poll_handler(void *arug0, void *arug1, void *arug2)
 				gpio_set(I3C_RAINBOW_ALERT_R_N, 1);
 		}
 		//check dc on/off and polling enable/disable
-		if (is_mb_dc_on() == false || !get_plat_sensor_polling_enable_flag()) {
+		if (is_mb_dc_on() == false || !get_plat_sensor_polling_enable_flag() ||
+		    (get_sensor_poll_enable_flag() == false)) {
 			ot_warning_poll_count = 0;
 			//dc is off, sleep 1 second
 			k_msleep(1000);
