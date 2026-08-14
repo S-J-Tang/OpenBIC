@@ -471,6 +471,40 @@ void cmd_log_dump(const struct shell *shell, size_t argc, char **argv)
 				shell_print(shell, "\t%s", reg_name);
 				shell_print(shell, "\t\t%s", bit_name);
 				err_data_len = 1;
+			} else if (cpld_offset == VR_POWER_FAULT_5_REG && bit_position == 7) {
+				// P12V_UBC_PWRGD is a single CPLD bit shared by UBC1 and UBC2
+				shell_print(shell, "\t%s", reg_name);
+				shell_print(shell, "\t\t%s", bit_name);
+
+				for (int j = 0; j < UBC_STATUS_NUM; j++) {
+					uint8_t idx = j * UBC_STATUS_ENTRY_SIZE;
+
+					shell_print(shell, "UBC%d status:", j + 1);
+					shell_print(shell, "\t\t  status word(0x79):");
+					shell_print(shell, "\t\t    low  byte: 0x%02x",
+						    log.error_data[idx]);
+					shell_print(shell, "\t\t    high byte: 0x%02x",
+						    log.error_data[idx + 1]);
+					shell_print(shell, "\t\t  status vout(0x7A):");
+					shell_print(shell, "\t\t    byte: 0x%02x",
+						    log.error_data[idx + 2]);
+					shell_print(shell, "\t\t  status iout(0x7B):");
+					shell_print(shell, "\t\t    byte: 0x%02x",
+						    log.error_data[idx + 3]);
+					shell_print(shell, "\t\t  status input(0x7C):");
+					shell_print(shell, "\t\t    byte: 0x%02x",
+						    log.error_data[idx + 4]);
+					shell_print(shell, "\t\t  status temperature(0x7D):");
+					shell_print(shell, "\t\t    byte: 0x%02x",
+						    log.error_data[idx + 5]);
+					shell_print(shell, "\t\t  status cml(0x7E):");
+					shell_print(shell, "\t\t    byte: 0x%02x",
+						    log.error_data[idx + 6]);
+					shell_print(shell, "\t\t  status MFR(0x80):");
+					shell_print(shell, "\t\t    byte: 0x%02x",
+						    log.error_data[idx + 7]);
+				}
+				err_data_len = UBC_STATUS_DATA_LEN;
 			} else {
 				shell_print(shell, "\t%s", reg_name);
 				shell_print(shell, "\t\t%s", bit_name);

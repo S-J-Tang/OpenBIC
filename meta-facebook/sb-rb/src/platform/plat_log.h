@@ -69,6 +69,13 @@
 #define SMBUS_ALRT_MAX_VR_NUM 4
 #define SMBUS_ALRT_ENTRY_SIZE 9
 
+// UBC1/UBC2 share the single P12V_UBC_PWRGD CPLD bit; data is stored as
+// UBC1's 8 status bytes (from vr_fault_get_error_data) followed by UBC2's
+// 8 status bytes, in that fixed order (no tag byte).
+#define UBC_STATUS_ENTRY_SIZE 8
+#define UBC_STATUS_NUM 2
+#define UBC_STATUS_DATA_LEN (UBC_STATUS_ENTRY_SIZE * UBC_STATUS_NUM)
+
 enum VR_ERR_LOG_DEVICE_INDEX_E {
 	//pwr fault reg 1
 	PWRGD_OWL_E_TRVDD0P9_R_FAULT = 1,
@@ -156,6 +163,7 @@ enum LOG_ERROR_TRIGGER_CAUSE_EXTEND {
 };
 
 bool check_temp_status_bit(uint8_t bit_num);
+bool get_ubc_vr_status_data(uint8_t *data);
 void packaged_bmc_log(uint8_t event_type, uint8_t event_data_1, uint8_t event_data_2,
 		      uint8_t event_data_3);
 uint8_t clk_100mhz_get_lock_status();

@@ -115,7 +115,9 @@ vr_device_match_sensor_num vr_error_fault_table[] = {
 	{ PWRGD_P1V5_E_RVDD_FAULT, 0 }, // TODO
 	{ PWRGD_P1V5_W_RVDD_FAULT, 0 }, // TODO
 	//pwr fault reg 5
-	{ P12V_UBC_PWRGD_FAULT, 0 }, // TODO
+	// sensor_num_1 is only used to satisfy the "valid sensor_num" check; the actual
+	// UBC1/UBC2 status data is retrieved via get_ubc_vr_status_data() below.
+	{ P12V_UBC_PWRGD_FAULT, SENSOR_NUM_UBC1_P12V_TEMP_C },
 	{ PWRGD_P5V_R_FAULT, 0 }, // TODO
 	{ PWRGD_P3V3_R_FAULT, 0 }, // TODO
 	{ PWRGD_P1V8_R_FAULT, 0 }, // TODO
@@ -332,6 +334,38 @@ bool vr_fault_get_error_data(uint8_t sensor_id, uint8_t *data)
 	}
 
 	memcpy(data, vr_status_buf, sizeof(vr_status_buf));
+
+	return ret;
+}
+
+// UBC1 status first, UBC2 status second (fixed order, no tag byte).
+static const uint8_t ubc_sensor_num_table[UBC_STATUS_NUM] = {
+	SENSOR_NUM_UBC1_P12V_TEMP_C,
+	SENSOR_NUM_UBC2_P12V_TEMP_C,
+};
+
+// Reads full PMBus status detail (via vr_fault_get_error_data) for UBC1 then
+// UBC2 and packs them back-to-back (8 status bytes each, no tag byte).
+bool get_ubc_vr_status_data(uint8_t *data)
+{
+	CHECK_NULL_ARG_WITH_RETURN(data, false);
+
+	bool ret = true;
+
+	memset(data, 0xFF, UBC_STATUS_DATA_LEN);
+
+	for (int i = 0; i < UBC_STATUS_NUM; i++) {
+		uint8_t offset = i * UBC_STATUS_ENTRY_SIZE;
+		uint8_t vr_status_buf[8];
+		memset(vr_status_buf, 0xFF, sizeof(vr_status_buf));
+
+		if (!vr_fault_get_error_data(ubc_sensor_num_table[i], vr_status_buf)) {
+			LOG_WRN("UBC%d status partial read fail", i + 1);
+			ret = false;
+		}
+
+		memcpy(&data[offset], vr_status_buf, sizeof(vr_status_buf));
+	}
 
 	return ret;
 }
@@ -873,6 +907,12 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 			}
 		} else {
 			LOG_ERR("smbus alrt index: 0x%x out of range", smbus_alrt_index);
+			return false;
+		}
+	} else if (device_id == P12V_UBC_PWRGD_FAULT) {
+		// P12V_UBC_PWRGD is a single CPLD bit shared by UBC1 and UBC2: save both
+		if (!get_ubc_vr_status_data(data)) {
+			LOG_ERR("Failed to retrieve UBC1/UBC2 status data");
 			return false;
 		}
 	} else {

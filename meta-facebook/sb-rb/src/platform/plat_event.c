@@ -89,7 +89,9 @@ const vr_fault_info vr_fault_table[] = {
 	{ IRIS_P1V5_E_RVDD, VR_POWER_FAULT_4_REG, BIT(1), false },
 	{ IRIS_P1V5_W_RVDD, VR_POWER_FAULT_4_REG, BIT(0), false },
 	// VR Power Fault 5
-	{ IRIS_P12V_UBC_PWRGD, VR_POWER_FAULT_5_REG, BIT(7), false }, // if true, is it 1 or 2?
+	// IRIS_P12V_UBC_PWRGD covers both UBC1 and UBC2; handled specially in
+	// process_ubc_vr_power_fault_sel() instead of the generic is_pmbus_vr path.
+	{ IRIS_P12V_UBC_PWRGD, VR_POWER_FAULT_5_REG, BIT(7), false },
 	{ IRIS_P5V, VR_POWER_FAULT_5_REG, BIT(6), false },
 	{ IRIS_P3V3, VR_POWER_FAULT_5_REG, BIT(5), false }, // osfp 3v3?
 	{ IRIS_P1V8, VR_POWER_FAULT_5_REG, BIT(4), false },
@@ -130,6 +132,69 @@ const vr_mapping_status vr_status_rail_list[] = {
 	{ .index = VR_STAUS_E_STATUS_CML, .pmbus_reg = PMBUS_STATUS_CML },
 };
 
+// IRIS_P12V_UBC_PWRGD is a single CPLD bit shared by UBC1 and UBC2. On fault,
+// SEL per remaining single-byte register
+// event_data_2 = register address,
+// event_data_3 = reading) for vout(0x7A)/iout(0x7B)/input(0x7C)/
+// temperature(0x7D)/cml(0x7E)/MFR(0x80) - 7 SELs per UBC, 14 total.
+static void process_ubc_vr_power_fault_sel(bool is_assert, uint8_t current_cpld_value)
+{
+	temp_polling_flag = get_plat_sensor_polling_enable_flag();
+	set_plat_sensor_polling_enable_flag(false);
+	// wait 10ms for vr monitor stop
+	k_msleep(10);
+
+	uint8_t ubc_status_data[UBC_STATUS_DATA_LEN];
+
+	if (!get_ubc_vr_status_data(ubc_status_data)) {
+		LOG_ERR("Fail get UBC1/UBC2 cpld 0x11 raw: 0x%02X", current_cpld_value);
+	}
+
+	set_plat_sensor_polling_enable_flag(temp_polling_flag);
+
+	LOG_INF("UBC1/UBC2 power fault (cpld 0x11 raw: 0x%02X):", current_cpld_value);
+
+	// data[idx+2 .. idx+7] register addresses, in order
+	static const uint8_t ubc_single_byte_status_reg[] = {
+		PMBUS_STATUS_VOUT,	  PMBUS_STATUS_IOUT, PMBUS_STATUS_INPUT,
+		PMBUS_STATUS_TEMPERATURE, PMBUS_STATUS_CML,  PMBUS_STATUS_MFR_SPECIFIC,
+	};
+
+	struct pldm_addsel_data
+		sel_msg[UBC_STATUS_NUM * (ARRAY_SIZE(ubc_single_byte_status_reg) + 1)];
+	memset(sel_msg, 0, sizeof(sel_msg));
+	uint8_t sel_msg_idx = 0;
+
+	for (int u = 0; u < UBC_STATUS_NUM; u++) {
+		uint8_t idx = u * UBC_STATUS_ENTRY_SIZE;
+
+		// status word(0x79): low byte then high byte, same as before
+		sel_msg[sel_msg_idx].event_data_2 = ubc_status_data[idx];
+		sel_msg[sel_msg_idx].event_data_3 = ubc_status_data[idx + 1];
+		sel_msg_idx++;
+
+		for (int r = 0; r < ARRAY_SIZE(ubc_single_byte_status_reg); r++) {
+			sel_msg[sel_msg_idx].event_data_2 = ubc_single_byte_status_reg[r];
+			sel_msg[sel_msg_idx].event_data_3 = ubc_status_data[idx + 2 + r];
+			sel_msg_idx++;
+		}
+	}
+
+	for (int k = 0; k < sel_msg_idx; k++) {
+		sel_msg[k].assert_type = is_assert ? LOG_ASSERT : LOG_DEASSERT;
+		sel_msg[k].event_type = IRIS_FAULT;
+		sel_msg[k].event_data_1 = IRIS_P12V_UBC_PWRGD;
+
+		if (PLDM_SUCCESS != send_event_log_to_bmc(sel_msg[k])) {
+			LOG_ERR("Fail send event: 0x%x 0x%x 0x%x", sel_msg[k].event_data_1,
+				sel_msg[k].event_data_2, sel_msg[k].event_data_3);
+		} else {
+			LOG_INF("Send event: 0x%x 0x%x 0x%x", sel_msg[k].event_data_1,
+				sel_msg[k].event_data_2, sel_msg[k].event_data_3);
+		}
+	}
+}
+
 void process_mtia_vr_power_fault_sel(cpld_info *cpld_info, uint8_t *current_cpld_value)
 {
 	CHECK_NULL_ARG(cpld_info);
@@ -163,7 +228,10 @@ void process_mtia_vr_power_fault_sel(cpld_info *cpld_info, uint8_t *current_cpld
 		LOG_INF("MTIA [0x%02X] reg[0x%02X] bit[0x%02X] is %s ", vr->mtia_event_source,
 			vr->cpld_reg_offset, vr->cpld_reg_bit, is_assert ? "ASSERT" : "DEASSERT");
 
-		if (vr_fault_table[i].is_pmbus_vr == false) {
+		if (vr->mtia_event_source == IRIS_P12V_UBC_PWRGD) {
+			// Shared UBC1/UBC2 pwrgd fault: query multiple status regs for both UBCs
+			process_ubc_vr_power_fault_sel(is_assert, *current_cpld_value);
+		} else if (vr_fault_table[i].is_pmbus_vr == false) {
 			// non-PMBus VR
 			struct pldm_addsel_data sel_msg = { 0 };
 

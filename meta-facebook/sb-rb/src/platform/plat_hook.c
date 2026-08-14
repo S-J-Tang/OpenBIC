@@ -612,12 +612,12 @@ bool vr_status_enum_get(uint8_t *name, uint8_t *num)
 	return false;
 }
 
-bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_status)
+static bool plat_get_vr_status_by_sensor_id(uint8_t sensor_id, uint8_t vr_status_rail,
+					    uint16_t *vr_status)
 {
 	CHECK_NULL_ARG_WITH_RETURN(vr_status, false);
 
 	bool ret = false;
-	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 	CHECK_NULL_ARG_WITH_RETURN(cfg, ret);
 
@@ -664,6 +664,12 @@ err:
 		}
 	}
 	return ret;
+}
+
+bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_status)
+{
+	return plat_get_vr_status_by_sensor_id(vr_rail_table[rail].sensor_id, vr_status_rail,
+					       vr_status);
 }
 
 bool plat_clear_vr_status(uint8_t rail)
