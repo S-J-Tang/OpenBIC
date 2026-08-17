@@ -9471,7 +9471,7 @@ pldm_sensor_info plat_pldm_sensor_quick_vr_table[] = {
 			0x00000000, //uint32_t normal_min;
 			0, //uint32_t warning_high;
 			0, //uint32_t warning_low;
-			245700, //uint32_t critical_high;
+			214065, //uint32_t critical_high;
 			-10000, //uint32_t critical_low;
 			0, //uint32_t fatal_high;
 			0, //uint32_t fatal_low;
@@ -9688,10 +9688,10 @@ pldm_sensor_info plat_pldm_sensor_quick_vr_table[] = {
 			0x00000000, //uint32_t nominal_value;
 			0x00000000, //uint32_t normal_max;
 			0x00000000, //uint32_t normal_min;
-			114000, //uint32_t warning_high;
-			-10000, //uint32_t warning_low;
-			112500, //uint32_t critical_high;
-			0, //uint32_t critical_low;
+			0, //uint32_t warning_high;
+			0, //uint32_t warning_low;
+			9000, //uint32_t critical_high;
+			-10000, //uint32_t critical_low;
 			0, //uint32_t fatal_high;
 			0, //uint32_t fatal_low;
 		},
@@ -9763,8 +9763,8 @@ pldm_sensor_info plat_pldm_sensor_quick_vr_table[] = {
 			0x00000000, //uint32_t normal_min;
 			0, //uint32_t warning_high;
 			0, //uint32_t warning_low;
-			63750, //uint32_t critical_high;
-			0, //uint32_t critical_low;
+			55250, //uint32_t critical_high;
+			-10000, //uint32_t critical_low;
 			0, //uint32_t fatal_high;
 			0, //uint32_t fatal_low;
 		},
