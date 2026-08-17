@@ -51,6 +51,9 @@
  *     has no counterpart here and is deliberately not carried over.
  * 10. IC_DEVICE_ID (ADh) gives a real identity check:
  *     0x2020323935323620 ("  29526 ").
+ * 11. Expected user CRC (B8h, page 0) is a PMBus block read (1B length + 4B
+ *     data), not a plain 2-byte register. Confirmed against hardware
+ *     readback: 04 c7 35 ae b3 -> CRC 0x35C7B3AE. See mp29526_get_fw_version().
  * =============================================================================
  */
 
@@ -64,6 +67,7 @@
 #include "pmbus.h"
 #include "mp29526.h"
 #include "util_pmbus.h"
+#include "pldm_firmware_update.h"
 
 LOG_MODULE_REGISTER(mp29526);
 
@@ -135,6 +139,13 @@ LOG_MODULE_REGISTER(mp29526);
 #define MP29526_REG_IC_DEVICE_REV 0xAE /* block, 1B */
 #define MP29526_REG_USER_DATA_00 0xB0 /* block, 2B */
 #define MP29526_REG_MFR_CODE_VERSION 0xEE /* 2B */
+/*
+ * Expected user CRC register. This is a PMBus block read, NOT a plain 2-byte
+ * register: byte 0 is a length count (4), followed by 4 CRC data bytes. Confirmed
+ * against actual hardware (page 0, `i2c read ... 0xB8 8` -> 04 c7 35 ae b3 ...).
+ */
+#define VR_REG_EXPECTED_USER_CRC 0xB8 /* block, 1B len + 4B data */
+#define MP29526_EXPECTED_USER_CRC_LEN 4
 
 /* ---- Page 5..8 : MPS registers, per rail --------------------------------- */
 #define MP29526_REG_PHASE_NUM 0x01 /* 1B, bits[4:0], 0=off 1..16 */
@@ -1007,7 +1018,14 @@ bool mp29526_check_device_id(uint8_t bus, uint8_t addr)
 	if (!mp29526_set_page(bus, addr, MP29526_PAGE_RAIL1))
 		return false;
 
-	/* block read: byte 0 is the length, then 8 ID bytes MSB first */
+	/*
+	 * Block read: byte 0 is the length, then 8 ID bytes - confirmed against
+	 * hardware that they arrive LSB-first, i.e. reversed relative to
+	 * MP29526_IC_DEVICE_ID_VALUE's natural MSB-first byte order. On the
+	 * wire: 20 36 32 35 39 32 20 20 (reads as "  62592 " in transmission
+	 * order); read back data[8]..data[1] and it's "  29526 ", matching
+	 * MP29526_IC_DEVICE_ID_VALUE.
+	 */
 	uint8_t data[MP29526_IC_DEVICE_ID_LEN + 1] = { 0 };
 	if (!mp29526_i2c_read(bus, addr, MP29526_REG_IC_DEVICE_ID, data, sizeof(data))) {
 		LOG_ERR("Failed to read IC_DEVICE_ID (ADh)");
@@ -1021,8 +1039,8 @@ bool mp29526_check_device_id(uint8_t bus, uint8_t addr)
 	}
 
 	uint64_t id = 0;
-	for (int i = 0; i < MP29526_IC_DEVICE_ID_LEN; i++)
-		id = (id << 8) | data[1 + i];
+	for (int i = MP29526_IC_DEVICE_ID_LEN; i >= 1; i--)
+		id = (id << 8) | data[i];
 
 	if (id != MP29526_IC_DEVICE_ID_VALUE) {
 		LOG_ERR("IC_DEVICE_ID 0x%08x%08x is not MP29526 (expected 0x%08x%08x) - wrong "
@@ -1080,27 +1098,39 @@ bool mp29526_set_write_protect(uint8_t bus, uint8_t addr, uint8_t wp)
 }
 
 /*
- * Config revision. MFR_CODE_VERSION (EEh) is the closest analogue to
- * mp29816a's config CRC; USER_DATA_00 (B0h) is what MPS documents for
- * "configuration tracking". Report the code version and fall back to nothing
- * else, so a caller comparing revisions is comparing a real field.
+ * Config revision, reported as the expected user CRC (B8h, page 0) - the
+ * value the device compares against the CRC it generates each time NVM is
+ * copied to configuration registers. Same role as mp29816a's checksum at
+ * EDh and mp2971's MFR checksum, so callers can treat it interchangeably.
+ *
+ * B8h is a PMBus block read: byte 0 is a length count (4), then 4 CRC data
+ * bytes. The two halves are each little-endian but concatenate in
+ * transmission order (first half -> high 16 bits, second half -> low 16
+ * bits) - confirmed against hardware: 04 c7 35 ae b3 -> CRC 0x35C7B3AE.
+ * It is NOT one 32-bit little-endian word.
  */
 bool mp29526_get_fw_version(uint8_t bus, uint8_t addr, uint32_t *rev)
 {
 	CHECK_NULL_ARG_WITH_RETURN(rev, false);
 
 	if (!mp29526_set_page(bus, addr, MP29526_PAGE_RAIL1)) {
-		LOG_ERR("Failed to set page before reading MFR_CODE_VERSION");
+		LOG_ERR("Failed to set page before reading expected user CRC");
 		return false;
 	}
 
-	uint8_t data[2] = { 0 };
-	if (!mp29526_i2c_read(bus, addr, MP29526_REG_MFR_CODE_VERSION, data, sizeof(data))) {
-		LOG_ERR("Failed to read MFR_CODE_VERSION (EEh)");
+	uint8_t data[MP29526_EXPECTED_USER_CRC_LEN + 1] = { 0 };
+	if (!mp29526_i2c_read(bus, addr, VR_REG_EXPECTED_USER_CRC, data, sizeof(data))) {
+		LOG_ERR("Failed to read expected user CRC (B8h)");
 		return false;
 	}
 
-	*rev = (uint32_t)le16(data);
+	if (data[0] != MP29526_EXPECTED_USER_CRC_LEN) {
+		LOG_ERR("Expected user CRC block length %d, expected %d", data[0],
+			MP29526_EXPECTED_USER_CRC_LEN);
+		return false;
+	}
+
+	*rev = ((uint32_t)le16(&data[1]) << 16) | le16(&data[3]);
 	return true;
 }
 
@@ -1222,6 +1252,13 @@ static uint32_t parsing_image(const uint8_t *img_buff, uint32_t img_size,
 		}
 		strncpy(tmp, (const char *)img_buff + i, len);
 
+		/* "END" marks the end of the real register writes; everything
+		 * after it (CRC_CHECK_START/STOP, CUSTOM_START/STOP) is
+		 * reference/readback data, not writes - see mp29526_stream's
+		 * past_end comment for the full rationale. */
+		if (len == (int)strlen("END") && !strncmp(tmp, "END", len))
+			break;
+
 		if (cnt_char(tmp, '\t') == 7) {
 			if (!parsing_line(tmp, len, cfg_data_list + cfg_cnt))
 				cfg_cnt++;
@@ -1295,7 +1332,7 @@ static uint8_t mp29526_do_update(struct cfg_data *cfg_data_list, uint32_t cfg_cn
 	for (uint32_t i = 0; i < cfg_cnt; i++) {
 		const struct cfg_data *p = cfg_data_list + i;
 
-		if (p->reg_len == 0 || p->reg_len > 2) {
+		if (p->reg_len > 2) {
 			LOG_ERR("Config entry %d has unsupported length %d", i, p->reg_len);
 			goto restore_wp;
 		}
@@ -1375,6 +1412,254 @@ bool mp29526_fwupdate(uint8_t bus, uint8_t addr, uint8_t *img_buff, uint32_t img
 exit:
 	SAFE_FREE(cfg_data_list);
 	return ret;
+}
+
+/* =============================================================================
+ * Config update - streaming variant
+ *
+ * mp29526 images are ~200KB of the same tab-separated text lines that
+ * mp29526_fwupdate() above buffers whole and parses in one pass. That doesn't
+ * fit this platform's heap (CONFIG_HEAP_MEM_POOL_SIZE), so this variant is
+ * fed one PLDM data chunk at a time (in offset order) and applies each
+ * complete "\r\n"-terminated line to the device as soon as it is assembled,
+ * instead of malloc'ing the full image. Only a small fixed line-assembly
+ * buffer is kept, matching parsing_line()'s own tmp[] bound.
+ * ========================================================================== */
+
+#define MP29526_STREAM_LINE_BUF_LEN 128
+
+static struct {
+	uint8_t bus;
+	uint8_t addr;
+	uint8_t page;
+	uint8_t saved_wp;
+	uint32_t applied_cnt;
+	uint16_t line_len;
+	bool aborted;
+	/*
+	 * The exported config has real register writes, then a bare "END"
+	 * line, then a CRC_CHECK_START/STOP block (self-check reference
+	 * values, REG_NAME "CRC_..." - already skipped below) and a
+	 * CUSTOM_START/STOP block (REG_NAME "IC_DEVICE_ID"/"READ_FW_VERSION"/
+	 * "READ_APP_FLASH_CRC"/"READ_OTA_FLASH_CRC" - readback verification
+	 * queries, not writes). Those CUSTOM rows don't match the CRC/TRIM
+	 * name filter, so without this they'd fall through to a real
+	 * mp29526_i2c_write() against read-only registers. Once "END" is
+	 * seen, nothing past it is a real write, so stop applying entirely
+	 * instead of relying on per-row name matching to catch every case.
+	 */
+	bool past_end;
+	char line_buf[MP29526_STREAM_LINE_BUF_LEN];
+} mp29526_stream;
+
+static bool mp29526_stream_apply_line(void)
+{
+	if (!mp29526_stream.line_len)
+		return true;
+
+	char *line = mp29526_stream.line_buf;
+	uint16_t len = mp29526_stream.line_len;
+	if (line[len - 1] == '\r')
+		line[--len] = '\0';
+	else
+		line[len] = '\0';
+
+	if (mp29526_stream.past_end) {
+		mp29526_stream.line_len = 0;
+		return true;
+	}
+
+	if (len == strlen("END") && !strncmp(line, "END", len)) {
+		LOG_INF("Reached END marker, ignoring anything after it");
+		mp29526_stream.past_end = true;
+		mp29526_stream.line_len = 0;
+		return true;
+	}
+
+	if (len && cnt_char(line, '\t') == 7) {
+		struct cfg_data cfg = { 0 };
+		if (!parsing_line(line, len, &cfg)) {
+			if (cfg.reg_len > 2) {
+				LOG_ERR("Config entry has unsupported length %d", cfg.reg_len);
+				return false;
+			}
+
+			if (cfg.cfg_page != mp29526_stream.page) {
+				mp29526_stream.page = cfg.cfg_page;
+				if (!mp29526_set_page(mp29526_stream.bus, mp29526_stream.addr,
+						      mp29526_stream.page))
+					return false;
+			}
+
+			uint8_t data[2];
+			memcpy(data, &cfg.reg_val, cfg.reg_len);
+			if (!mp29526_i2c_write(mp29526_stream.bus, mp29526_stream.addr,
+					       cfg.reg_addr, data, cfg.reg_len)) {
+				LOG_ERR("Config write failed (page 0x%x reg 0x%02x)",
+					cfg.cfg_page, cfg.reg_addr);
+				return false;
+			}
+
+			mp29526_stream.applied_cnt++;
+		}
+	}
+
+	mp29526_stream.line_len = 0;
+	return true;
+}
+
+static bool mp29526_stream_consume(const uint8_t *data, uint32_t data_len)
+{
+	for (uint32_t i = 0; i < data_len; i++) {
+		char c = (char)data[i];
+
+		if (c == '\n') {
+			if (!mp29526_stream_apply_line())
+				return false;
+			continue;
+		}
+
+		if (mp29526_stream.line_len >= MP29526_STREAM_LINE_BUF_LEN - 1) {
+			LOG_ERR("Config line exceeds parse buffer (%d bytes)",
+				MP29526_STREAM_LINE_BUF_LEN);
+			return false;
+		}
+		mp29526_stream.line_buf[mp29526_stream.line_len++] = c;
+	}
+	return true;
+}
+
+static void mp29526_stream_restore_wp(void)
+{
+	if (mp29526_stream.saved_wp != MP29526_WP_DISABLE) {
+		if (!mp29526_set_write_protect(mp29526_stream.bus, mp29526_stream.addr,
+					       mp29526_stream.saved_wp))
+			LOG_ERR("Failed to restore WRITE_PROTECT to 0x%02x - the device is left "
+				"unprotected",
+				mp29526_stream.saved_wp);
+	}
+}
+
+bool mp29526_fwupdate_stream(uint8_t bus, uint8_t addr, const uint8_t *data, uint32_t data_len,
+			     bool is_first, bool is_last)
+{
+	CHECK_NULL_ARG_WITH_RETURN(data, false);
+
+	if (is_first) {
+		memset(&mp29526_stream, 0, sizeof(mp29526_stream));
+		mp29526_stream.bus = bus;
+		mp29526_stream.addr = addr;
+		mp29526_stream.page = 0xFF;
+
+		if (!mp29526_check_device_id(bus, addr)) {
+			mp29526_stream.aborted = true;
+			return false;
+		}
+
+		if (!mp29526_get_write_protect(bus, addr, &mp29526_stream.saved_wp)) {
+			mp29526_stream.aborted = true;
+			return false;
+		}
+
+		if (mp29526_stream.saved_wp != MP29526_WP_DISABLE) {
+			LOG_INF("WRITE_PROTECT was 0x%02x, disabling for the update",
+				mp29526_stream.saved_wp);
+			if (!mp29526_set_write_protect(bus, addr, MP29526_WP_DISABLE)) {
+				mp29526_stream.aborted = true;
+				return false;
+			}
+		}
+
+		/* clear any stale CML bits so the post-store check is meaningful */
+		mp29526_i2c_write(bus, addr, MP29526_REG_CLEAR_FAULT, NULL, 0);
+	}
+
+	if (mp29526_stream.aborted) {
+		LOG_ERR("mp29526 stream update already aborted, dropping chunk");
+		return false;
+	}
+
+	if (!mp29526_stream_consume(data, data_len)) {
+		mp29526_stream.aborted = true;
+		mp29526_stream_restore_wp();
+		return false;
+	}
+
+	if (!is_last)
+		return true;
+
+	if (mp29526_stream.line_len) {
+		LOG_ERR("Incomplete trailing config line (%d bytes) at end of image",
+			mp29526_stream.line_len);
+		mp29526_stream.aborted = true;
+		mp29526_stream_restore_wp();
+		return false;
+	}
+
+	if (!mp29526_stream.applied_cnt) {
+		LOG_ERR("parsing image fail");
+		mp29526_stream.aborted = true;
+		mp29526_stream_restore_wp();
+		return false;
+	}
+
+	bool ret = false;
+
+	if (!mp29526_set_page(bus, addr, MP29526_PAGE_RAIL1))
+		goto restore_wp;
+
+	if (!mp29526_i2c_write(bus, addr, MP29526_REG_STORE_USER, NULL, 0)) {
+		LOG_ERR("STORE_USER (15h) failed");
+		goto restore_wp;
+	}
+
+	k_msleep(MP29526_NVM_STORE_DELAY_MS);
+
+	if (!mp29526_check_nvm_status(bus, addr))
+		goto restore_wp;
+
+	LOG_INF("MP29526 config stored to NVM (%d registers). Takes effect at the next POR; "
+		"RESTORE_USER is not issued because it is illegal while the rail is powered.",
+		mp29526_stream.applied_cnt);
+	ret = true;
+
+restore_wp:
+	mp29526_stream_restore_wp();
+	return ret;
+}
+
+/*
+ * PLDM-facing entry point: works out the chunk-boundary bookkeeping
+ * (next_ofs/next_len, first/last chunk) that pldm_vr_update() would
+ * otherwise do inline for a hex_buff-based VR, then feeds the chunk to
+ * mp29526_fwupdate_stream() above. Kept here (rather than in
+ * pldm_firmware_update.c) so all the mp29526 update logic lives in one
+ * place; see pldm_cpld_update()'s lattice.c equivalent for the same pattern.
+ */
+uint8_t mp29526_pldm_update(pldm_fw_update_param_t *p)
+{
+	bool is_first = (p->data_ofs == 0);
+
+	p->next_ofs = p->data_ofs + p->data_len;
+	p->next_len = fw_update_cfg.max_buff_size;
+
+	bool is_last = (p->next_ofs >= fw_update_cfg.image_size);
+	if (!is_last) {
+		if (p->next_ofs + p->next_len > fw_update_cfg.image_size)
+			p->next_len = fw_update_cfg.image_size - p->next_ofs;
+	} else {
+		p->next_len = 0;
+	}
+
+	if (is_first)
+		LOG_INF("MP29526 update start");
+
+	if (!mp29526_fwupdate_stream(p->bus, p->addr, p->data, p->data_len, is_first, is_last)) {
+		LOG_ERR("MP29526 streaming update failed");
+		return 1;
+	}
+
+	return 0;
 }
 
 /* =============================================================================

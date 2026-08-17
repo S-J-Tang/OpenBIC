@@ -40,6 +40,10 @@
 #include "stdint.h"
 #include "sensor.h"
 
+/* Avoids pulling pldm_firmware_update.h into every mp29526.h consumer just
+ * for the pointer type below; the full struct is only needed in mp29526.c. */
+struct pldm_fw_update_param;
+
 enum mp29526_rail {
 	MP29526_RAIL_1 = 0,
 	MP29526_RAIL_2 = 1,
@@ -90,6 +94,18 @@ bool mp29526_set_vout_min(sensor_cfg *cfg, uint8_t rail, uint16_t *millivolt);
 bool mp29526_get_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t *value);
 bool mp29526_set_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t value);
 bool mp29526_fwupdate(uint8_t bus, uint8_t addr, uint8_t *img_buff, uint32_t img_size);
+/*
+ * Line-streaming variant of mp29526_fwupdate(): applies the tab-separated
+ * config lines to the device as each chunk arrives instead of buffering the
+ * whole (~200KB) image in RAM first. Call once per PLDM firmware data chunk,
+ * in offset order, with is_first true on the very first chunk (offset 0) and
+ * is_last true on the chunk that completes the image.
+ */
+bool mp29526_fwupdate_stream(uint8_t bus, uint8_t addr, const uint8_t *data, uint32_t data_len,
+			     bool is_first, bool is_last);
+/* PLDM-facing wrapper around mp29526_fwupdate_stream(): call once per
+ * RequestFirmwareData chunk from pldm_vr_update(). */
+uint8_t mp29526_pldm_update(struct pldm_fw_update_param *p);
 bool mp29526_get_vout_command(sensor_cfg *cfg, uint8_t rail, uint16_t *millivolt);
 bool mp29526_set_vout_command(sensor_cfg *cfg, uint8_t rail, uint16_t *millivolt);
 bool mp29526_get_vr_status(sensor_cfg *cfg, uint8_t rail, uint8_t vr_status_rail,
