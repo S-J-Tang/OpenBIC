@@ -54,7 +54,7 @@ void gpio_int_default();
 	gpio_name_to_num(NUWA1_CHIP_STRAP0_MMC) \
 	gpio_name_to_num(NUWA0_HBM_CATTRIP_MMC_LVC33_R_ALARM)
 #define name_gpio3	\
-	gpio_name_to_num(Reserve_GPIO30) \
+	gpio_name_to_num(CLK_U618_EEPROM_PATH_EN) \
 	gpio_name_to_num(Reserve_GPIO31) \
 	gpio_name_to_num(Reserve_GPIO32) \
 	gpio_name_to_num(Reserve_GPIO33) \
@@ -76,7 +76,7 @@ void gpio_int_default();
 	gpio_name_to_num(SPI_NUWA1_MUX_IN1) \
 	gpio_name_to_num(SPI_HAMSA_MUX_IN1) \
 	gpio_name_to_num(QSPI_CPLD_SEL_0) \
-	gpio_name_to_num(Reserve_GPIO54) \
+	gpio_name_to_num(MMC_GPIO_APLL_LOCK) \
 	gpio_name_to_num(Reserve_GPIO55) \
 	gpio_name_to_num(Reserve_GPIO56) \
 	gpio_name_to_num(NUWA1_HBM_CATTRIP_MMC_LVC33_R_ALARM)

@@ -64,6 +64,7 @@ enum FIRMWARE_COMPONENT {
 	COMPNT_NUWA0,
 	COMPNT_NUWA1,
 	COMPNT_HAMSA_BOOT1,
+	COMPNT_CLK_U618,
 };
 
 void plat_set_cpld_reset_reg(uint8_t value);
