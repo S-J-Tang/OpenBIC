@@ -466,15 +466,18 @@ void plat_pldm_sensor_poll_post()
 }
 void set_sensor_polling_handler(struct k_work *work_item)
 {
-	const plat_control_sensor_polling *sensor_data =
+	plat_control_sensor_polling *sensor_data =
 		CONTAINER_OF(work_item, plat_control_sensor_polling, work);
 
 	int value = sensor_data->set_value;
 	if (!(value == 0 || value == 1)) {
 		LOG_ERR("set sensor_polling:%x is out of range", value);
+		SAFE_FREE(sensor_data);
 		return;
 	}
 	set_plat_sensor_polling_enable_flag(value);
+
+	SAFE_FREE(sensor_data);
 }
 
 uint8_t vr_pwr_sensor_table[] = {
@@ -1087,7 +1090,7 @@ uint8_t vr_pwr_alert_table[] = {
 
 void i2c_bridge_command_handler(struct k_work *work_item)
 {
-	const plat_i2c_bridge_command_config *sensor_data_config =
+	plat_i2c_bridge_command_config *sensor_data_config =
 		CONTAINER_OF(work_item, plat_i2c_bridge_command_config, work);
 
 	int response_data_len = sensor_data_config->read_len;
@@ -1095,15 +1098,19 @@ void i2c_bridge_command_handler(struct k_work *work_item)
 	size_t table_size_41 = sizeof(plat_i2c_bridge_command_status);
 	plat_i2c_bridge_command_status *sensor_data_status =
 		allocate_table((void **)&i2c_bridge_command_status_table[0], table_size_41);
-	if (!sensor_data_status)
+	if (!sensor_data_status) {
+		SAFE_FREE(sensor_data_config);
 		return;
+	}
 
 	size_t table_size_42 =
 		sizeof(plat_i2c_bridge_command_response_data) + response_data_len * sizeof(uint8_t);
 	plat_i2c_bridge_command_response_data *sensor_data_response =
 		allocate_table((void **)&i2c_bridge_command_response_data_table[0], table_size_42);
-	if (!sensor_data_response)
+	if (!sensor_data_response) {
+		SAFE_FREE(sensor_data_config);
 		return;
+	}
 
 	sensor_data_status->data_status = I2C_BRIDGE_COMMAND_IN_PROCESS;
 	sensor_data_response->data_length = 0x00;
@@ -1120,6 +1127,7 @@ void i2c_bridge_command_handler(struct k_work *work_item)
 			LOG_ERR("Failed to write reg, bus: %d, addr: 0x%x, tx_len: 0x%x",
 				i2c_msg.bus, i2c_msg.target_addr, i2c_msg.tx_len);
 			sensor_data_status->data_status = I2C_BRIDGE_COMMAND_FAILURE;
+			SAFE_FREE(sensor_data_config);
 			return;
 		}
 		sensor_data_status->data_status = I2C_BRIDGE_COMMAND_SUCCESS;
@@ -1129,27 +1137,31 @@ void i2c_bridge_command_handler(struct k_work *work_item)
 			LOG_ERR("Failed to read reg, bus: %d, addr: 0x%x, tx_len: 0x%x",
 				i2c_msg.bus, i2c_msg.target_addr, i2c_msg.tx_len);
 			sensor_data_status->data_status = I2C_BRIDGE_COMMAND_FAILURE;
+			SAFE_FREE(sensor_data_config);
 			return;
 		}
 		sensor_data_status->data_status = I2C_BRIDGE_COMMAND_SUCCESS;
 		sensor_data_response->data_length = response_data_len;
 		memcpy(sensor_data_response->response_data, i2c_msg.data, response_data_len);
 	}
+
+	SAFE_FREE(sensor_data_config);
 }
 
 void set_control_voltage_handler(struct k_work *work_item)
 {
-	const plat_control_voltage *sensor_data =
-		CONTAINER_OF(work_item, plat_control_voltage, work);
+	plat_control_voltage *sensor_data = CONTAINER_OF(work_item, plat_control_voltage, work);
 	uint8_t rail = sensor_data->rail;
 	uint16_t millivolt = sensor_data->set_value;
 
 	plat_set_vout_command(rail, &millivolt, false);
+
+	SAFE_FREE(sensor_data);
 }
 
 void set_power_capping_threshold_time_handler(struct k_work *work_item)
 {
-	const plat_power_capping_threshold_time_t *sensor_data =
+	plat_power_capping_threshold_time_t *sensor_data =
 		CONTAINER_OF(work_item, plat_power_capping_threshold_time_t, work);
 	const uint8_t *in_data = sensor_data->in_data;
 	uint8_t lv = sensor_data->lv;
@@ -1170,22 +1182,28 @@ void set_power_capping_threshold_time_handler(struct k_work *work_item)
 	set_power_capping_threshold(CAPPING_VR_IDX_MEDHA1, lv, value);
 	value = in_data[6] | (in_data[7] << 8);
 	set_power_capping_time_w(CAPPING_VR_IDX_MEDHA1, lv, value);
+
+	SAFE_FREE(sensor_data);
 }
 
 void set_power_capping_method_handler(struct k_work *work_item)
 {
-	const plat_power_capping_method_t *sensor_data =
+	plat_power_capping_method_t *sensor_data =
 		CONTAINER_OF(work_item, plat_power_capping_method_t, work);
 
 	set_power_capping_method(sensor_data->set_value);
+
+	SAFE_FREE(sensor_data);
 }
 
 void set_power_capping_source_handler(struct k_work *work_item)
 {
-	const plat_power_capping_method_t *sensor_data =
+	plat_power_capping_method_t *sensor_data =
 		CONTAINER_OF(work_item, plat_power_capping_method_t, work);
 
 	set_power_capping_source(sensor_data->set_value);
+
+	SAFE_FREE(sensor_data);
 }
 
 static const asic_i2c_bus_map target_bus_list[] = {
