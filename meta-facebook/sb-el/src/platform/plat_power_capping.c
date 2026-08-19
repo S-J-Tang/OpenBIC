@@ -514,62 +514,62 @@ void plat_power_capping_give_sem()
 	k_sem_give(&power_capping_sem);
 }
 
-// void plat_power_capping_init()
-// {
-// 	k_sem_init(&power_capping_sem, 0, 1);
+void plat_power_capping_init()
+{
+	k_sem_init(&power_capping_sem, 0, 1);
 
-// 	// sync avg_times
-// 	uint8_t data = 0;
-// 	if (plat_read_cpld(CPLD_OFFSET_POWER_CAPPING_LV1_TIME, &data, 1)) {
-// 		uint8_t idx = data >> 5;
-// 		if (idx < CPLD_LV1_TIME_WINDOW_NUM) {
-// 			power_capping_info.time_w[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV1] =
-// 				cpld_lv1_time_window_list[idx];
-// 			power_capping_info.time_w[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV1] =
-// 				cpld_lv1_time_window_list[idx];
-// 		} else {
-// 			LOG_ERR("invalid cpld lv1 time data 0x%02x", data);
-// 		}
-// 	} else {
-// 		LOG_ERR("can't r cpld offset %d", CPLD_OFFSET_POWER_CAPPING_LV1_TIME);
-// 	}
+	// sync avg_times
+	uint8_t data = 0;
+	if (plat_read_cpld(CPLD_OFFSET_POWER_CAPPING_LV1_TIME, &data, 1)) {
+		uint8_t idx = data >> 5;
+		if (idx < CPLD_LV1_TIME_WINDOW_NUM) {
+			power_capping_info.time_w[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV1] =
+				cpld_lv1_time_window_list[idx];
+			power_capping_info.time_w[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV1] =
+				cpld_lv1_time_window_list[idx];
+		} else {
+			LOG_ERR("invalid cpld lv1 time data 0x%02x", data);
+		}
+	} else {
+		LOG_ERR("can't r cpld offset %d", CPLD_OFFSET_POWER_CAPPING_LV1_TIME);
+	}
 
-// 	power_capping_info.time_w[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV2] =
-// 		get_adc_averge_times(ADC_IDX_NUWA0_1);
-// 	power_capping_info.time_w[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV2] =
-// 		get_adc_averge_times(ADC_IDX_NUWA1_1);
+	power_capping_info.time_w[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV2] =
+		get_adc_averge_times(ADC_IDX_NUWA0_1);
+	power_capping_info.time_w[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV2] =
+		get_adc_averge_times(ADC_IDX_NUWA1_1);
 
-// 	power_capping_info.time_w[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV3] =
-// 		get_adc_averge_times(ADC_IDX_NUWA0_2);
-// 	power_capping_info.time_w[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV3] =
-// 		get_adc_averge_times(ADC_IDX_NUWA1_2);
+	power_capping_info.time_w[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV3] =
+		get_adc_averge_times(ADC_IDX_NUWA0_2);
+	power_capping_info.time_w[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV3] =
+		get_adc_averge_times(ADC_IDX_NUWA1_2);
 
-// 	// sync threshold
-// 	add_sync_oc_warn_to_work();
+	// sync threshold
+	add_sync_oc_warn_to_work();
 
-// 	power_capping_info.threshold[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV2] =
-// 		get_adc_ucr(ADC_IDX_NUWA0_1);
-// 	power_capping_info.threshold[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV2] =
-// 		get_adc_ucr(ADC_IDX_NUWA1_1);
+	power_capping_info.threshold[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV2] =
+		get_adc_ucr(ADC_IDX_NUWA0_1);
+	power_capping_info.threshold[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV2] =
+		get_adc_ucr(ADC_IDX_NUWA1_1);
 
-// 	power_capping_info.threshold[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV3] =
-// 		get_adc_ucr(ADC_IDX_NUWA0_2);
-// 	power_capping_info.threshold[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV3] =
-// 		get_adc_ucr(ADC_IDX_NUWA1_2);
+	power_capping_info.threshold[CAPPING_VR_IDX_NUWA0][CAPPING_LV_IDX_LV3] =
+		get_adc_ucr(ADC_IDX_NUWA0_2);
+	power_capping_info.threshold[CAPPING_VR_IDX_NUWA1][CAPPING_LV_IDX_LV3] =
+		get_adc_ucr(ADC_IDX_NUWA1_2);
 
-// 	// init set capping to 0
-// 	if (plat_read_cpld(CPLD_OFFSET_POWER_CLAMP, &data, 1)) {
-// 		data = (data & 0x0F);
-// 		plat_write_cpld(CPLD_OFFSET_POWER_CLAMP, &data);
-// 		// save lv_switch_en in MMC
-// 		set_power_capping_lv_switch_en_val(data);
-// 	}
+	// init set capping to 0
+	if (plat_read_cpld(CPLD_OFFSET_POWER_CLAMP, &data, 1)) {
+		data = (data & 0x0F);
+		plat_write_cpld(CPLD_OFFSET_POWER_CLAMP, &data);
+		// save lv_switch_en in MMC
+		set_power_capping_lv_switch_en_val(data);
+	}
 
-// 	set_power_capping_source(CAPPING_SOURCE_VR);
+	set_power_capping_source(CAPPING_SOURCE_VR);
 
-// 	k_thread_create(&power_capping_thread, power_capping_thread_stack, POWER_CAPPING_STACK_SIZE,
-// 			power_capping_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0,
-// 			K_MSEC(3000));
+	k_thread_create(&power_capping_thread, power_capping_thread_stack, POWER_CAPPING_STACK_SIZE,
+			power_capping_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0,
+			K_MSEC(3000));
 
-// 	k_thread_name_set(&power_capping_thread, "power_capping");
-// }
+	k_thread_name_set(&power_capping_thread, "power_capping");
+}
