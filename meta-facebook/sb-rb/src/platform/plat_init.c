@@ -114,6 +114,9 @@ void pal_post_init()
 		if (!set_all_vout_command())
 			LOG_ERR("set all vout command fail!");
 	}
+	//check if dc on , set delay status to 1, enable sensor polling*(no need to wait 1s)
+	if (is_mb_dc_on() == true)
+		set_delay_status(1);
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78

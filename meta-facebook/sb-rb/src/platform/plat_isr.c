@@ -63,6 +63,10 @@ uint8_t get_delay_status(void)
 {
 	return delay_status;
 }
+void set_delay_status(uint8_t status)
+{
+	delay_status = status;
+}
 void check_read_100MHz_clock_status()
 {
 	uint8_t lock_status = 0;

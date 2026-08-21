@@ -34,4 +34,5 @@ void clear_pwr_cap_lv1_medha1_count();
 uint32_t get_pwr_cap_lv1_medha0_count();
 uint32_t get_pwr_cap_lv1_medha1_count();
 uint8_t get_delay_status(void);
+uint8_t set_delay_status(uint8_t status);
 #endif
