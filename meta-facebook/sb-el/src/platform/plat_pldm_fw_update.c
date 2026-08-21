@@ -710,7 +710,7 @@ static uint8_t pldm_post_vr_update(void *fw_update_param)
 
 	/* Start sensor polling */
 	k_msleep(2000);
-	set_plat_sensor_polling_enable_flag(true);
+	// set_plat_sensor_polling_enable_flag(true);
 
 	return 0;
 }
