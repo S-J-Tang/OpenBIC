@@ -13673,7 +13673,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 			}
 			LOG_INF("change VR sensors 0x%x address to 0x%x",
 				vr_table[j].pldm_sensor_cfg.num, vr_table[j].pldm_sensor_cfg.target_addr);
-			
+
 			if (is_mb_dc_on()){
 				set_plat_vr_change_done_flag(true);
 			}
