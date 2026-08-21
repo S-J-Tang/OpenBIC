@@ -32,6 +32,7 @@
 #include "plat_log.h"
 #include "iris_smbus.h"
 #include "plat_cpld.h"
+#include "plat_isr.h"
 
 LOG_MODULE_REGISTER(plat_pldm_sensor);
 
@@ -12242,7 +12243,8 @@ bool is_ubc_access(uint8_t sensor_num)
 			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
 	} else {
 		return (is_dc_access(sensor_num) && get_plat_sensor_ubc_polling_enable_flag() &&
-			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
+			get_plat_sensor_polling_enable_flag() && is_update_state_idle() &&
+			get_delay_status());
 	}
 }
 
@@ -12269,7 +12271,8 @@ bool is_vr_access(uint8_t sensor_num)
 
 	} else {
 		return (is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
-			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
+			get_plat_sensor_polling_enable_flag() && is_update_state_idle() &&
+			get_delay_status());
 	}
 }
 

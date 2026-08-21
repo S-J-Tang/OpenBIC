@@ -50,7 +50,19 @@ void pwr_sequence_event_timer_handler(struct k_timer *timer);
 K_TIMER_DEFINE(pwr_sequence_event_work_timer, pwr_sequence_event_timer_handler, NULL);
 void pwr_sequence_event(struct k_work *work);
 K_WORK_DEFINE(pwr_sequence_event_work, pwr_sequence_event);
+uint8_t delay_status = 0;
+static void sensor_polling_delay_work_handler(struct k_work *work);
+K_WORK_DELAYABLE_DEFINE(sensor_polling_delay_work, sensor_polling_delay_work_handler);
 
+void sensor_polling_delay_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	delay_status = 1;
+}
+uint8_t get_delay_status(void)
+{
+	return delay_status;
+}
 void check_read_100MHz_clock_status()
 {
 	uint8_t lock_status = 0;
@@ -309,6 +321,8 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 			LOG_ERR("set all vout command fail!");
 		//check RNS vr CML status
 		check_rns_vr_cml_status();
+		// delay 1s then set delay_status to 1, enable sensor polling
+		k_work_reschedule(&sensor_polling_delay_work, K_SECONDS(1));
 	} else {
 		plat_switch_pin_a12(true); /* LOW -> A12 = GPIO73 output low */
 		gpio_conf(SPI_ADC_CS1_N, GPIO_OUTPUT);
@@ -329,6 +343,7 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 		}
 		// set I3C_RAINBOW_ALERT_R_N to default
 		gpio_set(I3C_RAINBOW_ALERT_R_N, 1);
+		delay_status = 0;
 	}
 }
 
