@@ -188,6 +188,146 @@
     label = "GPIO_7";
 };
 
+/* IOX1: SGPIO_0_CLK(A7)/SGPIO_0_DI(B7)/SGPIO_0_DO(B11)/SGPIO_0_LD(C11) */
+&sgpio0 {
+    status = "okay";
+};
+
+/* sgpio0_0 ~ sgpio0_7: output bits 0-63, sgpio0_8 ~ sgpio0_f: input bits 0-63 */
+&sgpio0_0 {
+    status = "okay";
+};
+
+&sgpio0_1 {
+    status = "okay";
+};
+
+&sgpio0_2 {
+    status = "okay";
+};
+
+&sgpio0_3 {
+    status = "okay";
+};
+
+&sgpio0_4 {
+    status = "okay";
+};
+
+&sgpio0_5 {
+    status = "okay";
+};
+
+&sgpio0_6 {
+    status = "okay";
+};
+
+&sgpio0_7 {
+    status = "okay";
+};
+
+&sgpio0_8 {
+    status = "okay";
+};
+
+&sgpio0_9 {
+    status = "okay";
+};
+
+&sgpio0_a {
+    status = "okay";
+};
+
+&sgpio0_b {
+    status = "okay";
+};
+
+&sgpio0_c {
+    status = "okay";
+};
+
+&sgpio0_d {
+    status = "okay";
+};
+
+&sgpio0_e {
+    status = "okay";
+};
+
+&sgpio0_f {
+    status = "okay";
+};
+
+/* IOX2: SGPIO_1_CLK(C4)/SGPIO_1_DI(D4)/SGPIO_1_DO(D5)/SGPIO_1_LD(C5) */
+&sgpio1 {
+    status = "okay";
+};
+
+/* sgpio1_0 ~ sgpio1_7: output bits 0-63, sgpio1_8 ~ sgpio1_f: input bits 0-63 */
+&sgpio1_0 {
+    status = "okay";
+};
+
+&sgpio1_1 {
+    status = "okay";
+};
+
+&sgpio1_2 {
+    status = "okay";
+};
+
+&sgpio1_3 {
+    status = "okay";
+};
+
+&sgpio1_4 {
+    status = "okay";
+};
+
+&sgpio1_5 {
+    status = "okay";
+};
+
+&sgpio1_6 {
+    status = "okay";
+};
+
+&sgpio1_7 {
+    status = "okay";
+};
+
+&sgpio1_8 {
+    status = "okay";
+};
+
+&sgpio1_9 {
+    status = "okay";
+};
+
+&sgpio1_a {
+    status = "okay";
+};
+
+&sgpio1_b {
+    status = "okay";
+};
+
+&sgpio1_c {
+    status = "okay";
+};
+
+&sgpio1_d {
+    status = "okay";
+};
+
+&sgpio1_e {
+    status = "okay";
+};
+
+&sgpio1_f {
+    status = "okay";
+};
+
 &i3c0 {
 	status = "disabled";
 };

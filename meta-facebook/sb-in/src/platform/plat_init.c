@@ -18,6 +18,7 @@
 #include <logging/log.h>
 
 #include "expansion_board.h"
+#include "hal_gpio.h"
 #include "plat_led.h"
 #include "plat_i2c_target.h"
 #include "plat_mctp.h"
@@ -59,6 +60,11 @@ void pal_post_init()
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
+#define DEF_PROJ_SGPIO_PRIORITY 79
 
 DEVICE_DEFINE(PRE_DEF_PROJ_GPIO, "PRE_DEF_PROJ_GPIO_NAME", &gpio_init, NULL, NULL, NULL,
 	      POST_KERNEL, DEF_PROJ_GPIO_PRIORITY, NULL);
+
+/* Must come after PRE_DEF_PROJ_GPIO: sgpio_init() reuses gpio_init()'s work queue. */
+DEVICE_DEFINE(PRE_DEF_PROJ_SGPIO, "PRE_DEF_PROJ_SGPIO_NAME", &sgpio_init, NULL, NULL, NULL,
+	      POST_KERNEL, DEF_PROJ_SGPIO_PRIORITY, NULL);
