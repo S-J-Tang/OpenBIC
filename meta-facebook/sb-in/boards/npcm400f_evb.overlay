@@ -107,8 +107,21 @@
 	status = "okay";
 };
 
+/* Attach a SPI NOR flash on spip1 CS0.
+ * The label "spi_spip1_cs0" is used by device_get_binding() to get the device handle.
+ */
 &spip1 {
     status = "okay";
+    	spi_spip1_cs0: flash@0 {
+				compatible ="jedec,spi-nor";
+				/* slave */
+				reg = <0>;
+				spi-max-buswidth = <1>;
+				spi-max-frequency = <48000000>;
+				jedec-id = [];
+				label = "spi_spip1_cs0";
+				status = "okay";
+			};
 };
 
 &usbd0 {
