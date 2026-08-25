@@ -470,7 +470,7 @@ static bool get_boot0_nuwa1_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 #define RC38108_I2C_ADDR		0x08
 
 #define CLK_U618_I2C_BUS		I2C_BUS3
-#define CLK_U618_EEPROM_ADDR		0x51
+#define CLK_U618_EEPROM_ADDR		0x50
 
 #define CLK_U200045_I2C_BUS		I2C_BUS2
 #define CLK_U200045_EEPROM_ADDR		0x50
