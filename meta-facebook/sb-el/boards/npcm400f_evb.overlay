@@ -11,6 +11,10 @@
 	current-speed = <57600>;
 };
 
+&uart1 {
+	status = "disabled";
+};
+
 &i2c1a {
 	clock-frequency = <I2C_BITRATE_FAST>;
     scllt = <65>;
