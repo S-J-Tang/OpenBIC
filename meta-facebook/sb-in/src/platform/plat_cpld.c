@@ -7,6 +7,7 @@
 #include "plat_hook.h"
 #include <logging/log.h>
 
+// check when board come (astrid: 0x20)
 #define CPLD_ADDR (0x4C >> 1)
 #define I2C_BUS_CPLD I2C_BUS11
 

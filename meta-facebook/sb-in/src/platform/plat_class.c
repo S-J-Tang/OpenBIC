@@ -25,17 +25,50 @@
 #include "plat_util.h"
 #include "plat_cpld.h"
 #include "plat_mctp.h"
+#include "plat_user_setting.h"
+
+#define BOARD_TYPE_MASK (BIT(0) | BIT(1))
+#define REV_ID_MASK (BIT(0) | BIT(1) | BIT(2))
+
+#define I2C_BUS_TMP I2C_BUS3
 
 LOG_MODULE_REGISTER(plat_class);
 
 static uint8_t vr_module = VR_MODULE_UNKNOWN;
 static uint8_t ubc_module = UBC_MODULE_UNKNOWN;
-// static uint8_t tmp_module = TMP_TMP432;
+static uint8_t tmp_module = TMP_MODULE_TYPE_UNKNOWN;
 static uint8_t vr_vendor_module = VENDOR_TYPE_UNKNOWN;
 static uint8_t mmc_slot = 0;
 static uint8_t asic_board_id = 0;
 static uint8_t tray_location = 0;
 static uint8_t board_rev_id = 0;
+
+// clang-format off
+const char *vr_vendor_module_name[] = {
+	"FLEX_UBC_AND_MPS_VR_LPD",
+	"FLEX_UBC_AND_SNI_VR_LPD",
+	"REED_UBC_AND_RNS_VR_LPD",
+	"REED_UBC_AND_MPS_VR_PT",
+	"LUX_UBC_AND_SNU_VR_PT",
+	"REED_UBC_AND_RNS_VR_PT",
+	"VENDOR_TYPE_UNKNOWN",
+};
+
+const char *vr_module_name[] = {
+	"VR_MODULE_MPS",
+	"VR_MODULE_SNI",
+	"VR_MODULE_RNS",
+	"VR_MODULE_SNU",
+	"VR_MODULE_UNKNOWN",
+};
+
+const char *ubc_module_name[] = {
+	"UBC_MODULE_FLEX",
+	"UBC_MODULE_REED",
+	"UBC_MODULE_LUX",
+	"UBC_MODULE_UNKNOWN",
+};
+// clang-format on
 
 bool plat_cpld_eerprom_read(uint8_t *data, uint16_t offset, uint8_t len)
 {
@@ -61,65 +94,154 @@ bool plat_cpld_eerprom_read(uint8_t *data, uint16_t offset, uint8_t len)
 	return true;
 }
 
-void init_vr_vendor_module(void)
+void init_board_type(void)
 {
-	vr_vendor_module = VENDOR_TYPE_UNKNOWN;
+	uint8_t board_type_data = ASIC_BOARD_ID_UNKNOWN;
+	//get CPLD BOARD_TYPE
+	if (!plat_read_cpld(CPLD_OFFSET_ASIC_BOARD_ID, &board_type_data, 1)) {
+		LOG_ERR("Failed to get CPLD BOARD_TYPE 0x%02X", CPLD_OFFSET_ASIC_BOARD_ID);
+	}
+	board_type_data = board_type_data & BOARD_TYPE_MASK;
 
-	switch (ubc_module) {
-	case UBC_MODULE_MPS:
-		if (vr_module == VR_MODULE_MPS) {
-			vr_vendor_module = MPS_UBC_AND_MPS_VR;
-		} else if (vr_module == VR_MODULE_RNS) {
-			vr_vendor_module = MPS_UBC_AND_RNS_VR;
-		}
+	//print board type word
+	switch (board_type_data) {
+	case ASIC_BOARD_ID_INGRID:
+		asic_board_id = ASIC_BOARD_ID_INGRID;
+		LOG_INF("BOARD_TYPE(0x%02X) = INGRID", asic_board_id);
 		break;
-
-	case UBC_MODULE_DELTA:
-		if (vr_module == VR_MODULE_MPS) {
-			vr_vendor_module = DELTA_UBC_AND_MPS_VR;
-		} else if (vr_module == VR_MODULE_RNS) {
-			vr_vendor_module = DELTA_UBC_AND_RNS_VR;
-		}
+	case ASIC_BOARD_ID_EVB:
+		asic_board_id = ASIC_BOARD_ID_EVB;
+		LOG_INF("BOARD_TYPE(0x%02X) = EVB_BD", asic_board_id);
 		break;
-
-	case UBC_MODULE_LUXSHARE:
-		if (vr_module == VR_MODULE_MPS) {
-			vr_vendor_module = LUXSHURE_UBC_AND_MPS_VR;
-		} else if (vr_module == VR_MODULE_RNS) {
-			vr_vendor_module = LUXSHURE_UBC_AND_RNS_VR;
-		}
-		break;
-
 	default:
+		LOG_ERR("BOARD_TYPE = 0x%02X", board_type_data);
+		break;
+	}
+}
+void init_board_stage(void)
+{
+	uint8_t board_stage_data = REV_ID_UNKNOWN;
+	//get CPLD BOARD_STAGE
+	if (!plat_read_cpld(CPLD_OFFSET_BOARD_REV_ID, &board_stage_data, 1)) {
+		LOG_ERR("Failed to get CPLD BOARD_STAGE 0x%02X", CPLD_OFFSET_BOARD_REV_ID);
+	}
+	board_stage_data = board_stage_data & REV_ID_MASK;
+
+	//print board stage word
+	switch (board_stage_data) {
+	case REV_ID_EVT1A:
+		board_rev_id = REV_ID_EVT1A;
+		LOG_INF("BOARD_STAGE(0x%02X) = EVT1A", board_rev_id);
+		break;
+	case REV_ID_EVT1B:
+		board_rev_id = REV_ID_EVT1B;
+		LOG_INF("BOARD_STAGE(0x%02X) = EVT1B", board_rev_id);
+		break;
+	case REV_ID_EVT2:
+		board_rev_id = REV_ID_EVT2;
+		LOG_INF("BOARD_STAGE(0x%02X) = EVT2", board_rev_id);
+		break;
+	case REV_ID_DVT:
+		board_rev_id = REV_ID_DVT;
+		LOG_INF("BOARD_STAGE(0x%02X) = DVT", board_rev_id);
+		break;
+	case REV_ID_PVT:
+		board_rev_id = REV_ID_PVT;
+		LOG_INF("BOARD_STAGE(0x%02X) = PVT", board_rev_id);
+		break;
+	case REV_ID_MP:
+		board_rev_id = REV_ID_MP;
+		LOG_INF("BOARD_STAGE(0x%02X) = MP", board_rev_id);
+		break;
+	default:
+		LOG_INF("BOARD_STAGE = 0x%02X", board_stage_data);
+		break;
+	}
+}
+
+void init_tmp_vendor_type(void)
+{
+	I2C_MSG i2c_msg = { 0 };
+	uint8_t retry = 5;
+	i2c_msg.bus = I2C_BUS_TMP;
+	i2c_msg.target_addr = ASIC_NUWA0_SENSOR0_ADDR;
+	i2c_msg.tx_len = 1;
+	i2c_msg.rx_len = 1;
+	i2c_msg.data[0] = 0xFE; //MFG ID REG
+
+	int ret = 0;
+	if (ret == i2c_master_read(&i2c_msg, retry)) {
+		LOG_INF("Assume TMP is TMP432 by address check");
+		tmp_module = TMP_MODULE_TMP432;
+		return;
+	} else {
+		LOG_INF("Assume TMP is EMC1413 by register check");
+		tmp_module = TMP_MODULE_EMC1413;
+		return;
+	}
+}
+
+void init_vr_vendor_type(void)
+{
+	//get CPLD VR_VENDOR_TYPE
+	if (!plat_read_cpld(CPLD_OFFSET_VR_VENDER_TYPE, &vr_vendor_module, 1)) {
+		LOG_ERR("Failed to get CPLD VR_VENDOR_TYPE 0x%02X", CPLD_OFFSET_VR_VENDER_TYPE);
+	}
+
+	vr_vendor_module &= 0x0F;
+
+	switch (vr_vendor_module) {
+	case FLEX_UBC_AND_MPS_VR_LPD:
+		ubc_module = UBC_MODULE_FLEX;
+		vr_module = VR_MODULE_MPS;
+		break;
+	case FLEX_UBC_AND_SNI_VR_LPD:
+		ubc_module = UBC_MODULE_FLEX;
+		vr_module = VR_MODULE_SNI;
+		break;
+	case REED_UBC_AND_RNS_VR_LPD:
+	case REED_UBC_AND_RNS_VR_PT:
+		ubc_module = UBC_MODULE_REED;
+		vr_module = VR_MODULE_RNS;
+		break;
+	case REED_UBC_AND_MPS_VR_PT:
+		ubc_module = UBC_MODULE_REED;
+		vr_module = VR_MODULE_MPS;
+		break;
+	case LUX_UBC_AND_SNU_VR_PT:
+		ubc_module = UBC_MODULE_LUX;
+		vr_module = VR_MODULE_SNU;
+		break;
+	default:
+		LOG_ERR("Unknown VR_VENDOR_TYPE 0x%02X", vr_vendor_module);
 		vr_vendor_module = VENDOR_TYPE_UNKNOWN;
+		ubc_module = UBC_MODULE_UNKNOWN;
+		vr_module = VR_MODULE_UNKNOWN;
 		break;
 	}
 
-	LOG_INF("vr_vendor_module=%d (ubc=%d, vr=%d)", vr_vendor_module, ubc_module, vr_module);
+	LOG_INF("vr_vendor_module=%s (ubc=%s, vr=%s)", vr_vendor_module_name[vr_vendor_module],
+		ubc_module_name[ubc_module], vr_module_name[vr_module]);
 }
 
 void init_plat_config()
 {
-	uint8_t module = 0;
-	plat_read_cpld(CPLD_OFFSET_VR_VENDER_TYPE, &module, 1);
-	plat_read_cpld(CPLD_OFFSET_BOARD_REV_ID, &board_rev_id, 1);
-	// rev id only support 0, 1, 2 bit
-	board_rev_id = board_rev_id & 0x07;
-	vr_module = (module & 0x01);
-	ubc_module = (module >> 1) & 0x03;
-	uint8_t board_id = 0;
-	plat_read_cpld(CPLD_OFFSET_ASIC_BOARD_ID, &board_id, 1);
-	asic_board_id = board_id & 0x03;
-	init_vr_vendor_module();
-	change_sensor_cfg(asic_board_id, vr_module, ubc_module, board_rev_id);
+	init_board_type();
+	init_board_stage();
+	init_tmp_vendor_type();
+	change_tmp_sensor_cfg(asic_board_id, tmp_module, ubc_module, board_rev_id);
+	init_vr_vendor_type();
+	change_vr_sensor_cfg(asic_board_id, vr_module, ubc_module, board_rev_id);
+	
 	// cpld fru offset 0: slot
-	plat_cpld_eerprom_read(&mmc_slot, 0, 1);
+	plat_cpld_eerprom_read(&mmc_slot, MMC_SLOT_USER_SETTING_OFFSET, 1);
 	// mmc slot 1-4 * 0x0A
 	uint8_t init_plat_eid = ((get_mmc_slot() + 1) * MCTP_DEFAULT_ENDPOINT);
 	plat_set_eid(init_plat_eid);
-	// cpld fru offset 0x3FF: tray location
-	plat_cpld_eerprom_read(&tray_location, 1023, 1);
 	LOG_INF("init_plat_eid: 0x%x", init_plat_eid);
+
+	// cpld fru offset 0x3FF: tray location
+	plat_cpld_eerprom_read(&tray_location, MMC_TRAY_LOCATION_OFFSET, 1);
 }
 
 uint8_t get_vr_module()
