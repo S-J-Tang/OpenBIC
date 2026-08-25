@@ -37,6 +37,7 @@
 #include "plat_util.h"
 #include "plat_i2c.h"
 #include "plat_arke_smbus.h"
+#include "shell_arke_power.h"
 
 #define ARKE_BOOT0_IMG_SIZE 0x1FFFFB
 #define PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS 1000
@@ -464,6 +465,650 @@ static bool get_boot0_nuwa1_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 	return ret;
 }
 
+#define I2C_BUS_RC38108			I2C_BUS3
+#define RC38108_I2C_ADDR		0x08
+
+#define CLK_U618_I2C_BUS		I2C_BUS3
+#define CLK_U618_EEPROM_ADDR		0x51
+
+#define CLK_U618_EEPROM_SIZE		0x8000
+#define CLK_U618_EEPROM_PAGE_SIZE	64
+#define CLK_U618_EEPROM_ADDR_SIZE	2
+
+#define CLK_U618_EEPROM_WRITE_RETRY	3
+#define CLK_U618_EEPROM_READ_RETRY	3
+
+#define CLK_U618_EEPROM_WRITE_DELAY_MS	6
+
+#define CLK_U618_EEPROM_MAX_WRITE_SIZE                                \
+	MIN(CLK_U618_EEPROM_PAGE_SIZE,                                \
+	    (I2C_BUFF_SIZE - CLK_U618_EEPROM_ADDR_SIZE))
+
+#define RC38108_REG_DEVICE_STS		0x0024
+
+#define RC38108_DEVICE_STS_READY_BIT	6
+
+#define RC38108_REG_GPIO1_CNFG		0x0248
+#define RC38108_REG_GPIO1_PAD_CNFG	0x024B
+
+#define RC38108_GPIO_FUNC_APLL_LOCK	0x1B
+#define RC38108_GPIO_FUNC_INPUT		0x20
+
+#define RC38108_PAD_OE_B_BIT		3
+
+#define RC38108_APLL_LOCK_POLL_COUNT		50
+#define RC38108_APLL_LOCK_POLL_INTERVAL_MS	100
+
+static void clk_u618_restore_polling(void)
+{
+	set_plat_sensor_polling_enable_flag(true);
+	set_cpld_polling_enable_flag(true);
+}
+
+BUILD_ASSERT(I2C_BUFF_SIZE > CLK_U618_EEPROM_ADDR_SIZE,
+	     "I2C buffer is too small for EEPROM address");
+
+BUILD_ASSERT(CLK_U618_EEPROM_MAX_WRITE_SIZE > 0,
+	     "EEPROM maximum write size must be greater than zero");
+
+static int clk_u618_eeprom_read(uint32_t offset, uint8_t *data,
+				uint32_t data_size);
+
+static int rc38108_reg_read(uint16_t reg_addr, uint8_t *buf, uint8_t len)
+{
+	CHECK_NULL_ARG_WITH_RETURN(buf, -EINVAL);
+
+	if ((len == 0) || (len > I2C_BUFF_SIZE)) {
+		LOG_ERR("Invalid RC38108 read length: %u", len);
+		return -EINVAL;
+	}
+
+	I2C_MSG msg = { 0 };
+
+	msg.bus = I2C_BUS_RC38108;
+	msg.target_addr = RC38108_I2C_ADDR;
+	msg.tx_len = 2;
+	msg.rx_len = len;
+
+	msg.data[0] = (uint8_t)(reg_addr >> 8);
+	msg.data[1] = (uint8_t)(reg_addr & 0xFF);
+
+	int ret = i2c_master_read(&msg, 3);
+	if (ret) {
+		LOG_ERR("RC38108 register read 0x%04X failed (%d)",
+			reg_addr, ret);
+		return ret;
+	}
+
+	memcpy(buf, msg.data, len);
+
+	return 0;
+}
+
+static int rc38108_reg_write(uint16_t reg_addr, const uint8_t *buf,
+			     uint8_t len)
+{
+	CHECK_NULL_ARG_WITH_RETURN(buf, -EINVAL);
+
+	if ((len == 0) || (((uint32_t)len + 2U) > I2C_BUFF_SIZE)) {
+		LOG_ERR("Invalid RC38108 write length: %u", len);
+		return -EINVAL;
+	}
+
+	I2C_MSG msg = { 0 };
+
+	msg.bus = I2C_BUS_RC38108;
+	msg.target_addr = RC38108_I2C_ADDR;
+	msg.tx_len = 2 + len;
+	msg.rx_len = 0;
+
+	msg.data[0] = (uint8_t)(reg_addr >> 8);
+	msg.data[1] = (uint8_t)(reg_addr & 0xFF);
+
+	memcpy(&msg.data[2], buf, len);
+
+	int ret = i2c_master_write(&msg, 3);
+	if (ret) {
+		LOG_ERR("RC38108 register write 0x%04X failed (%d)",
+			reg_addr, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int rc38108_set_gpio1_input(void)
+{
+	uint8_t cnfg[2] = { 0 };
+	uint8_t pad = 0;
+	int ret;
+
+	ret = rc38108_reg_read(RC38108_REG_GPIO1_PAD_CNFG, &pad,
+			       sizeof(pad));
+	if (ret) {
+		LOG_ERR("Failed to read RC38108 GPIO1 pad configuration (%d)",
+			ret);
+		return ret;
+	}
+
+	pad |= BIT(RC38108_PAD_OE_B_BIT);
+
+	ret = rc38108_reg_write(RC38108_REG_GPIO1_PAD_CNFG, &pad,
+				sizeof(pad));
+	if (ret) {
+		LOG_ERR("Failed to disable RC38108 GPIO1 output buffer (%d)",
+			ret);
+		return ret;
+	}
+
+	ret = rc38108_reg_read(RC38108_REG_GPIO1_CNFG, cnfg,
+			       sizeof(cnfg));
+	if (ret) {
+		LOG_ERR("Failed to read RC38108 GPIO1 configuration (%d)",
+			ret);
+		return ret;
+	}
+
+	cnfg[0] = RC38108_GPIO_FUNC_INPUT;
+
+	ret = rc38108_reg_write(RC38108_REG_GPIO1_CNFG, cnfg,
+				sizeof(cnfg));
+	if (ret) {
+		LOG_ERR("Failed to configure RC38108 GPIO1 as input (%d)",
+			ret);
+		return ret;
+	}
+
+	LOG_INF("RC38108 GPIO1 configured as input");
+
+	return 0;
+}
+
+static int rc38108_restore_gpio1_apll_lock(void)
+{
+	uint8_t cnfg[2] = { 0 };
+	uint8_t pad = 0;
+	int ret;
+
+	ret = rc38108_reg_read(RC38108_REG_GPIO1_CNFG, cnfg,
+			       sizeof(cnfg));
+	if (ret) {
+		LOG_ERR("Failed to read RC38108 GPIO1 configuration (%d)",
+			ret);
+		return ret;
+	}
+
+	cnfg[0] = RC38108_GPIO_FUNC_APLL_LOCK;
+
+	ret = rc38108_reg_write(RC38108_REG_GPIO1_CNFG, cnfg,
+				sizeof(cnfg));
+	if (ret) {
+		LOG_ERR("Failed to restore RC38108 GPIO1 APLL lock function (%d)",
+			ret);
+		return ret;
+	}
+
+	ret = rc38108_reg_read(RC38108_REG_GPIO1_PAD_CNFG, &pad,
+			       sizeof(pad));
+	if (ret) {
+		LOG_ERR("Failed to read RC38108 GPIO1 pad configuration (%d)",
+			ret);
+		return ret;
+	}
+
+	pad &= ~BIT(RC38108_PAD_OE_B_BIT);
+
+	ret = rc38108_reg_write(RC38108_REG_GPIO1_PAD_CNFG, &pad,
+				sizeof(pad));
+	if (ret) {
+		LOG_ERR("Failed to enable RC38108 GPIO1 output buffer (%d)",
+			ret);
+		return ret;
+	}
+
+	LOG_INF("RC38108 GPIO1 restored as APLL lock output");
+
+	return 0;
+}
+
+static int rc38108_wait_apll_lock(void)
+{
+	for (int retry = 0; retry < RC38108_APLL_LOCK_POLL_COUNT;
+	     retry++) {
+		int status = gpio_get(MMC_GPIO_APLL_LOCK);
+
+		if (status < 0) {
+			LOG_ERR("Failed to read MMC GPIO%d (%d)",
+				MMC_GPIO_APLL_LOCK, status);
+			return status;
+		}
+
+		if (status == GPIO_HIGH) {
+			LOG_INF("RC38108 APLL lock detected on GPIO%d",
+				MMC_GPIO_APLL_LOCK);
+			return 0;
+		}
+
+		k_msleep(RC38108_APLL_LOCK_POLL_INTERVAL_MS);
+	}
+
+	LOG_ERR("RC38108 APLL lock timeout, GPIO%d remains low",
+		MMC_GPIO_APLL_LOCK);
+
+	return -ETIMEDOUT;
+}
+
+static int rc38108_wait_device_ready(void)
+{
+	for (int retry = 0; retry < RC38108_APLL_LOCK_POLL_COUNT; retry++) {
+		uint8_t sts = 0;
+		int ret = rc38108_reg_read(RC38108_REG_DEVICE_STS, &sts, sizeof(sts));
+
+		if (ret)
+			return ret;
+
+		if (sts & BIT(RC38108_DEVICE_STS_READY_BIT))
+			return 0;
+
+		k_msleep(RC38108_APLL_LOCK_POLL_INTERVAL_MS);
+	}
+
+	LOG_ERR("RC38108 device-ready timeout");
+	return -ETIMEDOUT;
+}
+
+static int clk_u618_restore_access(void)
+{
+	int result = 0;
+
+	int ret = gpio_set(CLK_U618_EEPROM_PATH_EN, GPIO_LOW);
+	if (ret) {
+		LOG_ERR("Failed to return CLK U618 EEPROM path to RC38108 (%d)", ret);
+		result = ret;
+	}
+
+	ret = rc38108_restore_gpio1_apll_lock();
+	if (ret) {
+		LOG_ERR("Failed to restore RC38108 GPIO1 (%d)", ret);
+		if (!result)
+			result = ret;
+	}
+
+	return result;
+}
+
+uint8_t pldm_pre_clk_u618_update(void *fw_update_param)
+{
+	ARG_UNUSED(fw_update_param);
+
+	uint8_t sts = 0;
+	int ret;
+	bool gpio1_is_input = false;
+	bool eeprom_path_is_mmc = false;
+
+	ret = rc38108_reg_read(RC38108_REG_DEVICE_STS, &sts, sizeof(sts));
+	if (ret) {
+		LOG_ERR("Failed to read RC38108 device status (%d)", ret);
+		return 1;
+	}
+
+	if (!(sts & BIT(RC38108_DEVICE_STS_READY_BIT))) {
+		LOG_ERR("RC38108 is not ready, DEVICE_STS=0x%02X", sts);
+		return 1;
+	}
+
+	ret = gpio_get(MMC_GPIO_APLL_LOCK);
+	if (ret != GPIO_HIGH) {
+		LOG_ERR("RC38108 APLL is not locked, GPIO status: %d", ret);
+		return 1;
+	}
+
+	set_plat_sensor_polling_enable_flag(false);
+	set_cpld_polling_enable_flag(false);
+	k_msleep(PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS);
+
+	ret = rc38108_set_gpio1_input();
+	if (ret)
+		goto fail;
+	gpio1_is_input = true;
+
+	ret = gpio_set(CLK_U618_EEPROM_PATH_EN, GPIO_HIGH);
+	if (ret) {
+		LOG_ERR("Failed to enable CLK U618 EEPROM path (%d)", ret);
+		goto fail;
+	}
+	eeprom_path_is_mmc = true;
+
+	uint8_t probe_data = 0;
+	ret = clk_u618_eeprom_read(0, &probe_data, sizeof(probe_data));
+	if (ret) {
+		LOG_ERR("CLK U618 EEPROM did not respond at 7-bit address 0x%02X",
+			CLK_U618_EEPROM_ADDR);
+		goto fail;
+	}
+
+	LOG_INF("CLK U618 EEPROM update path is ready");
+
+	return 0;
+
+fail:
+	if (eeprom_path_is_mmc)
+		gpio_set(CLK_U618_EEPROM_PATH_EN, GPIO_LOW);
+	if (gpio1_is_input)
+		rc38108_restore_gpio1_apll_lock();
+	clk_u618_restore_polling();
+	return 1;
+}
+
+static int clk_u618_eeprom_read(uint32_t offset, uint8_t *data,
+				uint32_t data_size)
+{
+	CHECK_NULL_ARG_WITH_RETURN(data, 1);
+
+	if ((data_size == 0) || (data_size > I2C_BUFF_SIZE)) {
+		LOG_ERR("Invalid EEPROM read size: %u, maximum: %u",
+			data_size, I2C_BUFF_SIZE);
+		return 1;
+	}
+
+	if ((offset >= CLK_U618_EEPROM_SIZE) ||
+	    (data_size > (CLK_U618_EEPROM_SIZE - offset))) {
+		LOG_ERR("EEPROM read exceeds memory range, offset: 0x%x, "
+			"length: %u",
+			offset, data_size);
+		return 1;
+	}
+
+	I2C_MSG msg = { 0 };
+
+	msg.bus = CLK_U618_I2C_BUS;
+	msg.target_addr = CLK_U618_EEPROM_ADDR;
+	msg.tx_len = CLK_U618_EEPROM_ADDR_SIZE;
+	msg.rx_len = data_size;
+
+	msg.data[0] = (uint8_t)((offset >> 8) & 0xFF);
+	msg.data[1] = (uint8_t)(offset & 0xFF);
+
+	int ret = i2c_master_read(&msg, CLK_U618_EEPROM_READ_RETRY);
+	if (ret) {
+		LOG_ERR("CLK U618 EEPROM read failed, offset: 0x%x, "
+			"length: %u, ret: %d",
+			offset, data_size, ret);
+		return 1;
+	}
+
+	memcpy(data, msg.data, data_size);
+
+	return 0;
+}
+
+static int clk_u618_eeprom_verify_page(uint32_t offset, const uint8_t *expected_data, uint32_t data_size)
+{
+	CHECK_NULL_ARG_WITH_RETURN(expected_data, 1);
+
+	if ((data_size == 0) || (data_size > CLK_U618_EEPROM_MAX_WRITE_SIZE)) {
+		LOG_ERR("Invalid EEPROM verify size: %u", data_size);
+		return 1;
+	}
+
+	uint8_t read_buf[CLK_U618_EEPROM_PAGE_SIZE] = { 0 };
+
+	int ret = clk_u618_eeprom_read(offset, read_buf, data_size);
+	if (ret)
+		return 1;
+
+	if (memcmp(read_buf, expected_data, data_size) != 0) {
+		LOG_ERR("CLK U618 EEPROM verify failed, offset: 0x%x, length: %u", offset, data_size);
+
+		LOG_HEXDUMP_ERR(expected_data, data_size, "expected");
+		LOG_HEXDUMP_ERR(read_buf, data_size, "read back");
+
+		for (uint32_t i = 0; i < data_size; i++) {
+			if (read_buf[i] != expected_data[i]) {
+				LOG_ERR("First mismatch at EEPROM offset 0x%x: expected=0x%02x, read=0x%02x", offset + i, expected_data[i],	read_buf[i]);
+				break;
+			}
+		}
+
+		return 1;
+	}
+
+	LOG_DBG("CLK U618 EEPROM verify passed, offset: 0x%x, length: %u", offset, data_size);
+
+	return 0;
+}
+
+static int clk_u618_eeprom_write_page(uint32_t offset, const uint8_t *data, uint32_t data_size)
+{
+	CHECK_NULL_ARG_WITH_RETURN(data, 1);
+
+	if ((data_size == 0) || (data_size > CLK_U618_EEPROM_MAX_WRITE_SIZE)) {
+		LOG_ERR("Invalid EEPROM transaction size: %u, maximum: %u",	data_size, (uint32_t)CLK_U618_EEPROM_MAX_WRITE_SIZE);
+		return 1;
+	}
+
+	if ((offset >= CLK_U618_EEPROM_SIZE) || (data_size > (CLK_U618_EEPROM_SIZE - offset))) {
+		LOG_ERR("EEPROM write exceeds memory range, offset: 0x%x, length: %u", offset, data_size);
+		return 1;
+	}
+
+	uint32_t page_offset = offset % CLK_U618_EEPROM_PAGE_SIZE;
+
+	uint32_t page_remaining = CLK_U618_EEPROM_PAGE_SIZE - page_offset;
+
+	if (data_size > page_remaining) {
+		LOG_ERR("EEPROM write crosses page boundary, offset: 0x%x, "
+			"length: %u, page remaining: %u",
+			offset, data_size, page_remaining);
+		return 1;
+	}
+
+	I2C_MSG msg = { 0 };
+
+	msg.bus = CLK_U618_I2C_BUS;
+	msg.target_addr = CLK_U618_EEPROM_ADDR;
+	msg.tx_len = CLK_U618_EEPROM_ADDR_SIZE + data_size;
+	msg.rx_len = 0;
+
+	msg.data[0] = (uint8_t)((offset >> 8) & 0xFF);
+	msg.data[1] = (uint8_t)(offset & 0xFF);
+
+	memcpy(&msg.data[CLK_U618_EEPROM_ADDR_SIZE], data, data_size);
+
+	int ret = i2c_master_write(&msg, CLK_U618_EEPROM_WRITE_RETRY);
+	if (ret) {
+		LOG_ERR("CLK U618 EEPROM write failed, offset: 0x%x, length: %u, ret: %d", offset, data_size, ret);
+		return 1;
+	}
+
+	k_msleep(CLK_U618_EEPROM_WRITE_DELAY_MS);
+
+	return 0;
+}
+
+static int clk_u618_eeprom_write(uint32_t offset,
+				 const uint8_t *data,
+				 uint32_t data_size)
+{
+	CHECK_NULL_ARG_WITH_RETURN(data, 1);
+
+	if (data_size == 0) {
+		LOG_ERR("CLK U618 EEPROM write size is zero");
+		return 1;
+	}
+
+	if ((offset >= CLK_U618_EEPROM_SIZE) || (data_size > (CLK_U618_EEPROM_SIZE - offset))) {
+		LOG_ERR("Invalid EEPROM write range, offset: 0x%x, length: %u",	offset, data_size);
+		return 1;
+	}
+
+	uint32_t written_size = 0;
+
+	while (written_size < data_size) {
+		uint32_t current_offset = offset + written_size;
+		uint32_t remaining_size = data_size - written_size;
+		uint32_t page_offset = current_offset % CLK_U618_EEPROM_PAGE_SIZE;
+		uint32_t page_remaining = CLK_U618_EEPROM_PAGE_SIZE - page_offset;
+
+		uint32_t write_size = MIN(remaining_size, page_remaining);
+
+		write_size = MIN(write_size, (uint32_t)CLK_U618_EEPROM_MAX_WRITE_SIZE);
+
+		const uint8_t *current_data = data + written_size;
+
+		if (clk_u618_eeprom_write_page(current_offset, current_data, write_size)) {
+			LOG_ERR("CLK U618 EEPROM block write failed, offset: 0x%x, length: %u",	current_offset, write_size);
+			return 1;
+		}
+
+		if (clk_u618_eeprom_verify_page(current_offset,	current_data,write_size)) {
+			LOG_ERR("CLK U618 EEPROM block verify failed, offset: 0x%x, length: %u", current_offset, write_size);
+			return 1;
+		}
+
+		written_size += write_size;
+
+		LOG_DBG("CLK U618 EEPROM write/verify completed, "
+			"offset: 0x%x, length: %u, progress: %u/%u",
+			current_offset,
+			write_size,
+			written_size,
+			data_size);
+	}
+
+	return 0;
+}
+
+uint8_t pldm_clk_u618_update(void *fw_update_param)
+{
+	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
+
+	pldm_fw_update_param_t *p =
+		(pldm_fw_update_param_t *)fw_update_param;
+
+	CHECK_NULL_ARG_WITH_RETURN(p->data, 1);
+
+	LOG_INF("CLK U618 PLDM block: offset=0x%x, length=%u",
+		p->data_ofs, p->data_len);
+
+	LOG_DBG("CLK U618 image size: %u",
+		fw_update_cfg.image_size);
+
+	LOG_DBG("CLK U618 maximum PLDM buffer size: %u",
+		fw_update_cfg.max_buff_size);
+
+	if ((fw_update_cfg.image_size == 0) ||
+	    (fw_update_cfg.image_size > CLK_U618_EEPROM_SIZE)) {
+		LOG_ERR("Invalid CLK U618 firmware image size: %u, "
+			"EEPROM size: %u",
+			fw_update_cfg.image_size,
+			CLK_U618_EEPROM_SIZE);
+		return 1;
+	}
+
+	if (p->data_len == 0) {
+		LOG_ERR("CLK U618 firmware block length is zero");
+		return 1;
+	}
+
+	if ((p->data_ofs >= fw_update_cfg.image_size) ||
+	    (p->data_len >
+	     (fw_update_cfg.image_size - p->data_ofs))) {
+		LOG_ERR("Invalid CLK U618 firmware block, offset: 0x%x, "
+			"length: %u, image size: %u",
+			p->data_ofs,
+			p->data_len,
+			fw_update_cfg.image_size);
+		return 1;
+	}
+
+	if (clk_u618_eeprom_write(p->data_ofs, p->data, p->data_len)) {
+		LOG_ERR("CLK U618 firmware write/verify failed offset: 0x%x, length: %u",p->data_ofs, p->data_len);
+		return 1;
+	}
+
+	p->next_ofs = p->data_ofs + p->data_len;
+
+	if (p->next_ofs < fw_update_cfg.image_size) {
+		uint32_t remaining_size = fw_update_cfg.image_size - p->next_ofs;
+		p->next_len = MIN(remaining_size, fw_update_cfg.max_buff_size);
+	} else {
+		p->next_len = 0;
+	}
+
+	LOG_DBG("CLK U618 block completed: next offset=0x%x next length=%u",p->next_ofs,p->next_len);
+
+	return 0;
+}
+
+uint8_t pldm_post_clk_u618_update(void *fw_update_param)
+{
+	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
+	pldm_fw_update_param_t *p = (pldm_fw_update_param_t *)fw_update_param;
+
+	int ret;
+	int result = 0;
+
+	ret = gpio_get(CLK_U618_EEPROM_PATH_EN);
+	if (ret < 0) {
+		LOG_ERR("Failed to read CLK U618 EEPROM path state (%d)", ret);
+		return 1;
+	}
+	if (ret != GPIO_HIGH)
+		return 0;
+
+	ret = clk_u618_restore_access();
+	if (ret)
+		result = ret;
+
+	if (!p->data || !p->data_len ||
+	    (p->data_ofs + p->data_len != fw_update_cfg.image_size) ||
+	    (p->next_len != 0)) {
+		LOG_ERR("CLK U618 update did not complete; skip DC cycle");
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	if (result) {
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	if (!arke_power_control(0)) {
+		LOG_ERR("Arke power off failed");
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	k_msleep(2000);
+
+	if (!arke_power_control(1)) {
+		LOG_ERR("Arke power on failed");
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	ret = rc38108_wait_device_ready();
+	if (ret) {
+		LOG_ERR("RC38108 failed to become ready after DC cycle (%d)", ret);
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	ret = rc38108_wait_apll_lock();
+	if (ret) {
+		LOG_ERR("RC38108 failed to assert APLL lock (%d)", ret);
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	clk_u618_restore_polling();
+	LOG_INF("CLK U618 EEPROM update and verification completed successfully");
+
+	return 0;
+}
+
+
 //clang-format off
 #define VR_COMPONENT_DEF(comp_id)                                                                  \
 	{                                                                                          \
@@ -550,6 +1195,21 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.activate_method = COMP_ACT_SELF,
 		.self_act_func = NULL,
 		.get_fw_version_fn = get_boot0_nuwa1_fw_version,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
+	},
+	{
+		.enable = true,
+		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+		.comp_identifier = COMPNT_CLK_U618,
+		.comp_classification_index = 0x00,
+		.pre_update_func = pldm_pre_clk_u618_update,
+		.update_func = pldm_clk_u618_update,
+		.pos_update_func = pldm_post_clk_u618_update,
+		.inf = COMP_UPDATE_VIA_I2C,
+		.activate_method = COMP_ACT_SELF,
+		.self_act_func = NULL,
+		.get_fw_version_fn = NULL,
 		.self_apply_work_func = NULL,
 		.comp_version_str = NULL,
 	},

@@ -387,7 +387,7 @@ void pwr_get_clock_status(const struct shell *shell, uint8_t clock_index)
 #define MAX_STEPS (sizeof(steps_on) / sizeof(steps_on[0]))
 int power_steps = 0;
 
-static bool arke_power_control(uint8_t onoff)
+bool arke_power_control(uint8_t onoff)
 {
 	uint8_t tmp = onoff ? 0x80 : 0x00;
 	return plat_write_cpld(CPLD_OFFSET_MMC_PWR_EN, &tmp);
