@@ -26,15 +26,14 @@
 
 LOG_MODULE_REGISTER(plat_clock);
 
-/* function to read APLL lock status for CLK_GEN_100M_U86 */
-uint8_t clk_100mhz_get_lock_status_u86(void)
+static uint8_t clk_100mhz_get_lock_status(uint8_t bus, uint8_t addr)
 {
     /* Switch to 2-byte address mode */
     #define SSI_GLOBAL_CNFG_REG 0x26
     #define SET_TWO_BYTE_ADDRESS 0x05
     uint8_t write_data = SET_TWO_BYTE_ADDRESS;
-    if (!plat_i2c_write(I2C_BUS3, CLK_GEN_100M_U86_ADDR, SSI_GLOBAL_CNFG_REG, &write_data, 1)) {
-        LOG_ERR("Failed to write 100MHz clock(U86) SSI 2-Byte address register");
+	if (!plat_i2c_write(bus, addr, SSI_GLOBAL_CNFG_REG, &write_data, 1)) {
+		LOG_ERR("Failed to set clock 0x%02x to 2-byte address mode", addr);
         return 0xFF;
     }
 
@@ -43,27 +42,37 @@ uint8_t clk_100mhz_get_lock_status_u86(void)
     #define U86_APLL_STS_REG_LSB 0x3F
 	I2C_MSG i2c_msg = { 0 };
 	uint8_t retry = 5;
-	i2c_msg.bus = I2C_BUS3;
-	i2c_msg.target_addr = CLK_GEN_100M_U86_ADDR; //7-bit
+	i2c_msg.bus = bus;
+	i2c_msg.target_addr = addr;
 	i2c_msg.tx_len = 2;
 	i2c_msg.rx_len = 1;
 	i2c_msg.data[0] = U86_APLL_STS_REG_HSB; //offset HSB
 	i2c_msg.data[1] = U86_APLL_STS_REG_LSB; //offset LSB
 
 	if (i2c_master_read_without_error_log(&i2c_msg, retry)) {
-        LOG_ERR("Failed to read 100MHz clock(U86) APLL lock status");
+		LOG_ERR("Failed to read clock 0x%02x APLL lock status", addr);
 		return 0xFF;
 	}
 
     /* Switch back to 1-byte address mode */
     #define SET_ONE_BYTE_ADDRESS 0x01
     write_data = SET_ONE_BYTE_ADDRESS;
-    if (!plat_i2c_write(I2C_BUS3, CLK_GEN_100M_U86_ADDR, SSI_GLOBAL_CNFG_REG, &write_data, 1)) {
-        LOG_ERR("Failed to write 100MHz clock(U86) SSI 1-Byte address register");
+	if (!plat_i2c_write(bus, addr, SSI_GLOBAL_CNFG_REG, &write_data, 1)) {
+		LOG_ERR("Failed to set clock 0x%02x to 1-byte address mode", addr);
         return 0xFF;
     }
 
 	return i2c_msg.data[0] & 0x01; //bit0 is the APLL lock status
+}
+
+uint8_t clk_100mhz_get_lock_status_u86(void)
+{
+	return clk_100mhz_get_lock_status(I2C_BUS3, CLK_GEN_100M_U86_ADDR);
+}
+
+uint8_t clk_100mhz_get_lock_status_u200045(void)
+{
+	return clk_100mhz_get_lock_status(I2C_BUS2, CLK_U200045_I2C_ADDR);
 }
 
 void check_clk_buf_loss_status(void)

@@ -37,6 +37,7 @@
 #include "plat_util.h"
 #include "plat_i2c.h"
 #include "plat_arke_smbus.h"
+#include "plat_clock.h"
 #include "shell_arke_power.h"
 
 #define ARKE_BOOT0_IMG_SIZE 0x1FFFFB
@@ -471,6 +472,11 @@ static bool get_boot0_nuwa1_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 #define CLK_U618_I2C_BUS		I2C_BUS3
 #define CLK_U618_EEPROM_ADDR		0x51
 
+#define CLK_U200045_I2C_BUS		I2C_BUS2
+#define CLK_U200045_EEPROM_ADDR		0x50
+#define CLK_U200045_REG_DEVICE_STS	0x1E
+#define CLK_U200045_DEVICE_READY_BIT	1
+
 #define CLK_U618_EEPROM_SIZE		0x8000
 #define CLK_U618_EEPROM_PAGE_SIZE	64
 #define CLK_U618_EEPROM_ADDR_SIZE	2
@@ -511,8 +517,8 @@ BUILD_ASSERT(I2C_BUFF_SIZE > CLK_U618_EEPROM_ADDR_SIZE,
 BUILD_ASSERT(CLK_U618_EEPROM_MAX_WRITE_SIZE > 0,
 	     "EEPROM maximum write size must be greater than zero");
 
-static int clk_u618_eeprom_read(uint32_t offset, uint8_t *data,
-				uint32_t data_size);
+static int clk_eeprom_read(uint8_t bus, uint8_t addr, uint32_t offset,
+			   uint8_t *data, uint32_t data_size);
 
 static int rc38108_reg_read(uint16_t reg_addr, uint8_t *buf, uint8_t len)
 {
@@ -739,12 +745,16 @@ static int clk_u618_restore_access(void)
 
 uint8_t pldm_pre_clk_u618_update(void *fw_update_param)
 {
-	ARG_UNUSED(fw_update_param);
+	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
+	pldm_fw_update_param_t *p = (pldm_fw_update_param_t *)fw_update_param;
 
 	uint8_t sts = 0;
 	int ret;
 	bool gpio1_is_input = false;
 	bool eeprom_path_is_mmc = false;
+
+	p->bus = CLK_U618_I2C_BUS;
+	p->addr = CLK_U618_EEPROM_ADDR;
 
 	ret = rc38108_reg_read(RC38108_REG_DEVICE_STS, &sts, sizeof(sts));
 	if (ret) {
@@ -780,7 +790,8 @@ uint8_t pldm_pre_clk_u618_update(void *fw_update_param)
 	eeprom_path_is_mmc = true;
 
 	uint8_t probe_data = 0;
-	ret = clk_u618_eeprom_read(0, &probe_data, sizeof(probe_data));
+	ret = clk_eeprom_read(CLK_U618_I2C_BUS, CLK_U618_EEPROM_ADDR, 0,
+			      &probe_data, sizeof(probe_data));
 	if (ret) {
 		LOG_ERR("CLK U618 EEPROM did not respond at 7-bit address 0x%02X",
 			CLK_U618_EEPROM_ADDR);
@@ -800,8 +811,8 @@ fail:
 	return 1;
 }
 
-static int clk_u618_eeprom_read(uint32_t offset, uint8_t *data,
-				uint32_t data_size)
+static int clk_eeprom_read(uint8_t bus, uint8_t addr, uint32_t offset,
+			   uint8_t *data, uint32_t data_size)
 {
 	CHECK_NULL_ARG_WITH_RETURN(data, 1);
 
@@ -821,8 +832,8 @@ static int clk_u618_eeprom_read(uint32_t offset, uint8_t *data,
 
 	I2C_MSG msg = { 0 };
 
-	msg.bus = CLK_U618_I2C_BUS;
-	msg.target_addr = CLK_U618_EEPROM_ADDR;
+	msg.bus = bus;
+	msg.target_addr = addr;
 	msg.tx_len = CLK_U618_EEPROM_ADDR_SIZE;
 	msg.rx_len = data_size;
 
@@ -842,7 +853,8 @@ static int clk_u618_eeprom_read(uint32_t offset, uint8_t *data,
 	return 0;
 }
 
-static int clk_u618_eeprom_verify_page(uint32_t offset, const uint8_t *expected_data, uint32_t data_size)
+static int clk_eeprom_verify_page(uint8_t bus, uint8_t addr, uint32_t offset,
+				  const uint8_t *expected_data, uint32_t data_size)
 {
 	CHECK_NULL_ARG_WITH_RETURN(expected_data, 1);
 
@@ -853,7 +865,7 @@ static int clk_u618_eeprom_verify_page(uint32_t offset, const uint8_t *expected_
 
 	uint8_t read_buf[CLK_U618_EEPROM_PAGE_SIZE] = { 0 };
 
-	int ret = clk_u618_eeprom_read(offset, read_buf, data_size);
+	int ret = clk_eeprom_read(bus, addr, offset, read_buf, data_size);
 	if (ret)
 		return 1;
 
@@ -878,7 +890,8 @@ static int clk_u618_eeprom_verify_page(uint32_t offset, const uint8_t *expected_
 	return 0;
 }
 
-static int clk_u618_eeprom_write_page(uint32_t offset, const uint8_t *data, uint32_t data_size)
+static int clk_eeprom_write_page(uint8_t bus, uint8_t addr, uint32_t offset,
+				 const uint8_t *data, uint32_t data_size)
 {
 	CHECK_NULL_ARG_WITH_RETURN(data, 1);
 
@@ -905,8 +918,8 @@ static int clk_u618_eeprom_write_page(uint32_t offset, const uint8_t *data, uint
 
 	I2C_MSG msg = { 0 };
 
-	msg.bus = CLK_U618_I2C_BUS;
-	msg.target_addr = CLK_U618_EEPROM_ADDR;
+	msg.bus = bus;
+	msg.target_addr = addr;
 	msg.tx_len = CLK_U618_EEPROM_ADDR_SIZE + data_size;
 	msg.rx_len = 0;
 
@@ -926,9 +939,8 @@ static int clk_u618_eeprom_write_page(uint32_t offset, const uint8_t *data, uint
 	return 0;
 }
 
-static int clk_u618_eeprom_write(uint32_t offset,
-				 const uint8_t *data,
-				 uint32_t data_size)
+static int clk_eeprom_write(uint8_t bus, uint8_t addr, uint32_t offset,
+			    const uint8_t *data, uint32_t data_size)
 {
 	CHECK_NULL_ARG_WITH_RETURN(data, 1);
 
@@ -956,12 +968,12 @@ static int clk_u618_eeprom_write(uint32_t offset,
 
 		const uint8_t *current_data = data + written_size;
 
-		if (clk_u618_eeprom_write_page(current_offset, current_data, write_size)) {
+		if (clk_eeprom_write_page(bus, addr, current_offset, current_data, write_size)) {
 			LOG_ERR("CLK U618 EEPROM block write failed, offset: 0x%x, length: %u",	current_offset, write_size);
 			return 1;
 		}
 
-		if (clk_u618_eeprom_verify_page(current_offset,	current_data,write_size)) {
+		if (clk_eeprom_verify_page(bus, addr, current_offset, current_data, write_size)) {
 			LOG_ERR("CLK U618 EEPROM block verify failed, offset: 0x%x, length: %u", current_offset, write_size);
 			return 1;
 		}
@@ -979,7 +991,7 @@ static int clk_u618_eeprom_write(uint32_t offset,
 	return 0;
 }
 
-uint8_t pldm_clk_u618_update(void *fw_update_param)
+uint8_t pldm_clk_eeprom_update(void *fw_update_param)
 {
 	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
 
@@ -1022,7 +1034,7 @@ uint8_t pldm_clk_u618_update(void *fw_update_param)
 		return 1;
 	}
 
-	if (clk_u618_eeprom_write(p->data_ofs, p->data, p->data_len)) {
+	if (clk_eeprom_write(p->bus, p->addr, p->data_ofs, p->data, p->data_len)) {
 		LOG_ERR("CLK U618 firmware write/verify failed offset: 0x%x, length: %u",p->data_ofs, p->data_len);
 		return 1;
 	}
@@ -1105,6 +1117,139 @@ uint8_t pldm_post_clk_u618_update(void *fw_update_param)
 	clk_u618_restore_polling();
 	LOG_INF("CLK U618 EEPROM update and verification completed successfully");
 
+	return 0;
+}
+
+static int clk_u200045_get_device_ready(void)
+{
+	I2C_MSG msg = { 0 };
+
+	msg.bus = CLK_U200045_I2C_BUS;
+	msg.target_addr = CLK_U200045_I2C_ADDR;
+	msg.tx_len = 1;
+	msg.rx_len = 2;
+	msg.data[0] = CLK_U200045_REG_DEVICE_STS;
+
+	int ret = i2c_master_read(&msg, CLK_U618_EEPROM_READ_RETRY);
+	if (ret) {
+		LOG_ERR("CLK U200045 device status read failed (%d)", ret);
+		return -EIO;
+	}
+
+	return !!(msg.data[1] & BIT(CLK_U200045_DEVICE_READY_BIT));
+}
+
+static int clk_u200045_wait_device_ready(void)
+{
+	for (int retry = 0; retry < RC38108_APLL_LOCK_POLL_COUNT; retry++) {
+		int ready = clk_u200045_get_device_ready();
+
+		if (ready < 0)
+			return ready;
+		if (ready)
+			return 0;
+
+		k_msleep(RC38108_APLL_LOCK_POLL_INTERVAL_MS);
+	}
+
+	LOG_ERR("CLK U200045 device-ready timeout");
+	return -ETIMEDOUT;
+}
+
+uint8_t pldm_pre_clk_u200045_update(void *fw_update_param)
+{
+	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
+	pldm_fw_update_param_t *p = (pldm_fw_update_param_t *)fw_update_param;
+
+	if (get_asic_board_id() != ASIC_BOARD_ID_EVB) {
+		LOG_ERR("CLK U200045 update is only supported on EVB");
+		return 1;
+	}
+
+	int ret = clk_u200045_get_device_ready();
+	if (ret != 1) {
+		LOG_ERR("CLK U200045 is not ready, status: %d", ret);
+		return 1;
+	}
+
+	p->bus = CLK_U200045_I2C_BUS;
+	p->addr = CLK_U200045_EEPROM_ADDR;
+
+	set_plat_sensor_polling_enable_flag(false);
+	set_cpld_polling_enable_flag(false);
+	k_msleep(PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS);
+
+	ret = gpio_set(U695_EN_R, GPIO_HIGH);
+	if (ret) {
+		LOG_ERR("Failed to enable CLK U200045 EEPROM path (%d)", ret);
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	uint8_t probe_data = 0;
+	ret = clk_eeprom_read(p->bus, p->addr, 0, &probe_data, sizeof(probe_data));
+	if (ret) {
+		LOG_ERR("CLK U200045 EEPROM did not respond at 7-bit address 0x%02X",
+			p->addr);
+		gpio_set(U695_EN_R, GPIO_LOW);
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	LOG_INF("CLK U200045 EEPROM update path is ready");
+	return 0;
+}
+
+uint8_t pldm_post_clk_u200045_update(void *fw_update_param)
+{
+	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
+	pldm_fw_update_param_t *p = (pldm_fw_update_param_t *)fw_update_param;
+
+	int ret = gpio_get(U695_EN_R);
+	if (ret < 0) {
+		LOG_ERR("Failed to read CLK U200045 EEPROM path state (%d)", ret);
+		return 1;
+	}
+	if (ret != GPIO_HIGH)
+		return 0;
+
+	ret = gpio_set(U695_EN_R, GPIO_LOW);
+	if (ret) {
+		LOG_ERR("Failed to restore CLK U200045 EEPROM path (%d)", ret);
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	if (!p->data || !p->data_len ||
+	    (p->data_ofs + p->data_len != fw_update_cfg.image_size) ||
+	    (p->next_len != 0)) {
+		LOG_ERR("CLK U200045 update did not complete; skip DC cycle");
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	if (!arke_power_control(0)) {
+		LOG_ERR("Arke power off failed");
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	k_msleep(2000);
+
+	if (!arke_power_control(1)) {
+		LOG_ERR("Arke power on failed");
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	ret = clk_u200045_wait_device_ready();
+	if (ret) {
+		clk_u618_restore_polling();
+		return 1;
+	}
+
+	clk_u618_restore_polling();
+	LOG_INF("CLK U200045 EEPROM update and verification completed successfully");
 	return 0;
 }
 
@@ -1204,8 +1349,23 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.comp_identifier = COMPNT_CLK_U618,
 		.comp_classification_index = 0x00,
 		.pre_update_func = pldm_pre_clk_u618_update,
-		.update_func = pldm_clk_u618_update,
+		.update_func = pldm_clk_eeprom_update,
 		.pos_update_func = pldm_post_clk_u618_update,
+		.inf = COMP_UPDATE_VIA_I2C,
+		.activate_method = COMP_ACT_SELF,
+		.self_act_func = NULL,
+		.get_fw_version_fn = NULL,
+		.self_apply_work_func = NULL,
+		.comp_version_str = NULL,
+	},
+	{
+		.enable = true,
+		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
+		.comp_identifier = COMPNT_CLK_U200045,
+		.comp_classification_index = 0x00,
+		.pre_update_func = pldm_pre_clk_u200045_update,
+		.update_func = pldm_clk_eeprom_update,
+		.pos_update_func = pldm_post_clk_u200045_update,
 		.inf = COMP_UPDATE_VIA_I2C,
 		.activate_method = COMP_ACT_SELF,
 		.self_act_func = NULL,
@@ -1328,6 +1488,15 @@ void load_pldmupdate_comp_config(void)
 	}
 
 	memcpy(comp_config, PLDMUPDATE_FW_CONFIG_TABLE, sizeof(PLDMUPDATE_FW_CONFIG_TABLE));
+
+	if (get_asic_board_id() != ASIC_BOARD_ID_EVB) {
+		for (uint8_t i = 0; i < comp_config_count; i++) {
+			if (comp_config[i].comp_identifier == COMPNT_CLK_U200045) {
+				comp_config[i].enable = false;
+				break;
+			}
+		}
+	}
 }
 
 // vr update

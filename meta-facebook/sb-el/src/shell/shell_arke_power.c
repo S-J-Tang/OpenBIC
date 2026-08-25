@@ -169,11 +169,17 @@ pwr_clock_compnt_mapping pwr_clock_compnt_mapping_table[] = {
 	{ CLK_BUF_100M_U690, CLK_BUF_U690_ADDR, I2C_BUS1, "LOS_EVT_CLK_BUF_100M_U690" },
 	{ CLK_BUF_100M_U88, CLK_BUF_U88_ADDR, I2C_BUS3, "LOS_EVT_CLK_BUF_100M_U88" },
 	{ CLK_GEN_100M_U86, CLK_GEN_100M_U86_ADDR, I2C_BUS3, "LOS_EVT_CLK_GEN_100M_U86" },
+	{ CLK_GEN_100M_U200045, CLK_U200045_I2C_ADDR, I2C_BUS2,
+	  "LOS_EVT_CLK_GEN_100M_U200045" },
 };
 // clang-format on
 
 void clear_clock_status(const struct shell *shell, uint8_t clock_index)
 {
+	if ((clock_index == CLK_GEN_100M_U200045) &&
+	    (get_asic_board_id() != ASIC_BOARD_ID_EVB))
+		return;
+
 	I2C_MSG i2c_msg = { 0 };
 	uint8_t retry = 5;
 	switch (clock_index) {
@@ -217,6 +223,7 @@ void clear_clock_status(const struct shell *shell, uint8_t clock_index)
 		}
 		break;
 	case CLK_GEN_100M_U86:
+	case CLK_GEN_100M_U200045:
 		i2c_msg.bus = pwr_clock_compnt_mapping_table[clock_index].bus;
 		i2c_msg.target_addr = pwr_clock_compnt_mapping_table[clock_index].addr;
 		i2c_msg.tx_len = 1;
@@ -318,6 +325,10 @@ void pwer_gd_get_status(const struct shell *shell)
 
 void pwr_get_clock_status(const struct shell *shell, uint8_t clock_index)
 {
+	if ((clock_index == CLK_GEN_100M_U200045) &&
+	    (get_asic_board_id() != ASIC_BOARD_ID_EVB))
+		return;
+
 	uint8_t addr = 0;
 	uint8_t bus = 0;
 	uint8_t *temp_clock_name = "";
@@ -361,6 +372,7 @@ void pwr_get_clock_status(const struct shell *shell, uint8_t clock_index)
 
 		break;
 	case CLK_GEN_100M_U86:
+	case CLK_GEN_100M_U200045:
 		i2c_msg.bus = bus;
 		i2c_msg.target_addr = addr;
 		i2c_msg.tx_len = 1;

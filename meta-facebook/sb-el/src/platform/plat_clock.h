@@ -21,6 +21,7 @@
 #define CLK_BUF_U690_ADDR (0xD8 >> 1)
 #define CLK_BUF_U88_ADDR (0xDE >> 1)
 #define CLK_GEN_100M_U86_ADDR (0x12 >> 1)
+#define CLK_U200045_I2C_ADDR (0x12 >> 1)
 #define CLK_GEN_312_5M_U618_ADDR (0x10 >> 1)
 
 /* for error indexing  */
@@ -38,6 +39,7 @@
 #define CLK_BUF2_100M_LOSB_PLD_EVENT 0x5F
 
 uint8_t clk_100mhz_get_lock_status_u86(void);
+uint8_t clk_100mhz_get_lock_status_u200045(void);
 uint8_t clk_312_5mhz_get_lock_status_u618(void);
 void check_clk_buf_loss_status(void);
 bool clock_get_error_data(uint16_t error_code, uint8_t *data);

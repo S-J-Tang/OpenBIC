@@ -55,7 +55,7 @@ void gpio_int_default();
 	gpio_name_to_num(NUWA0_HBM_CATTRIP_MMC_LVC33_R_ALARM)
 #define name_gpio3	\
 	gpio_name_to_num(CLK_U618_EEPROM_PATH_EN) \
-	gpio_name_to_num(Reserve_GPIO31) \
+	gpio_name_to_num(U695_EN_R) \
 	gpio_name_to_num(Reserve_GPIO32) \
 	gpio_name_to_num(Reserve_GPIO33) \
 	gpio_name_to_num(Reserve_GPIO34) \
