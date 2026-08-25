@@ -29,7 +29,10 @@
 #define I2C_BUS_BMC I2C_BUS6
 
 /* i3c vendor-def-id */
-#define DEFAULT_VENDOR_DEF_ID 0x567
+#define DEFAULT_VENDOR_DEF_ID_1 0x567
+#define DEFAULT_VENDOR_DEF_ID_2 0x577
+#define DEFAULT_VENDOR_DEF_ID_3 0x587
+#define DEFAULT_VENDOR_DEF_ID_4 0x597
 
 /* mctp endpoint */
 #define MCTP_EID_BMC 0x08
