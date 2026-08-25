@@ -36,8 +36,8 @@ plat_sensor_reading *sensor_reading_table[DATA_TABLE_LENGTH_4] = { NULL };
 
 /* I2C target init-enable table */
 const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
-	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
-	TARGET_DISABLE, TARGET_ENABLE,	TARGET_ENABLE, TARGET_DISABLE,
+	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_ENABLE,
+	TARGET_ENABLE,	TARGET_DISABLE, TARGET_ENABLE,	TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 };
 
@@ -49,14 +49,23 @@ const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
 // }
 
 /* I2C target init-config table */
+// clang-format off
 const struct _i2c_target_config I2C_TARGET_CONFIG_TABLE[MAX_TARGET_NUM] = {
-	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0xFF, 0xA },
-	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0x42, 0xA },
-	{ 0x40, 0xA }, { 0xFF, 0xA }, { 0xFF, 0xA },
-	{ 0xFF, 0xA }, { 0xFF, 0xA }, { 0xFF, 0xA },
+	{ 0xFF, 0xA },
+	{ 0xFF, 0xA },
+	{ 0xFF, 0xA },
+	{ 0x40, 0xA }, // ZORA00
+	{ 0x40, 0xA }, // ZORA10
+	{ 0xFF, 0xA }, // Astrid BMC interface change to i3c
+	{ 0x40, 0xA }, // HAMSA_CRM
+	{ 0xFF, 0xA },
+	{ 0xFF, 0xA },
+	{ 0xFF, 0xA },
+	{ 0xFF, 0xA },
+	{ 0xFF, 0xA },
 };
+// clang-format on
 #define SENSOR_READING_PDR_INDEX_MAX 50
-
 
 void update_sensor_reading_by_sensor_number(uint8_t sensor_number)
 {
@@ -76,4 +85,3 @@ void update_sensor_reading_by_sensor_number(uint8_t sensor_number)
 	sensor_data->sensor_entries[sensor_index].sensor_value =
 		(status == SENSOR_READ_SUCCESS) ? reading : 0xFFFFFFFF;
 }
-
