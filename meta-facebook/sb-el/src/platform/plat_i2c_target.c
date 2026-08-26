@@ -669,7 +669,7 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 		memcpy(&buffer[36], &val, sizeof(val));
 	} else {
 		/* EVT1B and later PDB1 power comes from INA238 sensor cache */
-		int milivolt = get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_INA238_PWR_W);
+		int milivolt = get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_PDB1_PWR_W);
 		uint16_t val = (milivolt + 500) / 1000;
 		memcpy(&buffer[36], &val, sizeof(val));
 	}
@@ -798,8 +798,7 @@ void i2c_bridge_command_handler(struct k_work *work_item)
 
 void set_control_voltage_handler(struct k_work *work_item)
 {
-	plat_control_voltage *sensor_data =
-		CONTAINER_OF(work_item, plat_control_voltage, work);
+	plat_control_voltage *sensor_data = CONTAINER_OF(work_item, plat_control_voltage, work);
 	uint8_t rail = sensor_data->rail;
 	uint16_t millivolt = sensor_data->set_value;
 
