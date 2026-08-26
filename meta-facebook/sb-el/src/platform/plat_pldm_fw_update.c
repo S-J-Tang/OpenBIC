@@ -498,6 +498,8 @@ static const struct clk_eeprom_geometry m24c16_geometry = {
 	.addr_size = M24C16_EEPROM_ADDR_SIZE,
 };
 
+static bool clk_u618_bootstrap_update;
+
 static int clk_eeprom_read(uint8_t bus, uint8_t addr, uint32_t offset, uint8_t *data,
 			   uint32_t data_size, const struct clk_eeprom_geometry *geometry);
 
@@ -639,25 +641,32 @@ static int rc38108_restore_gpio1_apll_lock(void)
 	return 0;
 }
 
+static int rc38108_get_apll_lock(void)
+{
+	uint8_t sts = 0;
+	int ret = rc38108_reg_read(RC38108_REG_APLL_STS, &sts, sizeof(sts));
+	if (ret)
+		return ret;
+
+	return !!(sts & BIT(RC38108_APLL_STS_LOCK_BIT));
+}
+
 static int rc38108_wait_apll_lock(void)
 {
 	for (int retry = 0; retry < RC38108_APLL_LOCK_POLL_COUNT; retry++) {
-		int status = gpio_get(MMC_GPIO_APLL_LOCK);
-
-		if (status < 0) {
-			LOG_ERR("Failed to read MMC GPIO%d (%d)", MMC_GPIO_APLL_LOCK, status);
+		int status = rc38108_get_apll_lock();
+		if (status < 0)
 			return status;
-		}
 
-		if (status == GPIO_HIGH) {
-			LOG_INF("RC38108 APLL lock detected on GPIO%d", MMC_GPIO_APLL_LOCK);
+		if (status == 1) {
+			LOG_INF("RC38108 APLL lock detected");
 			return 0;
 		}
 
 		k_msleep(RC38108_APLL_LOCK_POLL_INTERVAL_MS);
 	}
 
-	LOG_ERR("RC38108 APLL lock timeout, GPIO%d remains low", MMC_GPIO_APLL_LOCK);
+	LOG_ERR("RC38108 APLL lock timeout");
 
 	return -ETIMEDOUT;
 }
@@ -691,11 +700,13 @@ static int clk_u618_restore_access(void)
 		result = ret;
 	}
 
-	ret = rc38108_restore_gpio1_apll_lock();
-	if (ret) {
-		LOG_ERR("Failed to restore RC38108 GPIO1 (%d)", ret);
-		if (!result)
-			result = ret;
+	if (!clk_u618_bootstrap_update) {
+		ret = rc38108_restore_gpio1_apll_lock();
+		if (ret) {
+			LOG_ERR("Failed to restore RC38108 GPIO1 (%d)", ret);
+			if (!result)
+				result = ret;
+		}
 	}
 
 	return result;
@@ -713,32 +724,30 @@ uint8_t pldm_pre_clk_u618_update(void *fw_update_param)
 
 	p->bus = CLK_U618_I2C_BUS;
 	p->addr = CLK_U618_EEPROM_ADDR;
+	clk_u618_bootstrap_update = false;
 
 	ret = rc38108_reg_read(RC38108_REG_DEVICE_STS, &sts, sizeof(sts));
-	if (ret) {
-		LOG_ERR("Failed to read RC38108 device status (%d)", ret);
-		return 1;
-	}
-
-	if (!(sts & BIT(RC38108_DEVICE_STS_READY_BIT))) {
-		LOG_ERR("RC38108 is not ready, DEVICE_STS=0x%02X", sts);
-		return 1;
-	}
-
-	ret = gpio_get(MMC_GPIO_APLL_LOCK);
-	if (ret != GPIO_HIGH) {
-		LOG_ERR("RC38108 APLL is not locked, GPIO status: %d", ret);
-		return 1;
+	if (ret || !(sts & BIT(RC38108_DEVICE_STS_READY_BIT))) {
+		clk_u618_bootstrap_update = true;
+		LOG_WRN("RC38108 firmware is not running; use bootstrap EEPROM update path");
+	} else {
+		ret = rc38108_get_apll_lock();
+		if (ret != 1) {
+			clk_u618_bootstrap_update = true;
+			LOG_WRN("RC38108 APLL is not locked; use bootstrap EEPROM update path");
+		}
 	}
 
 	set_plat_sensor_polling_enable_flag(false);
 	set_cpld_polling_enable_flag(false);
 	k_msleep(PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS);
 
-	ret = rc38108_set_gpio1_input();
-	if (ret)
-		goto fail;
-	gpio1_is_input = true;
+	if (!clk_u618_bootstrap_update) {
+		ret = rc38108_set_gpio1_input();
+		if (ret)
+			goto fail;
+		gpio1_is_input = true;
+	}
 
 	ret = gpio_set(CLK_U618_EEPROM_PATH_EN, GPIO_HIGH);
 	if (ret) {
@@ -748,11 +757,11 @@ uint8_t pldm_pre_clk_u618_update(void *fw_update_param)
 	eeprom_path_is_mmc = true;
 
 	uint8_t probe_data = 0;
-	ret = clk_eeprom_read(CLK_U618_I2C_BUS, CLK_U618_EEPROM_ADDR, 0, &probe_data,
+	ret = clk_eeprom_read(CLK_U618_I2C_BUS, p->addr, 0, &probe_data,
 			      sizeof(probe_data), &m24256_geometry);
 	if (ret) {
 		LOG_ERR("CLK U618 EEPROM did not respond at 7-bit address 0x%02X",
-			CLK_U618_EEPROM_ADDR);
+			p->addr);
 		goto fail;
 	}
 
@@ -765,6 +774,7 @@ fail:
 		gpio_set(CLK_U618_EEPROM_PATH_EN, GPIO_LOW);
 	if (gpio1_is_input)
 		rc38108_restore_gpio1_apll_lock();
+	clk_u618_bootstrap_update = false;
 	clk_u618_restore_polling();
 	return 1;
 }
@@ -1245,7 +1255,7 @@ static uint8_t pldm_post_clk_rc210xx_update(void *fw_update_param, uint8_t bus, 
 uint8_t pldm_pre_clk_u86_update(void *fw_update_param)
 {
 	return pldm_pre_clk_rc210xx_update(fw_update_param, CLK_U86_I2C_BUS, CLK_GEN_100M_U86_ADDR,
-					   CLK_U86_EEPROM_ADDR, "U86", true);
+					   CLK_U86_EEPROM_ADDR, "U86", false);
 }
 
 uint8_t pldm_post_clk_u86_update(void *fw_update_param)
@@ -1263,7 +1273,7 @@ uint8_t pldm_pre_clk_u200045_update(void *fw_update_param)
 
 	return pldm_pre_clk_rc210xx_update(fw_update_param, CLK_U200045_I2C_BUS,
 					   CLK_U200045_I2C_ADDR, CLK_U200045_EEPROM_ADDR, "U200045",
-					   true);
+					   false);
 }
 
 uint8_t pldm_post_clk_u200045_update(void *fw_update_param)

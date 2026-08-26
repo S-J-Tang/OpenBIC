@@ -426,6 +426,64 @@ bool clock_name_get(uint8_t index, uint8_t **name)
 	return true;
 }
 
+static void cmd_dump_clock_eeprom(const struct shell *shell, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+
+	uint8_t clock_index;
+	if (!clock_enum_get(argv[1], &clock_index)) {
+		shell_error(shell, "Invalid clock name: %s", argv[1]);
+		return;
+	}
+
+	uint8_t clock_addr = 0;
+	uint8_t bus = 0;
+	if (find_clock_address_and_bus_by_clock_name_index(clock_index, &clock_addr, &bus)) {
+		shell_error(shell, "Can't find clock address and bus by clock name");
+		return;
+	}
+	ARG_UNUSED(clock_addr);
+
+	uint32_t eeprom_addr = strtoul(argv[2], NULL, 0);
+	uint32_t offset = strtoul(argv[3], NULL, 0);
+	uint32_t length = strtoul(argv[4], NULL, 0);
+	if (eeprom_addr > 0x7F) {
+		shell_error(shell, "Invalid 7-bit EEPROM address: 0x%x", eeprom_addr);
+		return;
+	}
+	if (!length || offset > UINT16_MAX || length > (UINT16_MAX + 1U - offset)) {
+		shell_error(shell, "Invalid EEPROM range: offset=0x%x length=0x%x", offset,
+			    length);
+		return;
+	}
+
+	while (length) {
+		uint8_t read_size = MIN(length, 16U);
+		I2C_MSG msg = {
+			.bus = bus,
+			.target_addr = eeprom_addr,
+			.tx_len = 2,
+			.rx_len = read_size,
+		};
+		msg.data[0] = offset >> 8;
+		msg.data[1] = offset & 0xFF;
+
+		if (i2c_master_read(&msg, 3)) {
+			shell_error(shell, "EEPROM read failed: bus=%u addr=0x%02x offset=0x%04x",
+				    bus, eeprom_addr, offset);
+			return;
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "%04x: ", offset);
+		for (uint8_t i = 0; i < read_size; i++)
+			shell_fprintf(shell, SHELL_NORMAL, "%02x ", msg.data[i]);
+		shell_print(shell, "");
+
+		offset += read_size;
+		length -= read_size;
+	}
+}
+
 static void dynamic_clock_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	uint8_t *name = NULL;
@@ -465,8 +523,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_clock_cmds,
 					     "set <clock> <reg-offset> <value>",
 					     cmd_set_clock, 4, 3),
 			       SHELL_CMD_ARG(get, &clock_name,
-					     "get <clock> <reg-offset> <read_length>",
-					     cmd_get_clock, 4, 0),
+				     "get <clock> <reg-offset> <read_length>",
+				     cmd_get_clock, 4, 0),
+			       SHELL_CMD_ARG(eeprom_dump, &clock_name,
+				     "eeprom_dump <clock> <eeprom_addr> <offset> <length>",
+				     cmd_dump_clock_eeprom, 5, 0),
 			       SHELL_SUBCMD_SET_END);
 
 /* Root of command clock */
