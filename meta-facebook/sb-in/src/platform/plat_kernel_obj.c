@@ -17,6 +17,8 @@
 #include "plat_kernel_obj.h"
 #include "plat_gpio.h"
 #include "plat_util.h"
+#include "plat_log.h"
+#include "plat_hook.h"
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(plat_kernel_obj);

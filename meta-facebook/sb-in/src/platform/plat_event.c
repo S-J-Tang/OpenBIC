@@ -18,3 +18,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include "plat_event.h"
+#include "plat_log.h"
+
+LOG_MODULE_REGISTER(plat_event);
+
+/* ac log event*/
+void plat_set_ac_on_log(void)
+{
+	uint16_t error_code = (AC_ON_TRIGGER_CAUSE << 13);
+	error_log_event(error_code, LOG_ASSERT);
+	LOG_INF("Generated AC on error code: 0x%x", error_code);
+}
+
+/* dc log event*/
+void plat_set_dc_on_log(bool is_assert)
+{
+	uint16_t error_code = (DC_ON_TRIGGER_CAUSE << 13);
+	error_log_event(error_code, (is_assert ? LOG_ASSERT : LOG_DEASSERT));
+
+	if (is_assert == LOG_ASSERT) {
+		LOG_INF("DC on error code asserted: 0x%x", error_code);
+	} else if (is_assert == LOG_DEASSERT) {
+		LOG_INF("DC on error code deasserted");
+	}
+}

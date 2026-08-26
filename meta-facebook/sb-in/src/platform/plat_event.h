@@ -13,3 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+void plat_set_ac_on_log(void);
+void plat_set_dc_on_log(bool is_assert);

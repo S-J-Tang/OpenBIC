@@ -24,9 +24,11 @@
 #include "plat_i2c.h"
 #include "plat_log.h"
 #include "plat_cpld.h"
+#include "plat_gpio.h"
 #include "plat_hook.h"
 #include "plat_class.h"
 #include "plat_pldm_sensor.h"
+#include "pldm_oem.h"
 
 LOG_MODULE_REGISTER(plat_log);
 
@@ -183,6 +185,16 @@ bool vr_fault_get_error_data(uint8_t sensor_id, uint8_t *data)
 bool get_error_data(uint16_t error_code, uint8_t *data)
 {
 	CHECK_NULL_ARG_WITH_RETURN(data, false);
+
+	uint8_t trigger_case = (error_code >> ERROR_CODE_TYPE_SHIFT) & 0x07;
+
+	switch (trigger_case) {
+	case AC_ON_TRIGGER_CAUSE:
+	case DC_ON_TRIGGER_CAUSE: {
+		data[0] = gpio_get(RST_ASTRID_PWR_ON_PLD_R1_N);
+		return true;
+	}
+	}
 
 	// Extract CPLD offset and bit position from the error code
 	uint8_t cpld_offset = error_code & 0xFF;

@@ -27,6 +27,7 @@
 #include "plat_class.h"
 #include "plat_cpld.h"
 #include "plat_log.h"
+#include "plat_event.h"
 
 LOG_MODULE_REGISTER(plat_init);
 
@@ -56,6 +57,7 @@ void pal_post_init()
 	init_fru_info();
 	init_load_eeprom_log();
 	init_cpld_polling();
+	plat_set_ac_on_log();
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78

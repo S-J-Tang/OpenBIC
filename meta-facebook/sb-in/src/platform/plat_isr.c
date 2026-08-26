@@ -22,6 +22,8 @@
 #include "plat_gpio.h"
 #include "plat_cpld.h"
 #include "plat_kernel_obj.h"
+#include "plat_event.h"
+#include "plat_log.h"
 
 LOG_MODULE_REGISTER(plat_isr);
 
@@ -46,6 +48,12 @@ void ISR_GPIO_ALL_VR_PM_ALERT_R_N()
 void ISR_GPIO_FM_PLD_UBC_EN_R()
 {
 	LOG_INF("FM_PLD_UBC_EN_R = %d\nDC ON", gpio_get(FM_PLD_UBC_EN_R));
+
+	if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) {
+		plat_set_dc_on_log(LOG_ASSERT);
+	} else {
+		plat_set_dc_on_log(LOG_DEASSERT);
+	}
 
 	plat_update_ubc_status();
 }
