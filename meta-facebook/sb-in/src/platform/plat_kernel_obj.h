@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
+#ifndef PLAT_KERNEL_OBJ_H
+#define PLAT_KERNEL_OBJ_H
+
 #include <zephyr.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <logging/log.h>
 
-#include "plat_gpio.h"
-#include "plat_cpld.h"
-#include "plat_kernel_obj.h"
+/* semaphore CPLD polling semaphore */
+void plat_ragular_cpld_polling_sem_handler(struct k_timer *timer);
+void plat_activate_cpld_polling_semaphore_timer(void);
+void plat_wait_for_cpld_polling_trigger(void);
+void plat_trigger_cpld_polling(void);
 
-LOG_MODULE_REGISTER(plat_isr);
-
-void ISR_GPIO_ALL_VR_PM_ALERT_R_N()
-{
-	if (gpio_get(ALL_VR_PM_ALERT_R_N) == GPIO_LOW) {
-		plat_trigger_cpld_polling();
-	}
-}
+#endif

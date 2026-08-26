@@ -5,13 +5,13 @@
 #include "plat_gpio.h"
 #include "plat_log.h"
 #include "plat_hook.h"
+#include "plat_kernel_obj.h"
 #include <logging/log.h>
 
 #define CPLD_ADDR (0x4C >> 1)
 #define I2C_BUS_CPLD I2C_BUS11
 
 #define POLLING_CPLD_STACK_SIZE 2048
-#define CPLD_POLLING_INTERVAL_MS 1000 // 1 second polling interval
 
 #define CHECK_ALL_BITS 0xFF
 
@@ -65,13 +65,7 @@ cpld_info cpld_info_table[] = {
 	{ VR_POWER_FAULT_5_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
 };
 
-bool cpld_polling_alert_status = false; // only polling cpld when alert status is true
 bool cpld_polling_enable_flag = true;
-
-void check_cpld_polling_alert_status(void)
-{
-	cpld_polling_alert_status = (gpio_get(ALL_VR_PM_ALERT_R_N) == 0);
-}
 
 void set_cpld_polling_enable_flag(bool status)
 {
@@ -179,67 +173,14 @@ bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value)
 
 void poll_cpld_registers()
 {
-	uint8_t data = 0;
-	bool prev_alert_status = false;
-
 	while (1) {
-		/* Sleep for the polling interval */
-		k_msleep(CPLD_POLLING_INTERVAL_MS);
+		plat_wait_for_cpld_polling_trigger();
 
-		LOG_DBG("cpld_polling_alert_status = %d, cpld_polling_enable_flag = %d",
-			cpld_polling_alert_status, cpld_polling_enable_flag);
-
-		// Check for falling edge of cpld_polling_alert_status (true -> false)
-		if (prev_alert_status && !cpld_polling_alert_status) {
-			uint8_t err_type = CPLD_UNEXPECTED_VAL_TRIGGER_CAUSE;
-			LOG_DBG("cpld_polling_alert_status: true -> false, reset_error_log_states: %x",
-				err_type);
-			reset_error_log_states(err_type);
-		}
-		// Save current alert status for next loop comparison
-		prev_alert_status = cpld_polling_alert_status;
-
-		if (!cpld_polling_alert_status || !cpld_polling_enable_flag)
+		if (!cpld_polling_enable_flag) {
 			continue;
-
-		LOG_DBG("Polling CPLD registers");
-
-		for (size_t i = 0; i < ARRAY_SIZE(cpld_info_table); i++) {
-			uint8_t expected_val = ubc_enabled_delayed_status ?
-						       cpld_info_table[i].dc_on_defaut :
-						       cpld_info_table[i].dc_off_defaut;
-
-			// Read from CPLD
-			if (!plat_read_cpld(cpld_info_table[i].cpld_offset, &data, 1)) {
-				LOG_DBG("Failed to read CPLD register 0x%02X",
-					cpld_info_table[i].cpld_offset);
-				continue;
-			}
-
-			LOG_DBG("Polling CPLD 0x%02X raw=0x%02X, expected=0x%02X, mask=0x%02X",
-				cpld_info_table[i].cpld_offset, data, expected_val,
-				cpld_info_table[i].bit_check_mask);
-
-			if (!cpld_info_table[i].is_fault_log)
-				continue;
-
-			uint8_t new_fault_map =
-				(data ^ expected_val) & cpld_info_table[i].bit_check_mask;
-
-			// get unrecorded fault bit map
-			uint8_t is_status_changed =
-				new_fault_map ^ cpld_info_table[i].is_fault_bit_map;
-
-			if (is_status_changed) {
-				if (cpld_info_table[i].status_changed_cb) {
-					cpld_info_table[i].status_changed_cb(
-						&cpld_info_table[i], &data);
-				}
-				// update map
-				cpld_info_table[i].is_fault_bit_map = new_fault_map;
-				cpld_info_table[i].last_polling_value = data;
-			}
 		}
+
+		// TODO: poll cpld_info_table after trigger
 	}
 }
 
@@ -258,7 +199,7 @@ void check_cpld_handler()
 
 void init_cpld_polling(void)
 {
-	check_cpld_polling_alert_status();
+	plat_activate_cpld_polling_semaphore_timer();
 
 	cpld_polling_tid =
 		k_thread_create(&cpld_polling_thread, cpld_polling_stack,
