@@ -30,17 +30,18 @@
 
 LOG_MODULE_REGISTER(plat_log);
 
-#define LOG_MAX_INDEX 0x0FFF // recount when log index > 0x0FFF
-#define LOG_MAX_NUM 100 // total log amount: 100
+#define LOG_MAX_INDEX 0x0FFF // err_log_data[].index range: 0 ~ (LOG_MAX_INDEX - 1), then wraps
+#define LOG_MAX_NUM 50 // total log amount: 50
 #define FRU_LOG_START 0x0000 // log offset: 0KB
 #define EEPROM_MAX_WRITE_TIME 5 // the BR24G512 eeprom max write time is 3.5 ms
 #define CPLD_VR_VENDOR_TYPE_REG 0x1C
 #define ERROR_CODE_TYPE_SHIFT 13
 
 static plat_err_log_mapping err_log_data[LOG_MAX_NUM];
-static uint16_t err_code_caches[200]; //extend if error code types > 200
-static uint16_t next_log_position = 0; // Next position to write in the eeprom, 1-based, defaut 0
-static uint16_t next_index = 0; // Next global index to use for logs, 1-based, defaut 0
+static uint16_t err_code_caches[200];
+// codes currently asserting (not yet deasserted); extend if concurrent error types > 200
+static uint16_t next_log_position; // next RAM/EEPROM slot to write, 0-based
+static uint16_t next_index; // next value for err_log_data[].index, 0-based, wraps at LOG_MAX_INDEX
 static uint8_t log_num; // Number of logs in EEPROM
 
 typedef struct _vr_ubc_device_table_ {
@@ -121,9 +122,8 @@ void plat_log_read(uint8_t *log_data, uint8_t cmd_size, uint16_t order)
 {
 	CHECK_NULL_ARG(log_data);
 
-	// Calculate the target log position based on next_log_position
-	uint16_t zero_base_log_position =
-		((next_log_position - 1) + LOG_MAX_NUM - order) % LOG_MAX_NUM;
+	// Calculate the target log position based on next_log_position (0-based)
+	uint16_t zero_base_log_position = (next_log_position + LOG_MAX_NUM - order) % LOG_MAX_NUM;
 
 	uint16_t eeprom_address =
 		FRU_LOG_START + zero_base_log_position * sizeof(plat_err_log_mapping);
@@ -230,101 +230,101 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 	return true;
 }
 
-// Handle error log events and record them if necessary
-void error_log_event(uint16_t error_code, bool log_status)
+// Find error_code in the active-fault cache. Returns the slot index, or -1 if not present.
+static int16_t find_active_fault(uint16_t error_code)
 {
-	bool log_todo = false;
-
-	// Check if the error_code is already logged
-	for (uint8_t i = 1; i < ARRAY_SIZE(err_code_caches); i++) {
+	for (uint8_t i = 0; i < ARRAY_SIZE(err_code_caches); i++) {
 		if (err_code_caches[i] == error_code) {
-			if (log_status == LOG_ASSERT) {
-				log_todo = false; // Duplicate error, no need to log again
-				LOG_INF("Duplicate error_code: 0x%x, log_status: %d", error_code,
-					log_status);
-				return;
-			} else if (log_status == LOG_DEASSERT) {
-				log_todo = true; // The error needs to be cleared
-				err_code_caches[i] = 0; // Remove the error code from the cache
-				LOG_INF("Duplicate error_code: 0x%x, log_status: %d", error_code,
-					log_status);
-				return;
-			}
+			return i;
 		}
 	}
+	return -1;
+}
 
-	// If the error_code is new and it's a LOG_ASSERT, add it to the cache
-	if (!log_todo && (log_status == LOG_ASSERT)) {
-		for (uint8_t i = 1; i < ARRAY_SIZE(err_code_caches); i++) {
-			if (err_code_caches[i] == 0) {
-				err_code_caches[i] =
-					error_code; // Add the new error code to the cache
-				log_todo = true;
-				break;
-			}
+// Update the active-fault cache and decide whether a new log entry is needed.
+// DEASSERT only clears the cache, it never produces a new log entry.
+static bool update_active_fault_cache(uint16_t error_code, bool log_status)
+{
+	int16_t idx = find_active_fault(error_code);
+
+	if (log_status == LOG_DEASSERT) {
+		if (idx >= 0) {
+			err_code_caches[idx] = 0;
+			LOG_INF("Fault cleared, error_code: 0x%x", error_code);
 		}
+		return false;
 	}
 
-	// If no action is needed, exit the function
-	if (!log_todo) {
-		LOG_INF("Duplicate or no log needed for error_code: 0x%x", error_code);
-		return;
+	// LOG_ASSERT
+	if (idx >= 0) {
+		LOG_INF("Duplicate error_code: 0x%x, already asserting", error_code);
+		return false;
 	}
 
-	uint16_t fru_count = next_log_position;
+	int16_t free_idx = find_active_fault(0);
+	if (free_idx < 0) {
+		LOG_ERR("err_code_caches full, cannot track error_code: 0x%x", error_code);
+		return false;
+	}
+	err_code_caches[free_idx] = error_code;
+	return true;
+}
 
-	// Update the log entry's index
-	err_log_data[fru_count].index = next_index;
-	next_index = (next_index % LOG_MAX_INDEX) + 1;
+// Fill in one log entry: index, error code, timestamp, VR data and CPLD dump.
+static void fill_log_entry(plat_err_log_mapping *entry, uint16_t error_code)
+{
+	entry->index = next_index;
+	next_index = (next_index + 1) % LOG_MAX_INDEX;
 
-	// Update log error code and timestamp
-	err_log_data[fru_count].err_code = error_code;
-	err_log_data[fru_count].sys_time = k_uptime_get();
+	entry->err_code = error_code;
+	entry->sys_time = k_uptime_get();
 
-	if (!get_error_data(error_code, err_log_data[fru_count].error_data)) {
+	if (!get_error_data(error_code, entry->error_data)) {
 		// Clear error data if no valid data is found
-		memset(err_log_data[fru_count].error_data, 0,
-		       sizeof(err_log_data[fru_count].error_data));
+		memset(entry->error_data, 0, sizeof(entry->error_data));
 	}
 
-	if (!plat_read_cpld(CPLD_REGISTER_1ST_PART_START_OFFSET, err_log_data[fru_count].cpld_dump,
+	if (!plat_read_cpld(CPLD_REGISTER_1ST_PART_START_OFFSET, entry->cpld_dump,
 			    CPLD_REGISTER_1ST_PART_NUM)) {
 		LOG_ERR("Failed to dump 1st part CPLD data");
 	}
+}
 
-	if (!plat_read_cpld(CPLD_REGISTER_2ND_PART_START_OFFSET,
-			    err_log_data[fru_count].cpld_dump + CPLD_REGISTER_1ST_PART_NUM,
-			    CPLD_REGISTER_2ND_PART_NUM)) {
-		LOG_ERR("Failed to dump 2nd part CPLD data");
-	}
+// Persist one log entry to EEPROM and advance the ring buffer position.
+static void store_log_entry(const plat_err_log_mapping *entry)
+{
+	uint16_t write_address = FRU_LOG_START + next_log_position * sizeof(plat_err_log_mapping);
 
-	//dump err_log_data for debug
-	LOG_HEXDUMP_DBG(&err_log_data[fru_count], sizeof(plat_err_log_mapping), "err_log_data");
-
-	// 1 base fru_count, write_address is 0 base
-	uint16_t write_address = FRU_LOG_START + (fru_count - 1) * sizeof(plat_err_log_mapping);
-
-	// Write log to EEPROM with error handling
-	if (!plat_eeprom_write(write_address, (uint8_t *)&err_log_data[fru_count],
-			       sizeof(plat_err_log_mapping))) {
-		LOG_ERR("Write Log failed with Error code: %02x", error_code);
+	if (!plat_eeprom_write(write_address, (uint8_t *)entry, sizeof(plat_err_log_mapping))) {
+		LOG_ERR("Write Log failed with Error code: %02x", entry->err_code);
 	} else {
 		k_msleep(EEPROM_MAX_WRITE_TIME); // wait 5ms to write EEPROM
 	}
 
-	// Update the next log position
-	next_log_position = (fru_count % LOG_MAX_NUM) + 1;
-	log_num++;
-
-	if (log_num > LOG_MAX_NUM) {
-		log_num = LOG_MAX_NUM;
+	next_log_position = (next_log_position + 1) % LOG_MAX_NUM;
+	if (log_num < LOG_MAX_NUM) {
+		log_num++;
 	}
+}
+
+// Handle error log events and record them if necessary
+void error_log_event(uint16_t error_code, bool log_status)
+{
+	if (!update_active_fault_cache(error_code, log_status)) {
+		/* dessert or duplicate, nothing to do */
+		return;
+	}
+
+	plat_err_log_mapping *entry = &err_log_data[next_log_position];
+	fill_log_entry(entry, error_code);
+
+	store_log_entry(entry);
 }
 
 void reset_error_log_event(uint8_t err_type)
 {
 	// Remove and DEASSERT error logs starting with the err_type
-	for (uint8_t i = 1; i < ARRAY_SIZE(err_code_caches); i++) {
+	for (uint8_t i = 0; i < ARRAY_SIZE(err_code_caches); i++) {
 		uint16_t error_code = err_code_caches[i];
 		uint8_t code_type = error_code >> ERROR_CODE_TYPE_SHIFT;
 		if (code_type == err_type) {
@@ -343,7 +343,7 @@ uint8_t plat_log_get_num(void)
 void find_last_log_position()
 {
 	uint16_t max_index = 0; // Highest valid index found
-	uint16_t last_position = 0; // Position of the highest valid index
+	uint16_t last_position = 0; // Position (0-based) of the highest valid index
 	bool all_empty = true; // Flag to detect if all entries are empty
 	plat_err_log_mapping log_entry;
 
@@ -358,26 +358,26 @@ void find_last_log_position()
 		}
 
 		// Check if the entry is valid
-		if (log_entry.index != 0xFFFF && log_entry.index <= LOG_MAX_INDEX) {
+		if (log_entry.index != 0xFFFF && log_entry.index < LOG_MAX_INDEX) {
 			all_empty = false; // At least one entry is valid
 			log_num++;
 			if (log_entry.index > max_index) {
 				max_index = log_entry.index; // Update max index
-				last_position = i + 1; // Update last position, 1 base
+				last_position = i; // Update last position, 0-based
 			}
 		}
 	}
 
 	// All entries are empty
 	if (all_empty) {
-		LOG_INF("All entries are empty. Initializing next_log_position and next_index to 1.");
-		next_log_position = 1;
-		next_index = 1;
+		LOG_INF("All entries are empty. Initializing next_log_position and next_index to 0.");
+		next_log_position = 0;
+		next_index = 0;
 		return;
 	}
 
-	next_log_position = (last_position % LOG_MAX_NUM) + 1;
-	next_index = (max_index % LOG_MAX_INDEX) + 1;
+	next_log_position = (last_position + 1) % LOG_MAX_NUM;
+	next_index = (max_index + 1) % LOG_MAX_INDEX;
 	LOG_INF("Next log position: %d, next index: %d", next_log_position, next_index);
 }
 

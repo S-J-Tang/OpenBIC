@@ -19,12 +19,10 @@
 
 #include "plat_pldm_sensor.h"
 
-#define CPLD_REGISTER_MAX_NUM 96
+#define CPLD_REGISTER_MAX_NUM 72
 #define CPLD_REGISTER_1ST_PART_START_OFFSET                                                        \
 	0x00 // first part of cpld register offset from 0x00 to 0x47
 #define CPLD_REGISTER_1ST_PART_NUM 72
-#define CPLD_REGISTER_2ND_PART_START_OFFSET 0x97
-#define CPLD_REGISTER_2ND_PART_NUM (CPLD_REGISTER_MAX_NUM - CPLD_REGISTER_1ST_PART_NUM)
 #define FRU_LOG_SIZE sizeof(plat_err_log_mapping)
 
 #define LOG_ASSERT 1
@@ -51,6 +49,7 @@ typedef struct __attribute__((packed)) _plat_err_log_mapping {
 	uint64_t sys_time;
 	uint8_t error_data[20];
 	uint8_t cpld_dump[CPLD_REGISTER_MAX_NUM];
+	uint8_t reserved[24];
 } plat_err_log_mapping;
 
 enum LOG_ERROR_TRIGGER_CAUSE {
