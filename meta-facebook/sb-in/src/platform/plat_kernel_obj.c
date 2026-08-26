@@ -15,6 +15,8 @@
  */
 
 #include "plat_kernel_obj.h"
+#include "plat_gpio.h"
+#include "plat_util.h"
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(plat_kernel_obj);
@@ -43,4 +45,31 @@ void plat_trigger_cpld_polling(void)
 {
 	LOG_WRN("triggering CPLD polling");
 	k_sem_give(&cpld_polling_sem);
+}
+
+/* Timer for dc status checking
+We expect UBC ON will trigger DC ON. */
+bool ubc_status = false; // "ubc_enabled_delayed_status" in rainbow
+void plat_check_ubc_delayed_timer_handler(struct k_timer *timer);
+K_TIMER_DEFINE(check_ubc_delayed_timer, plat_check_ubc_delayed_timer_handler, NULL);
+
+void plat_check_ubc_delayed_timer_handler(struct k_timer *timer)
+{
+	/* FM_PLD_UBC_EN_R
+	 * 1 -> UBC is enabled
+	 * 0 -> UBC is disabled
+	 */
+	bool is_ubc_enabled = (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH);
+	ubc_status = is_ubc_enabled;
+}
+
+void plat_update_ubc_status(void)
+{
+	// delay for power sequence
+	k_timer_start(&check_ubc_delayed_timer, K_MSEC(DC_ON_DELAY_TIMMING), K_NO_WAIT);
+}
+
+bool plat_get_ubc_status(void)
+{
+	return ubc_status;
 }

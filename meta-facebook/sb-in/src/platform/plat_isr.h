@@ -17,6 +17,8 @@
 #ifndef PLAT_ISR_H
 #define PLAT_ISR_H
 
+void ISR_GPIO_RST_ASTRID_PWR_ON_PLD_R1_N();
 void ISR_GPIO_ALL_VR_PM_ALERT_R_N();
+void ISR_GPIO_FM_PLD_UBC_EN_R();
 
 #endif

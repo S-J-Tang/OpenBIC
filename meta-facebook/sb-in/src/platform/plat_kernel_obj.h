@@ -25,4 +25,7 @@ void plat_activate_cpld_polling_semaphore_timer(void);
 void plat_wait_for_cpld_polling_trigger(void);
 void plat_trigger_cpld_polling(void);
 
+/* Timer for dc status checking */
+void plat_update_ubc_status(void);
+bool plat_get_ubc_status(void);
 #endif

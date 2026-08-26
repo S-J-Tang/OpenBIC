@@ -25,9 +25,27 @@
 
 LOG_MODULE_REGISTER(plat_isr);
 
+void ISR_GPIO_RST_ASTRID_PWR_ON_PLD_R1_N()
+{
+	if (gpio_get(RST_ASTRID_PWR_ON_PLD_R1_N)) {
+		/* dc on */
+		LOG_INF("DC ON");
+	} else {
+		/* dc off */
+		LOG_INF("DC OFF");
+	}
+}
+
 void ISR_GPIO_ALL_VR_PM_ALERT_R_N()
 {
 	if (gpio_get(ALL_VR_PM_ALERT_R_N) == GPIO_LOW) {
 		plat_trigger_cpld_polling();
 	}
+}
+
+void ISR_GPIO_FM_PLD_UBC_EN_R()
+{
+	LOG_INF("FM_PLD_UBC_EN_R = %d\nDC ON", gpio_get(FM_PLD_UBC_EN_R));
+
+	plat_update_ubc_status();
 }
