@@ -466,51 +466,8 @@ static bool get_boot0_nuwa1_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 	return ret;
 }
 
-#define I2C_BUS_RC38108 I2C_BUS3
-#define RC38108_I2C_ADDR 0x08
-
-#define CLK_U618_I2C_BUS I2C_BUS3
-#define CLK_U618_EEPROM_ADDR 0x50
-
-#define CLK_U86_I2C_BUS I2C_BUS3
-#define CLK_U86_EEPROM_ADDR 0x50
-
-#define CLK_U200045_I2C_BUS I2C_BUS2
-#define CLK_U200045_EEPROM_ADDR 0x50
-
-#define RC210XX_REG_DEVICE_STS 0x1E
-#define RC210XX_DEVICE_READY_BIT 1
-
-#define M24256_EEPROM_SIZE 0x8000
-#define M24256_EEPROM_PAGE_SIZE 64
-#define M24256_EEPROM_ADDR_SIZE 2
-
-#define M24C16_EEPROM_SIZE 0x800
-#define M24C16_EEPROM_PAGE_SIZE 16
-#define M24C16_EEPROM_ADDR_SIZE 1
-
-#define CLK_U618_EEPROM_WRITE_RETRY 3
-#define CLK_U618_EEPROM_READ_RETRY 3
-
-#define CLK_U618_EEPROM_WRITE_DELAY_MS 6
-
 #define CLK_U618_EEPROM_MAX_WRITE_SIZE                                                             \
 	MIN(M24256_EEPROM_PAGE_SIZE, (I2C_BUFF_SIZE - M24256_EEPROM_ADDR_SIZE))
-
-#define RC38108_REG_DEVICE_STS 0x0024
-
-#define RC38108_DEVICE_STS_READY_BIT 6
-
-#define RC38108_REG_GPIO1_CNFG 0x0248
-#define RC38108_REG_GPIO1_PAD_CNFG 0x024B
-
-#define RC38108_GPIO_FUNC_APLL_LOCK 0x1B
-#define RC38108_GPIO_FUNC_INPUT 0x20
-
-#define RC38108_PAD_OE_B_BIT 3
-
-#define RC38108_APLL_LOCK_POLL_COUNT 50
-#define RC38108_APLL_LOCK_POLL_INTERVAL_MS 100
 
 static void clk_u618_restore_polling(void)
 {
@@ -845,7 +802,7 @@ static int clk_eeprom_read(uint8_t bus, uint8_t addr, uint32_t offset, uint8_t *
 		msg.data[1] = (uint8_t)(offset & 0xFF);
 	}
 
-	int ret = i2c_master_read(&msg, CLK_U618_EEPROM_READ_RETRY);
+	int ret = i2c_master_read(&msg, CLK_EEPROM_READ_RETRY);
 	if (ret) {
 		LOG_ERR("CLK U618 EEPROM read failed, offset: 0x%x, "
 			"length: %u, ret: %d",
@@ -948,14 +905,14 @@ static int clk_eeprom_write_page(uint8_t bus, uint8_t addr, uint32_t offset, con
 
 	memcpy(&msg.data[geometry->addr_size], data, data_size);
 
-	int ret = i2c_master_write(&msg, CLK_U618_EEPROM_WRITE_RETRY);
+	int ret = i2c_master_write(&msg, CLK_EEPROM_WRITE_RETRY);
 	if (ret) {
 		LOG_ERR("CLK U618 EEPROM write failed, offset: 0x%x, length: %u, ret: %d", offset,
 			data_size, ret);
 		return 1;
 	}
 
-	k_msleep(CLK_U618_EEPROM_WRITE_DELAY_MS);
+	k_msleep(CLK_EEPROM_WRITE_DELAY_MS);
 
 	return 0;
 }
@@ -1162,7 +1119,7 @@ static int clk_rc210xx_get_device_ready(uint8_t bus, uint8_t addr, const char *n
 	msg.rx_len = 2;
 	msg.data[0] = RC210XX_REG_DEVICE_STS;
 
-	int ret = i2c_master_read(&msg, CLK_U618_EEPROM_READ_RETRY);
+	int ret = i2c_master_read(&msg, CLK_EEPROM_READ_RETRY);
 	if (ret) {
 		LOG_ERR("CLK %s device status read failed (%d)", name, ret);
 		return -EIO;
