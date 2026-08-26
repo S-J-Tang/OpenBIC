@@ -77,7 +77,7 @@ static bool is_quick_vr_sensor(uint8_t sensor_num)
 	case SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_PWR_W:
 	case SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_PWR_W:
 	case SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W:
-	case SENSOR_NUM_INA238_PWR_W:
+	case SENSOR_NUM_PDB1_PWR_W:
 
 		return true;
 	}
@@ -232,7 +232,7 @@ uint8_t check_sensor_type(uint8_t sensor_num)
 		return TEMP_SENSOR_THREAD_ID;
 
 	/* Normal and quick VR sensors */
-	if (sensor_num <= SENSOR_NUM_INA238_PWR_W)
+	if (sensor_num <= SENSOR_NUM_PDB1_PWR_W)
 		return is_quick_vr_sensor(sensor_num) ? QUICK_VR_SENSOR_THREAD_ID :
 							VR_SENSOR_THREAD_ID;
 
@@ -7277,7 +7277,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 	},
 	{
 		{
-			// SENSOR_NUM_INA238_VOLT_VBUS_A
+			// SENSOR_NUM_PDB1_VOLT_VBUS_A
 			/*** PDR common header***/
 			{
 				0x00000000, //uint32_t record_handle
@@ -7289,9 +7289,9 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			SENSOR_NUM_INA238_VOLT_VBUS_A, //uint16_t sensor_id;
+			SENSOR_NUM_PDB1_VOLT_VBUS_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			SENSOR_NUM_INA238_VOLT_VBUS_A, //uint16_t entity_instance_number;
+			SENSOR_NUM_PDB1_VOLT_VBUS_A, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7332,10 +7332,10 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = SENSOR_NUM_INA238_VOLT_VBUS_A,
+			.num = SENSOR_NUM_PDB1_VOLT_VBUS_A,
 			.type = sensor_dev_ina238,
 			.port = I2C_BUS10,
-			.target_addr = INA238_ADDR_0,
+			.target_addr = PDB1_ADDR_0,
 			.offset = INA238_VBUS_OFFSET,
 			.access_checker = is_ina238_access,
 			.sample_count = SAMPLE_COUNT_DEFAULT,
@@ -7359,9 +7359,9 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			SENSOR_NUM_INA238_CURR_A, //uint16_t sensor_id;
+			SENSOR_NUM_PDB1_CURR_A, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			SENSOR_NUM_INA238_CURR_A, //uint16_t entity_instance_number;
+			SENSOR_NUM_PDB1_CURR_A, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -7402,10 +7402,10 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = SENSOR_NUM_INA238_CURR_A,
+			.num = SENSOR_NUM_PDB1_CURR_A,
 			.type = sensor_dev_ina238,
 			.port = I2C_BUS10,
-			.target_addr = INA238_ADDR_0,
+			.target_addr = PDB1_ADDR_0,
 			.offset = INA238_CUR_OFFSET,
 			.access_checker = is_ina238_access,
 			.sample_count = SAMPLE_COUNT_DEFAULT,
@@ -8089,9 +8089,9 @@ pldm_sensor_info plat_pldm_sensor_quick_vr_table[] = {
 
 			/***numeric sensor format***/
 			0x0000, //uint16_t PLDM_terminus_handle;
-			SENSOR_NUM_INA238_PWR_W, //uint16_t sensor_id;
+			SENSOR_NUM_PDB1_PWR_W, //uint16_t sensor_id;
 			0x0000, //uint16_t entity_type; //Need to check
-			SENSOR_NUM_INA238_PWR_W, //uint16_t entity_instance_number;
+			SENSOR_NUM_PDB1_PWR_W, //uint16_t entity_instance_number;
 			0x0000, //uint16_t container_id;
 			0x00, //uint8_t sensor_init; //Need to check
 			0x01, //uint8_t sensor_auxiliary_names_pdr;
@@ -8132,10 +8132,10 @@ pldm_sensor_info plat_pldm_sensor_quick_vr_table[] = {
 		},
 		.update_time = 0,
 		{
-			.num = SENSOR_NUM_INA238_PWR_W,
+			.num = SENSOR_NUM_PDB1_PWR_W,
 			.type = sensor_dev_ina238,
 			.port = I2C_BUS10,
-			.target_addr = INA238_ADDR_0,
+			.target_addr = PDB1_ADDR_0,
 			.offset = INA238_PWR_OFFSET,
 			.access_checker = is_ina238_access,
 			.sample_count = SAMPLE_COUNT_DEFAULT,
@@ -10797,11 +10797,11 @@ static PDR_sensor_auxiliary_names plat_ina238_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = SENSOR_NUM_INA238_VOLT_VBUS_A,
+		.sensor_id = SENSOR_NUM_PDB1_VOLT_VBUS_A,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
-		.sensorName = u"INA238_VOLT_VBUS_A",
+		.sensorName = u"PDB1_VOLT_VBUS_A",
 	},
 	{
 		{
@@ -10812,11 +10812,11 @@ static PDR_sensor_auxiliary_names plat_ina238_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = SENSOR_NUM_INA238_CURR_A,
+		.sensor_id = SENSOR_NUM_PDB1_CURR_A,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
-		.sensorName = u"INA238_CURR_A",
+		.sensorName = u"PDB1_CURR_A",
 	},
 	{
 		{
@@ -10827,11 +10827,11 @@ static PDR_sensor_auxiliary_names plat_ina238_pdr_sensor_aux_names_table[] = {
 			.data_length = 0x0000,
 		},
 		.terminus_handle = 0x0000,
-		.sensor_id = SENSOR_NUM_INA238_PWR_W,
+		.sensor_id = SENSOR_NUM_PDB1_PWR_W,
 		.sensor_count = 0x1,
 		.nameStringCount = 0x1,
 		.nameLanguageTag = "en",
-		.sensorName = u"INA238_PWR_W",
+		.sensorName = u"PDB1_PWR_W",
 	},
 };
 
@@ -11169,20 +11169,20 @@ PDR_numeric_sensor *get_pdr_numeric_sensor_by_sensor_id(uint8_t sensor_id)
 static uint8_t get_ina238_addr(void)
 {
 	if (get_asic_board_id() == ASIC_BOARD_ID_EVB)
-		return INA238_ADDR_EVB;
+		return PDB1_ADDR_EVB;
 
 	switch (get_mmc_slot()) {
 	case 0:
-		return INA238_ADDR_0;
+		return PDB1_ADDR_0;
 	case 1:
-		return INA238_ADDR_1;
+		return PDB1_ADDR_1;
 	case 2:
-		return INA238_ADDR_2;
+		return PDB1_ADDR_2;
 	case 3:
-		return INA238_ADDR_3;
+		return PDB1_ADDR_3;
 	default:
 		LOG_WRN("Invalid MMC slot, keep INA238 default address");
-		return INA238_ADDR_0;
+		return PDB1_ADDR_0;
 	}
 }
 
@@ -11285,9 +11285,9 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		for (uint8_t j = 0; j < count; j++) {
 			uint8_t num = vr_table[j].pldm_sensor_cfg.num;
 
-			if (num == SENSOR_NUM_INA238_VOLT_VBUS_A ||
-				num == SENSOR_NUM_INA238_CURR_A ||
-				num == SENSOR_NUM_INA238_PWR_W) {
+			if (num == SENSOR_NUM_PDB1_VOLT_VBUS_A ||
+				num == SENSOR_NUM_PDB1_CURR_A ||
+				num == SENSOR_NUM_PDB1_PWR_W) {
 				uint8_t old_addr = vr_table[j].pldm_sensor_cfg.target_addr;
 				vr_table[j].pldm_sensor_cfg.target_addr = ina238_addr;
 
@@ -11727,7 +11727,7 @@ void set_ina238_polling_rate_type(uint8_t type)
 	}
 
 	for (uint8_t i = 0; i < count; i++) {
-		if (vr_table[i].pldm_sensor_cfg.num == SENSOR_NUM_INA238_PWR_W) {
+		if (vr_table[i].pldm_sensor_cfg.num == SENSOR_NUM_PDB1_PWR_W) {
 			vr_table[i].poll_interval_ms = polling_interval_ms[type];
 			ina238_polling_rate_type = type;
 			LOG_INF("INA238 polling rate set successfully: type=%u, interval=%u ms",
