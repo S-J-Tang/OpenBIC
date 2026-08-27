@@ -1223,6 +1223,15 @@ bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm)
 		goto err;
 	}
 
+	if (is_perm) {
+		vr_vout_user_settings.vout[rail] = setting_millivolt;
+		if (!set_user_settings_vr_vout_to_eeprom(&vr_vout_user_settings,
+							 sizeof(vr_vout_user_settings))) {
+			LOG_ERR("set user settings vr vout to eeprom failed");
+			goto err;
+		}
+	}
+
 	voltage_command_get.vout[rail] = setting_millivolt;
 
 	ret = true;
