@@ -20,16 +20,14 @@ typedef struct _cpld_info_ {
 	bool is_fault_log; // if true, check the value is defaut or not
 	uint8_t is_fault_bit_map; //flag for fault
 
-	//flag for 1st polling
-	bool is_first_polling;
-
-	//flag for 1st polling after changing DC status
-	bool is_first_polling_after_dc_change;
+	/* is_send_bmc in electra */
+	bool send_to_bmc_flag; //flag for sending alert to bmc
 
 	//temp data for last polling
 	uint8_t last_polling_value;
 
-	bool (*status_changed_cb)(cpld_info *, uint8_t *);
+	bool (*status_changed_cb)(cpld_info *, uint8_t *current_cpld_value, uint8_t expected_val,
+				   uint8_t status_changed_bit);
 
 	uint8_t bit_check_mask; //bit check mask
 

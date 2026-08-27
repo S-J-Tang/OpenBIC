@@ -54,15 +54,16 @@ typedef struct _vr_error_callback_info_ {
 	uint8_t bit_mapping_vr_sensor_num[8];
 } vr_error_callback_info;
 
-bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value);
+bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value, uint8_t expected_val,
+			uint8_t status_changed_bit);
 
 // clang-format off
 cpld_info cpld_info_table[] = {
-	{ VR_POWER_FAULT_1_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
-	{ VR_POWER_FAULT_2_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
-	{ VR_POWER_FAULT_3_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
-	{ VR_POWER_FAULT_4_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
-	{ VR_POWER_FAULT_5_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
+	{ VR_POWER_FAULT_1_REG, 			0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
+	{ VR_POWER_FAULT_2_REG, 			0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
+	{ VR_POWER_FAULT_3_REG, 			0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
+	{ VR_POWER_FAULT_4_REG, 			0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
+	{ VR_POWER_FAULT_5_REG, 			0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
 };
 
 bool cpld_polling_enable_flag = true;
@@ -122,23 +123,13 @@ void reset_error_log_states(uint8_t err_type)
 	LOG_INF("Reset error_log_states with err_type = 0x%02x", err_type);
 }
 
-bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value)
+bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value, uint8_t expected_val,
+			uint8_t status_changed_bit)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cpld_info, false);
 	CHECK_NULL_ARG_WITH_RETURN(current_cpld_value, false);
 
-	// Get the expected value based on the current UBC status
-	uint8_t expected_val =
-		ubc_enabled_delayed_status ? cpld_info->dc_on_defaut : cpld_info->dc_off_defaut;
-
-	// Calculate current faults and new faults
-	uint8_t current_fault = (*current_cpld_value ^ expected_val) & cpld_info->bit_check_mask;
-	uint8_t status_changed_bit = current_fault ^ cpld_info->is_fault_bit_map;
-
-	if (!status_changed_bit)
-		return true; // No new faults, return early
-
-	LOG_DBG("CPLD register 0x%02X has status changed 0x%02X", cpld_info->cpld_offset,
+	LOG_INF("CPLD register 0x%02X has status changed 0x%02X", cpld_info->cpld_offset,
 		status_changed_bit);
 
 	// Iterate through each bit in status_changed_bit to handle the corresponding VR
@@ -152,23 +143,57 @@ bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value)
 
 		uint8_t bit_val = (*current_cpld_value & BIT(bit)) >> bit;
 		uint8_t expected_bit_val = (expected_val & BIT(bit)) >> bit;
-		LOG_DBG("cpld offset 0x%02X, bit %d, bit_val %d, expected_bit_val %d",
-			cpld_info->cpld_offset, bit, bit_val, expected_bit_val);
 
 		if (bit_val != expected_bit_val) {
 			LOG_ERR("Generated error code: 0x%04X (bit %d, CPLD offset 0x%02X)",
 				error_code, bit, cpld_info->cpld_offset);
-
-			// Perform additional operations if needed
-			LOG_DBG("ASSERT");
 			error_log_event(error_code, LOG_ASSERT);
 		} else {
-			LOG_DBG("DEASSERT");
+			LOG_INF("Deasserted error code: 0x%04X (bit %d, CPLD offset 0x%02X)",
+				error_code, bit, cpld_info->cpld_offset);
 			error_log_event(error_code, LOG_DEASSERT);
 		}
 	}
 
 	return true;
+}
+
+void poll_cpld_info_table(void)
+{
+	uint8_t data = 0;
+
+	for (size_t i = 0; i < ARRAY_SIZE(cpld_info_table); i++) {
+		if (!cpld_info_table[i].is_fault_log)
+			continue;
+
+		if (!plat_read_cpld(cpld_info_table[i].cpld_offset, &data, 1)) {
+			LOG_DBG("Failed to read CPLD register 0x%02X",
+				cpld_info_table[i].cpld_offset);
+			continue;
+		}
+
+		uint8_t expected_val = ubc_enabled_delayed_status ?
+						cpld_info_table[i].dc_on_defaut :
+						cpld_info_table[i].dc_off_defaut;
+
+		uint8_t new_fault_map = (data ^ expected_val) & cpld_info_table[i].bit_check_mask;
+
+		// get unrecorded fault bit map
+		uint8_t status_changed_bit = new_fault_map ^ cpld_info_table[i].is_fault_bit_map;
+
+		if (status_changed_bit) {
+			if (cpld_info_table[i].status_changed_cb) {
+				cpld_info_table[i].status_changed_cb(&cpld_info_table[i], &data,
+								      expected_val,
+								      status_changed_bit);
+			}
+			// waiting for cpld reg and check with bmc with Astrid fault
+
+			// update map
+			cpld_info_table[i].is_fault_bit_map = new_fault_map;
+			cpld_info_table[i].last_polling_value = data;
+		}
+	}
 }
 
 void poll_cpld_registers()
@@ -180,7 +205,7 @@ void poll_cpld_registers()
 			continue;
 		}
 
-		// TODO: poll cpld_info_table after trigger
+		poll_cpld_info_table();
 	}
 }
 
