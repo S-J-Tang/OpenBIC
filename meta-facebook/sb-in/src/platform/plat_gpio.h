@@ -42,7 +42,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO13) \
 	gpio_name_to_num(Reserve_GPIO14) \
 	gpio_name_to_num(Reserve_GPIO15) \
-	gpio_name_to_num(NUWA1_CHIP_STRAP1_MMC) \
+	gpio_name_to_num(Reserve_GPIO16) \
 	gpio_name_to_num(Reserve_GPIO17)
 #define name_gpio2	\
 	gpio_name_to_num(HAMSA_UART_MUX_SEL_R) \
@@ -93,7 +93,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO70) \
 	gpio_name_to_num(FM_OWL_E_JTAG_MUX_SEL_02) \
 	gpio_name_to_num(FM_OWL_E_JTAG_MUX_SEL_03) \
-	gpio_name_to_num(SPI_CRD_CS0_N) \
+	gpio_name_to_num(Reserve_GPIO73) \
 	gpio_name_to_num(Reserve_GPIO74) \
 	gpio_name_to_num(Reserve_GPIO75) \
 	gpio_name_to_num(Reserve_GPIO76) \
