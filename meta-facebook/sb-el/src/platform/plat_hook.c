@@ -253,6 +253,64 @@ ubc_vr_power_mapping_sensor ubc_vr_power_table[] = {
 };
 
 /* bootstrap */
+/* DBB bootstrap preset. Keep the values indexed by enum PLAT_STRAP_INDEX_E. */
+const uint8_t dbb_bootstrap_settings[STRAP_INDEX_EXCEPT_EVB_MAX] = {
+	[STRAP_INDEX_HAMSA_TEST_STRAP_R] = 0x00,
+	[STRAP_INDEX_HAMSA_LS_STRAP_0] = 0x01,
+	[STRAP_INDEX_HAMSA_LS_STRAP_1] = 0x00,
+	[STRAP_INDEX_HAMSA_CRM_STRAP_0] = 0x00,
+	[STRAP_INDEX_HAMSA_CRM_STRAP_1] = 0x00,
+	[STRAP_INDEX_HAMSA_MFIO7] = 0x01,
+	[STRAP_INDEX_HAMSA_MFIO9] = 0x00,
+	[STRAP_INDEX_HAMSA_MFIO11] = 0x00,
+	[STRAP_INDEX_HAMSA_MFIO17] = 0x00,
+	[STRAP_INDEX_HAMSA_MFIO18] = 0x01,
+	[STRAP_INDEX_HAMSA_CORE_TAP_CTRL_L] = 0x01,
+	[STRAP_INDEX_HAMSA_TRI_L] = 0x01,
+	[STRAP_INDEX_HAMSA_ATPG_MODE_L] = 0x01,
+	[STRAP_INDEX_HAMSA_DFT_TAP_EN_L] = 0x01,
+	[STRAP_INDEX_FM_JTAG_HAMSA_JTCE_0_3] = 0x01,
+	[STRAP_INDEX_NUWA0_TEST_STRAP] = 0x00,
+	[STRAP_INDEX_NUWA0_CRM_STRAP_0] = 0x00,
+	[STRAP_INDEX_NUWA0_CRM_STRAP_1] = 0x00,
+	[STRAP_INDEX_NUWA0_CHIP_STRAP_0] = 0x01,
+	[STRAP_INDEX_NUWA0_CHIP_STRAP_1] = 0x00,
+	[STRAP_INDEX_NUWA0_CORE_TAP_CTRL_PLD_L] = 0x01,
+	[STRAP_INDEX_NUWA0_TRI_L] = 0x01,
+	[STRAP_INDEX_NUWA0_ATPG_MODE_L] = 0x01,
+	[STRAP_INDEX_NUWA0_DFT_TAP_EN_PLD_L] = 0x01,
+	[STRAP_INDEX_NUWA1_TEST_STRAP] = 0x00,
+	[STRAP_INDEX_NUWA1_CRM_STRAP_0] = 0x00,
+	[STRAP_INDEX_NUWA1_CRM_STRAP_1] = 0x00,
+	[STRAP_INDEX_NUWA1_CHIP_STRAP_0] = 0x01,
+	[STRAP_INDEX_NUWA1_CHIP_STRAP_1] = 0x00,
+	[STRAP_INDEX_NUWA1_CORE_TAP_CTRL_PLD_L] = 0x01,
+	[STRAP_INDEX_NUWA1_TRI_L] = 0x01,
+	[STRAP_INDEX_NUWA1_ATPG_MODE_L] = 0x01,
+	[STRAP_INDEX_NUWA1_DFT_TAP_EN_PLD_L] = 0x01,
+	[STRAP_INDEX_FM_JTAG_NUWA0_JTCE_0_2] = 0x01,
+	[STRAP_INDEX_FM_JTAG_NUWA1_JTCE_0_2] = 0x01,
+	[STRAP_INDEX_PLD_OWL_E_DFT_TAP_EN_L] = 0x01,
+	[STRAP_INDEX_PLD_OWL_E_CORE_TAP_CTRL_L] = 0x01,
+	[STRAP_INDEX_PLD_OWL_E_PAD_TRI_L] = 0x01,
+	[STRAP_INDEX_PLD_OWL_E_ATPG_MODE_L] = 0x01,
+	[STRAP_INDEX_PLD_OWL_W_DFT_TAP_EN_L] = 0x01,
+	[STRAP_INDEX_PLD_OWL_W_CORE_TAP_CTRL_L] = 0x01,
+	[STRAP_INDEX_PLD_OWL_W_PAD_TRI_L] = 0x01,
+	[STRAP_INDEX_PLD_OWL_W_ATPG_MODE_L] = 0x01,
+	[STRAP_INDEX_OWL_E_JTAG_MUX_PLD_SEL_00] = 0x00,
+	[STRAP_INDEX_OWL_E_JTAG_MUX_PLD_SEL_01] = 0x00,
+	[STRAP_INDEX_OWL_E_JTAG_MUX_PLD_SEL_02] = 0x00,
+	[STRAP_INDEX_OWL_E_JTAG_MUX_PLD_SEL_03] = 0x00,
+	[STRAP_INDEX_OWL_W_JTAG_MUX_PLD_SEL_0_3] = 0x00,
+	[STRAP_INDEX_OWL_E_UART_MUX_PLD_SEL_0_2] = 0x00,
+	[STRAP_INDEX_OWL_W_UART_MUX_PLD_SEL_0_2] = 0x00,
+	[STRAP_INDEX_OWL_E_DVT_ENABLE] = 0x00,
+	[STRAP_INDEX_OWL_W_DVT_ENABLE] = 0x00,
+	[STRAP_INDEX_OWL_E_BOOT_SOURCE_0_7] = 0x00,
+	[STRAP_INDEX_OWL_W_BOOT_SOURCE_0_7] = 0x00,
+};
+
 bootstrap_mapping_register bootstrap_table[] = {
 	{ STRAP_INDEX_HAMSA_TEST_STRAP_R, STRAP_TYPE_CPLD, HAMSA_STRAP, "HAMSA_TEST_STRAP_R", 4, 1, 0x0,
 	  0x0, false },
@@ -2141,6 +2199,29 @@ bool bootstrap_default_settings_init(void)
 	}
 
 	return set_ioexp_val_to_bootstrap_table();
+}
+
+bool bootstrap_set_dbb(bool is_perm)
+{
+	LOG_INF("Setting DBB bootstrap config");
+
+	/* TODO: Temporary DBB override; remove after bootstrap defaults are finalized. */
+	for (int i = 0; i < ARRAY_SIZE(dbb_bootstrap_settings); i++) {
+		uint8_t change_setting_value = 0;
+
+		if (!set_bootstrap_table_and_user_settings(
+			    i, &change_setting_value, dbb_bootstrap_settings[i], is_perm, false)) {
+			LOG_ERR("Failed to set DBB bootstrap[%d]", i);
+			return false;
+		}
+
+		if (!set_bootstrap_val_to_device(i, change_setting_value)) {
+			LOG_ERR("Failed to write DBB bootstrap[%d]", i);
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static inline uint8_t get_val_from_strap_index(uint8_t strap_index)
