@@ -259,6 +259,7 @@ typedef struct bootstrap_user_settings_struct {
 	uint16_t user_setting_value[STRAP_INDEX_MAX];
 } bootstrap_user_settings_struct;
 extern bootstrap_user_settings_struct bootstrap_user_settings;
+extern const uint8_t dbb_bootstrap_settings[STRAP_INDEX_EXCEPT_EVB_MAX];
 
 extern vr_vout_range_user_settings_struct vout_range_user_settings;
 extern mp2971_init_arg mp2971_init_args[];
@@ -330,6 +331,7 @@ bool plat_get_alert_level_is_assert(void);
 
 // Bootstrape
 bool bootstrap_default_settings_init(void);
+bool bootstrap_set_dbb(bool is_perm);
 bool bootstrap_user_settings_init(void);
 bool temp_threshold_user_settings_get(void *temp_threshold_user_settings);
 bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting_value,
