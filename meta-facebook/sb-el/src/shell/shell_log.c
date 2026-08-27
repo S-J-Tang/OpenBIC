@@ -327,10 +327,10 @@ uint8_t normal_error_code_dump(const struct shell *shell, uint16_t err_code, uin
 			shell_print(shell, "read vr sensor status word(0x79):");
 			shell_print(shell, "\tlow  byte: 0x%02x", data[0]);
 			shell_print(shell, "\thigh byte: 0x%02x", data[1]);
-			shell_print(shell, "read vr sensor status vout(0x20): 0x%02x", data[2]);
-			shell_print(shell, "read vr sensor status iout(0x21): 0x%02x", data[3]);
-			shell_print(shell, "read vr sensor status input(0x22): 0x%02x", data[4]);
-			shell_print(shell, "read vr sensor status temperature(0x24): 0x%02x",
+			shell_print(shell, "read vr sensor status vout(0x7a): 0x%02x", data[2]);
+			shell_print(shell, "read vr sensor status iout(0x7b): 0x%02x", data[3]);
+			shell_print(shell, "read vr sensor status input(0x7c): 0x%02x", data[4]);
+			shell_print(shell, "read vr sensor status temperature(0x7d): 0x%02x",
 				    data[5]);
 			shell_print(shell, "read vr sensor status CML(0x7e): 0x%02x", data[6]);
 			err_data_len = 7;
