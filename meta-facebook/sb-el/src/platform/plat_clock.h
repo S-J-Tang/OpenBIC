@@ -13,15 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef PLAT_CLOCK_H
+#define PLAT_CLOCK_H
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "plat_i2c.h"
 
 #define CLK_BUF_U85_ADDR (0xCE >> 1)
 #define CLK_BUF_U690_ADDR (0xD8 >> 1)
 #define CLK_BUF_U88_ADDR (0xDE >> 1)
 #define CLK_GEN_100M_U86_ADDR (0x12 >> 1)
+#define CLK_U200045_I2C_ADDR (0x12 >> 1)
 #define CLK_GEN_312_5M_U618_ADDR (0x10 >> 1)
+
+/* Clock firmware update */
+#define I2C_BUS_RC38108 I2C_BUS3
+#define RC38108_I2C_ADDR 0x08
+
+#define CLK_U618_I2C_BUS I2C_BUS3
+#define CLK_U86_I2C_BUS I2C_BUS3
+#define CLK_U200045_I2C_BUS I2C_BUS2
+
+#define RC210XX_REG_DEVICE_STS 0x1E
+#define RC210XX_DEVICE_READY_BIT 1
+
+#define RC38108_REG_DEVICE_STS 0x0024
+#define RC38108_DEVICE_STS_READY_BIT 6
+#define RC38108_REG_APLL_STS 0x00BD
+#define RC38108_APLL_STS_LOCK_BIT 0
+
+#define RC38108_REG_GPIO1_CNFG 0x0248
+#define RC38108_REG_GPIO1_PAD_CNFG 0x024B
+
+#define RC38108_GPIO_FUNC_APLL_LOCK 0x1B
+#define RC38108_GPIO_FUNC_INPUT 0x20
+#define RC38108_PAD_OE_B_BIT 3
+
+#define RC38108_APLL_LOCK_POLL_COUNT 50
+#define RC38108_APLL_LOCK_POLL_INTERVAL_MS 100
 
 /* for error indexing  */
 #define CLK_100MHZ_ERR_IDX 0x1
@@ -38,6 +70,9 @@
 #define CLK_BUF2_100M_LOSB_PLD_EVENT 0x5F
 
 uint8_t clk_100mhz_get_lock_status_u86(void);
+uint8_t clk_100mhz_get_lock_status_u200045(void);
 uint8_t clk_312_5mhz_get_lock_status_u618(void);
 void check_clk_buf_loss_status(void);
 bool clock_get_error_data(uint16_t error_code, uint8_t *data);
+
+#endif

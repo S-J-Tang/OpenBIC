@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #include <shell/shell.h>
+#include "plat_clock.h"
 #ifndef PLAT_ARKE_POWER_H
 #define PLAT_ARKE_POWER_H
 typedef struct pwr_clock_compnt_mapping {
@@ -28,6 +29,7 @@ enum PWR_CLOCK_COMPONENT {
 	CLK_BUF_100M_U690,
 	CLK_BUF_100M_U88,
 	CLK_GEN_100M_U86,
+	CLK_GEN_100M_U200045,
 	CLK_COMPONENT_MAX
 };
 
@@ -82,7 +84,6 @@ enum power_good_status_type_for_steps_on {
 #define CLK_BUF_U85_ADDR (0xCE >> 1)
 #define CLK_BUF_U690_ADDR (0xD8 >> 1)
 #define CLK_BUF_U88_ADDR (0xDE >> 1)
-#define CLK_GEN_100M_U86_ADDR 0x9
 #define CLK_BUF_100M_WRITE_LOCK_CLEAR_LOS_EVENT_OFFSET 0x27
 #define CLK_GEN_LOSMON_EVENT_OFFSET 0x5a
 #define CLK_BUF_100M_BYTE_COUNT 0x7
@@ -109,5 +110,6 @@ typedef struct steps_on_struct {
 bool check_p3v3_p5v_pwrgd(void);
 void pwer_gd_get_status(const struct shell *shell);
 void clear_clock_status(const struct shell *shell, uint8_t clock_index);
+bool arke_power_control(uint8_t onoff);
 bool set_all_vout_command();
 #endif
