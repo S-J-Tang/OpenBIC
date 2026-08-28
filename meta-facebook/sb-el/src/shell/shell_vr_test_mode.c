@@ -184,14 +184,6 @@ static int get_vr_reg_to_int(uint8_t vr_rail, uint8_t reg)
 	return (int)val;
 }
 
-static uint8_t get_vr_uvp_reg(uint8_t vr_rail)
-{
-	uint8_t sensor_id = vr_rail_table[vr_rail].sensor_id;
-	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
-
-	return (cfg && cfg->type == sensor_dev_raa229140a) ? VR_RAA229140A_UVP_REG : VR_UVP_REG;
-}
-
 void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!cmd_is_dc_on(shell))
@@ -209,13 +201,8 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 		for (uint8_t i = 0; i < VR_RAIL_E_P3V3_OSFP_VOLT_V; i++) {
 			uint8_t *rail_name = NULL;
 			if (vr_rail_name_get((uint8_t)i, &rail_name)) {
-				uint16_t uvp = 0;
-				uint16_t ovp = 0;
-				if (get_vr_fixed_uvp_ovp_enable(i)) {
-					uvp = get_vr_reg_to_int(i, get_vr_uvp_reg(i));
-					ovp = get_vr_reg_to_int(i, VR_OVP_REG);
-				} else if (!get_vr_offset_uvp_ovp(i, &uvp, &ovp))
-					shell_error(shell, "get vr %d uvp/ovp fail", i);
+				int uvp = get_vr_reg_to_int(i, VR_UVP_REG);
+				int ovp = get_vr_reg_to_int(i, VR_OVP_REG);
 
 				shell_print(
 					shell,

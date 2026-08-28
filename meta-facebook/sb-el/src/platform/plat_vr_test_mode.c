@@ -258,7 +258,6 @@ static bool encode_vr_test_mode_reg(uint8_t rail, uint8_t reg, uint16_t val, uin
 	case VR_SLOW_OCP_REG:
 		return linear11_from_scaled(val, 10, raw); // table unit: 0.1 A
 	case VR_UVP_REG:
-		return linear11_from_scaled(val, 1000, raw); // table unit: mV
 	case VR_OVP_REG:
 	case VR_VOUT_MAX_REG:
 		*raw = linear16u_from_scaled(val, 1000, 9); // table unit: mV, exponent -9
@@ -273,12 +272,8 @@ bool get_vr_test_mode_reg_value(uint8_t rail, uint8_t reg, uint16_t *val)
 	CHECK_NULL_ARG_WITH_RETURN(val, false);
 
 	bool is_raa229140a = is_raa229140a_rail(rail);
-	uint8_t logical_reg = (is_raa229140a && reg == VR_RAA229140A_UVP_REG) ? VR_UVP_REG : reg;
-	uint8_t command =
-		(is_raa229140a && logical_reg == VR_UVP_REG) ? VR_RAA229140A_UVP_REG : reg;
 	uint8_t data[2] = { 0 };
-	if (!get_raw_data_from_sensor_id(vr_rail_table[rail].sensor_id, command, data,
-					 sizeof(data)))
+	if (!get_raw_data_from_sensor_id(vr_rail_table[rail].sensor_id, reg, data, sizeof(data)))
 		return false;
 
 	uint16_t raw = data[0] | (data[1] << 8);
@@ -287,14 +282,12 @@ bool get_vr_test_mode_reg_value(uint8_t rail, uint8_t reg, uint16_t *val)
 		return true;
 	}
 
-	switch (logical_reg) {
+	switch (reg) {
 	case VR_FAST_OCP_REG:
 	case VR_SLOW_OCP_REG:
 		*val = linear11_to_scaled(raw, 10); // return unit: 0.1 A
 		return true;
 	case VR_UVP_REG:
-		*val = linear11_to_scaled(raw, 1000); // return unit: mV
-		return true;
 	case VR_OVP_REG:
 	case VR_VOUT_MAX_REG:
 		*val = linear16u_to_scaled(raw, 1000, 9); // return unit: mV, exponent -9
@@ -454,13 +447,9 @@ static bool set_vr_test_mode_reg(bool is_default)
 
 		for (size_t j = 0; j < ARRAY_SIZE(regs); j++) {
 			uint16_t raw = 0;
-			uint8_t command =
-				(is_raa229140a_rail(cfg->vr_rail) && regs[j].offset == VR_UVP_REG) ?
-					VR_RAA229140A_UVP_REG :
-					regs[j].offset;
 			if (!encode_vr_test_mode_reg(cfg->vr_rail, regs[j].offset, regs[j].val,
 						     &raw) ||
-			    !update_vr_reg(cfg->vr_rail, command, raw)) {
+			    !update_vr_reg(cfg->vr_rail, regs[j].offset, raw)) {
 				ret = false;
 				LOG_ERR("VR rail %x set %s to %d failed", cfg->vr_rail,
 					regs[j].name, regs[j].val);
