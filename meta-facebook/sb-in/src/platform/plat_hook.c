@@ -29,25 +29,37 @@
 
 LOG_MODULE_REGISTER(plat_hook);
 
-static struct k_mutex vr_mutex[VR_MAX_NUM];
+static struct k_mutex vr_mutex[VR_INDEX_MAX];
 
 #define EEPROM_MAX_WRITE_TIME 5 // the BR24G512 eeprom max write time is 3.5 ms
 
+/* one {mutex, page} slot per (VR chip, PMBus page) pair; stride is VR_PAGE_NUM,
+ * keep in sync with the VR_INDEX_E_x * VR_PAGE_NUM [+ page] indexing in plat_pldm_sensor.c
+ */
+#define VR_PRE_PROC_ARG_ENTRY(n)                                                                 \
+	{ .mutex = vr_mutex + (n), .vr_page = 0x0 }, { .mutex = vr_mutex + (n), .vr_page = 0x1 }, \
+	{ .mutex = vr_mutex + (n), .vr_page = 0x2 },
+
 vr_pre_proc_arg vr_pre_read_args[] = {
-	{ .mutex = vr_mutex + 0, .vr_page = 0x0 },  { .mutex = vr_mutex + 0, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 1, .vr_page = 0x0 },  { .mutex = vr_mutex + 1, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 2, .vr_page = 0x0 },  { .mutex = vr_mutex + 2, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 3, .vr_page = 0x0 },  { .mutex = vr_mutex + 3, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 4, .vr_page = 0x0 },  { .mutex = vr_mutex + 4, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 5, .vr_page = 0x0 },  { .mutex = vr_mutex + 5, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 6, .vr_page = 0x0 },  { .mutex = vr_mutex + 6, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 7, .vr_page = 0x0 },  { .mutex = vr_mutex + 7, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 8, .vr_page = 0x0 },  { .mutex = vr_mutex + 8, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 9, .vr_page = 0x0 },  { .mutex = vr_mutex + 9, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 10, .vr_page = 0x0 }, { .mutex = vr_mutex + 10, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 11, .vr_page = 0x0 }, { .mutex = vr_mutex + 11, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 12, .vr_page = 0x0 }, { .mutex = vr_mutex + 12, .vr_page = 0x1 },
+	VR_PRE_PROC_ARG_ENTRY(0)  VR_PRE_PROC_ARG_ENTRY(1)  VR_PRE_PROC_ARG_ENTRY(2)
+	VR_PRE_PROC_ARG_ENTRY(3)  VR_PRE_PROC_ARG_ENTRY(4)  VR_PRE_PROC_ARG_ENTRY(5)
+	VR_PRE_PROC_ARG_ENTRY(6)  VR_PRE_PROC_ARG_ENTRY(7)  VR_PRE_PROC_ARG_ENTRY(8)
+	VR_PRE_PROC_ARG_ENTRY(9)  VR_PRE_PROC_ARG_ENTRY(10) VR_PRE_PROC_ARG_ENTRY(11)
+	VR_PRE_PROC_ARG_ENTRY(12)
 };
+
+#undef VR_PRE_PROC_ARG_ENTRY
+
+BUILD_ASSERT(ARRAY_SIZE(vr_pre_read_args) == VR_INDEX_MAX * VR_PAGE_NUM,
+	     "vr_pre_read_args size must match VR_INDEX_MAX * VR_PAGE_NUM");
+
+void vr_mutex_init(void)
+{
+	for (uint8_t i = 0; i < ARRAY_SIZE(vr_mutex); i++) {
+		k_mutex_init(vr_mutex + i);
+		LOG_DBG("vr_mutex[%d] %p init", i, vr_mutex + i);
+	}
+}
 
 void *vr_mutex_get(enum VR_INDEX_E vr_index)
 {
@@ -134,86 +146,57 @@ bool is_mb_dc_on()
 	return gpio_get(RST_ASTRID_PWR_ON_PLD_R1_N);
 }
 
-void vr_mutex_init(void)
-{
-	for (uint8_t i = 0; i < ARRAY_SIZE(vr_mutex); i++) {
-		k_mutex_init(vr_mutex + i);
-		LOG_DBG("vr_mutex[%d] %p init", i, vr_mutex + i);
-	}
-}
-
-/* the order is following enum VR_RAIL_E */
-vr_mapping_sensor vr_rail_table[] = {
-	{ VR_RAIL_E_ASIC_P0V75_NUWA0_VDD, SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_VOLT_V,
-	  "CB_ASIC_P0V75_NUWA0_VDD", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V75_NUWA1_VDD, SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_VOLT_V,
-	  "CB_ASIC_P0V75_NUWA1_VDD", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V9_OWL_E_TRVDD, SENSOR_NUM_ASIC_P0V9_OWL_E_TRVDD_VOLT_V,
-	  "CB_ASIC_P0V9_OWL_E_TRVDD", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V75_OWL_E_TRVDD, SENSOR_NUM_ASIC_P0V75_OWL_E_TRVDD_VOLT_V,
-	  "CB_ASIC_P0V75_OWL_E_TRVDD", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V75_MAX_M_VDD, SENSOR_NUM_ASIC_P0V75_MAX_M_VDD_VOLT_V,
-	  "CB_ASIC_P0V75_MAX_M_VDD", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM1357, SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM1357_VOLT_V,
-	  "CB_ASIC_P0V75_VDDPHY_HBM1357", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V75_OWL_E_VDD, SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_VOLT_V,
-	  "CB_ASIC_P0V75_OWL_E_VDD", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V4_VDDQL_HBM1357, SENSOR_NUM_ASIC_P0V4_VDDQL_HBM1357_VOLT_V,
-	  "CB_ASIC_P0V4_VDDQL_HBM1357", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P1V05_VDDQC_HBM1357, SENSOR_NUM_ASIC_P1V05_VDDQC_HBM1357_VOLT_V,
-	  "CB_ASIC_P1V05_VDDQC_HBM1357", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P1V8_VPP_HBM1357, SENSOR_NUM_ASIC_P1V8_VPP_HBM1357_VOLT_V,
-	  "CB_ASIC_P1V8_VPP_HBM1357", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V9_VDDQ_HBM1357, SENSOR_NUM_ASIC_P0V9_VDDQ_HBM1357_VOLT_V,
-	  "CB_ASIC_P0V9_VDDQ_HBM1357", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V85_HAMSA_VDD, SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_VOLT_V,
-	  "CB_ASIC_P0V85_HAMSA_VDD", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V75_MAX_N_VDD, SENSOR_NUM_ASIC_P0V75_MAX_N_VDD_VOLT_V,
-	  "CB_ASIC_P0V75_MAX_N_VDD", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V8_HAMSA_AVDD_PCIE, SENSOR_NUM_ASIC_P0V8_HAMSA_AVDD_PCIE_VOLT_V,
-	  "CB_ASIC_P0V8_HAMSA_AVDD_PCIE", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V9_VDDQ_HBM0246, SENSOR_NUM_ASIC_P0V9_VDDQ_HBM0246_VOLT_V,
-	  "CB_ASIC_P0V9_VDDQ_HBM0246", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE, SENSOR_NUM_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_VOLT_V,
-	  "CB_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P1V05_VDDQC_HBM0246, SENSOR_NUM_ASIC_P1V05_VDDQC_HBM0246_VOLT_V,
-	  "CB_ASIC_P1V05_VDDQC_HBM0246", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P1V8_VPP_HBM0246, SENSOR_NUM_ASIC_P1V8_VPP_HBM0246_VOLT_V,
-	  "CB_ASIC_P1V8_VPP_HBM0246", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V4_VDDQL_HBM0246, SENSOR_NUM_ASIC_P0V4_VDDQL_HBM0246_VOLT_V,
-	  "CB_ASIC_P0V4_VDDQL_HBM0246", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM0246, SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM0246_VOLT_V,
-	  "CB_ASIC_P0V75_VDDPHY_HBM0246", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V75_OWL_W_VDD, SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_VOLT_V,
-	  "CB_ASIC_P0V75_OWL_W_VDD", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V75_MAX_S_VDD, SENSOR_NUM_ASIC_P0V75_MAX_S_VDD_VOLT_V,
-	  "CB_ASIC_P0V75_MAX_S_VDD", 0xffffffff },
-
-	{ VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD, SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_VOLT_V,
-	  "CB_ASIC_P0V9_OWL_W_TRVDD", 0xffffffff },
-	{ VR_RAIL_E_ASIC_P0V75_OWL_W_TRVDD, SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_VOLT_V,
-	  "CB_ASIC_P0V75_OWL_W_TRVDD", 0xffffffff },
-};
-
-vr_mapping_status vr_status_table[] = {
-	{ VR_STAUS_E_STATUS_BYTE, PMBUS_STATUS_BYTE, "STATUS_BYTE" },
-	{ VR_STAUS_E_STATUS_WORD, PMBUS_STATUS_WORD, "STATUS_WORD" },
-	{ VR_STAUS_E_STATUS_VOUT, PMBUS_STATUS_VOUT, "STATUS_VOUT" },
-	{ VR_STAUS_E_STATUS_IOUT, PMBUS_STATUS_IOUT, "STATUS_IOUT" },
-	{ VR_STAUS_E_STATUS_INPUT, PMBUS_STATUS_INPUT, "STATUS_INPUT" },
-	{ VR_STAUS_E_STATUS_TEMPERATURE, PMBUS_STATUS_TEMPERATURE, "STATUS_TEMPERATURE" },
-	{ VR_STAUS_E_STATUS_CML, PMBUS_STATUS_CML, "STATUS_CML_PMBUS" },
+/**************************************************************************************/
+/******************************** VR_RAIL_INDEX_TABLE *********************************/
+/**************************************************************************************/
+//the order is following enum VR_RAIL_E
+static vr_mapping_sensor vr_rail_table[] = {
+	//PU1: 
+	{ SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_VOLT_V, "ASIC_P0V9_OWL_W_TRVDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_VOLT_V, "ASIC_P0V75_OWL_W_TRVDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P1V05_VDDC_HBM0145_VOLT_V, "ASIC_P1V05_VDDC_HBM0145_VOLT_V", 0xffffffff },
+	//PU2: 
+	{ SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_VOLT_V, "ASIC_P0V75_OWL_W_VDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V8_MAX_S_VDD_VOLT_V, "ASIC_P0V8_MAX_S_VDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V4_VDDQL_HBM0145_VOLT_V, "ASIC_P0V4_VDDQL_HBM0145_VOLT_V", 0xffffffff },
+	//PU3: 
+	{ SENSOR_NUM_ASIC_P0V75_MAX_N_VDD_VOLT_V, "ASIC_P0V75_MAX_N_VDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM0145_VOLT_V, "ASIC_P0V75_VDDPHY_HBM0145_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V9_VDDQ_HBM0145_VOLT_V, "ASIC_P0V9_VDDQ_HBM0145_VOLT_V", 0xffffffff },
+	//PU4: 
+	{ SENSOR_NUM_ASIC_P0V9_OWL_E_TRVDD_VOLT_V, "ASIC_P0V9_OWL_E_TRVDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_OWL_E_TRVDD_VOLT_V, "ASIC_P0V75_OWL_E_TRVDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P1V05_VDDC_HBM2367_VOLT_V, "ASIC_P1V05_VDDC_HBM2367_VOLT_V", 0xffffffff },
+	//PU5: 
+	{ SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_VOLT_V, "ASIC_P0V75_OWL_E_VDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V8_MAX_M_VDD_VOLT_V, "ASIC_P0V8_MAX_M_VDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V4_VDDQL_HBM2367_VOLT_V, "ASIC_P0V4_VDDQL_HBM2367_VOLT_V", 0xffffffff },
+	//PU6: 
+	{ SENSOR_NUM_ASIC_P0V83_HAMSA_AVDD_PCIE_VOLT_V, "ASIC_P0V83_HAMSA_AVDD_PCIE_VOLT_V",
+	  0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM2367_VOLT_V, "ASIC_P0V75_VDDPHY_HBM2367_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V9_VDDQ_HBM2367_VOLT_V, "ASIC_P0V9_VDDQ_HBM2367_VOLT_V", 0xffffffff },
+	//PU7: 
+	{ SENSOR_NUM_ASIC_P0V75_ZORA11_VDDL_VOLT_V, "ASIC_P0V75_ZORA11_VDDL_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_ZORA11_VDDH_VOLT_V, "ASIC_P0V75_ZORA11_VDDH_VOLT_V", 0xffffffff },
+	//PU8: 
+	{ SENSOR_NUM_ASIC_P0V75_ZORA10_VDDL_VOLT_V, "ASIC_P0V75_ZORA10_VDDL_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_ZORA10_VDDH_VOLT_V, "ASIC_P0V75_ZORA10_VDDH_VOLT_V", 0xffffffff },
+	//PU9: 
+	{ SENSOR_NUM_ASIC_P0V75_ZORA01_VDDL_VOLT_V, "ASIC_P0V75_ZORA01_VDDL_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_ZORA01_VDDH_VOLT_V, "ASIC_P0V75_ZORA01_VDDH_VOLT_V", 0xffffffff },
+	//PU10: 
+	{ SENSOR_NUM_ASIC_P0V75_ZORA00_VDDL_VOLT_V, "ASIC_P0V75_ZORA00_VDDL_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V75_ZORA00_VDDH_VOLT_V, "ASIC_P0V75_ZORA00_VDDH_VOLT_V", 0xffffffff },
+	//PU11: 
+	{ SENSOR_NUM_ASIC_P1V8_VPP_HBM0145_VOLT_V, "ASIC_P1V8_VPP_HBM0145_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P1V8_VOLT_V, "ASIC_P1V8_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P1V8_VPP_HBM2367_VOLT_V, "ASIC_P1V8_VPP_HBM2367_VOLT_V", 0xffffffff },
+	//PU624: 
+	{ SENSOR_NUM_ASIC_P0V75_MAX_EW2_VDD_VOLT_V, "ASIC_P0V75_MAX_EW2_VDD_VOLT_V", 0xffffffff },
+	//PU626: 
+	{ SENSOR_NUM_ASIC_P0V75_MAX_EW1_VDD_VOLT_V, "ASIC_P0V75_MAX_EW1_VDD_VOLT_V", 0xffffffff },
+	{ SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_VOLT_V, "ASIC_P0V85_HAMSA_VDD_VOLT_V", 0xffffffff },
 };
 
 bool vr_rail_name_get(uint8_t rail, uint8_t **name)
@@ -226,19 +209,6 @@ bool vr_rail_name_get(uint8_t rail, uint8_t **name)
 	}
 
 	*name = (uint8_t *)vr_rail_table[rail].sensor_name;
-	return true;
-}
-
-bool vr_status_name_get(uint8_t rail, uint8_t **name)
-{
-	CHECK_NULL_ARG_WITH_RETURN(name, false);
-
-	if (rail >= VR_STAUS_E_MAX) {
-		*name = NULL;
-		return false;
-	}
-
-	*name = (uint8_t *)vr_status_table[rail].vr_status_name;
 	return true;
 }
 
@@ -256,6 +226,44 @@ bool vr_rail_enum_get(uint8_t *name, uint8_t *num)
 
 	LOG_ERR("invalid rail name %s", name);
 	return false;
+}
+
+bool vr_rail_sensor_id_get(uint8_t rail, uint8_t *sensor_id)
+{
+	CHECK_NULL_ARG_WITH_RETURN(sensor_id, false);
+
+	if (rail >= VR_RAIL_E_MAX) {
+		return false;
+	}
+
+	*sensor_id = vr_rail_table[rail].sensor_id;
+	return true;
+}
+
+/**************************************************************************************/
+/********************************** VR_STATUS_TABLE ***********************************/
+/**************************************************************************************/
+static vr_mapping_status vr_status_table[] = {
+	{ PMBUS_STATUS_BYTE, "STATUS_BYTE" },
+	{ PMBUS_STATUS_WORD, "STATUS_WORD" },
+	{ PMBUS_STATUS_VOUT, "STATUS_VOUT" },
+	{ PMBUS_STATUS_IOUT, "STATUS_IOUT" },
+	{ PMBUS_STATUS_INPUT, "STATUS_INPUT" },
+	{ PMBUS_STATUS_TEMPERATURE, "STATUS_TEMPERATURE" },
+	{ PMBUS_STATUS_CML, "STATUS_CML_PMBUS" },
+};
+
+bool vr_status_name_get(uint8_t rail, uint8_t **name)
+{
+	CHECK_NULL_ARG_WITH_RETURN(name, false);
+
+	if (rail >= VR_STAUS_E_MAX) {
+		*name = NULL;
+		return false;
+	}
+
+	*name = (uint8_t *)vr_status_table[rail].vr_status_name;
+	return true;
 }
 
 bool vr_status_enum_get(uint8_t *name, uint8_t *num)
@@ -279,7 +287,11 @@ bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_statu
 	CHECK_NULL_ARG_WITH_RETURN(vr_status, false);
 
 	bool ret = false;
-	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+	uint8_t sensor_id;
+	if (!vr_rail_sensor_id_get(rail, &sensor_id)) {
+		LOG_ERR("invalid vr rail %d", rail);
+		return false;
+	}
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 	CHECK_NULL_ARG_WITH_RETURN(cfg, ret);
 
@@ -332,7 +344,11 @@ err:
 bool plat_clear_vr_status(uint8_t rail)
 {
 	bool ret = false;
-	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+	uint8_t sensor_id;
+	if (!vr_rail_sensor_id_get(rail, &sensor_id)) {
+		LOG_ERR("invalid vr rail %d", rail);
+		return false;
+	}
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 
 	if (cfg == NULL) {
@@ -382,6 +398,7 @@ err:
 	}
 	return ret;
 }
+/**************************************************************************************/
 
 bool post_sensor_reading_hook_func(uint8_t sensor_number)
 {

@@ -19,8 +19,8 @@
 
 #include "sensor.h"
 
-#define VR_MAX_NUM 12
 #define VR_MUTEX_LOCK_TIMEOUT_MS 1000
+#define VR_PAGE_NUM 3 // PMBus pages reserved per VR chip in vr_pre_read_args
 
 #include "plat_pldm_sensor.h"
 
@@ -42,30 +42,51 @@ enum VR_INDEX_E {
 };
 
 enum VR_RAIL_E {
-	VR_RAIL_E_ASIC_P0V75_NUWA0_VDD = 0,
-	VR_RAIL_E_ASIC_P0V75_NUWA1_VDD,
+	//PU1
+	VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD = 0,
+	VR_RAIL_E_ASIC_P0V75_OWL_W_TRVDD,
+	VR_RAIL_E_ASIC_P1V05_VDDC_HBM0145,
+	//PU2
+	VR_RAIL_E_ASIC_P0V75_OWL_W_VDD,
+	VR_RAIL_E_ASIC_P0V8_MAX_S_VDD,
+	VR_RAIL_E_ASIC_P0V4_VDDQL_HBM0145,
+	//PU3
+	VR_RAIL_E_ASIC_P0V75_MAX_N_VDD,
+	VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM0145,
+	VR_RAIL_E_ASIC_P0V9_VDDQ_HBM0145,
+	//PU4
 	VR_RAIL_E_ASIC_P0V9_OWL_E_TRVDD,
 	VR_RAIL_E_ASIC_P0V75_OWL_E_TRVDD,
-	VR_RAIL_E_ASIC_P0V75_MAX_M_VDD,
-	VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM1357,
+	VR_RAIL_E_ASIC_P1V05_VDDC_HBM2367,
+	//PU5
 	VR_RAIL_E_ASIC_P0V75_OWL_E_VDD,
-	VR_RAIL_E_ASIC_P0V4_VDDQL_HBM1357,
-	VR_RAIL_E_ASIC_P1V05_VDDQC_HBM1357,
-	VR_RAIL_E_ASIC_P1V8_VPP_HBM1357,
-	VR_RAIL_E_ASIC_P0V9_VDDQ_HBM1357,
+	VR_RAIL_E_ASIC_P0V8_MAX_M_VDD,
+	VR_RAIL_E_ASIC_P0V4_VDDQL_HBM2367,
+	//PU6
+	VR_RAIL_E_ASIC_P0V83_HAMSA_AVDD_PCIE,
+	VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM2367,
+	VR_RAIL_E_ASIC_P0V9_VDDQ_HBM2367,
+	//PU7
+	VR_RAIL_E_ASIC_P0V75_ZORA11_VDDL,
+	VR_RAIL_E_ASIC_P0V75_ZORA11_VDDH,
+	//PU8
+	VR_RAIL_E_ASIC_P0V75_ZORA10_VDDL,
+	VR_RAIL_E_ASIC_P0V75_ZORA10_VDDH,
+	//PU9
+	VR_RAIL_E_ASIC_P0V75_ZORA01_VDDL,
+	VR_RAIL_E_ASIC_P0V75_ZORA01_VDDH,
+	//PU10
+	VR_RAIL_E_ASIC_P0V75_ZORA00_VDDL,
+	VR_RAIL_E_ASIC_P0V75_ZORA00_VDDH,
+	//PU11
+	VR_RAIL_E_ASIC_P1V8_VPP_HBM0145,
+	VR_RAIL_E_ASIC_P1V8,
+	VR_RAIL_E_ASIC_P1V8_VPP_HBM2367,
+	//PU624
+	VR_RAIL_E_ASIC_P0V75_MAX_EW2_VDD,
+	//PU626
+	VR_RAIL_E_ASIC_P0V75_MAX_EW1_VDD,
 	VR_RAIL_E_ASIC_P0V85_HAMSA_VDD,
-	VR_RAIL_E_ASIC_P0V75_MAX_N_VDD,
-	VR_RAIL_E_ASIC_P0V8_HAMSA_AVDD_PCIE,
-	VR_RAIL_E_ASIC_P0V9_VDDQ_HBM0246,
-	VR_RAIL_E_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE,
-	VR_RAIL_E_ASIC_P1V05_VDDQC_HBM0246,
-	VR_RAIL_E_ASIC_P1V8_VPP_HBM0246,
-	VR_RAIL_E_ASIC_P0V4_VDDQL_HBM0246,
-	VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM0246,
-	VR_RAIL_E_ASIC_P0V75_OWL_W_VDD,
-	VR_RAIL_E_ASIC_P0V75_MAX_S_VDD,
-	VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD,
-	VR_RAIL_E_ASIC_P0V75_OWL_W_TRVDD,
 	VR_RAIL_E_MAX,
 };
 
@@ -111,7 +132,6 @@ enum VR_STAUS_E {
 };
 
 typedef struct vr_mapping_status {
-	uint8_t index;
 	uint16_t pmbus_reg;
 	uint8_t *vr_status_name;
 } vr_mapping_status;
@@ -122,7 +142,6 @@ typedef struct _vr_pre_proc_arg {
 } vr_pre_proc_arg;
 
 typedef struct vr_mapping_sensor {
-	uint8_t index;
 	uint8_t sensor_id;
 	uint8_t *sensor_name;
 	int peak_value;
@@ -134,6 +153,7 @@ bool is_mb_dc_on();
 void *vr_mutex_get(enum VR_INDEX_E vr_index);
 void vr_mutex_init(void);
 bool vr_rail_name_get(uint8_t rail, uint8_t **name);
+bool vr_rail_sensor_id_get(uint8_t rail, uint8_t *sensor_id);
 bool vr_status_name_get(uint8_t rail, uint8_t **name);
 bool vr_rail_enum_get(uint8_t *name, uint8_t *num);
 bool vr_status_enum_get(uint8_t *name, uint8_t *num);
