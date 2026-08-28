@@ -23,6 +23,7 @@
 #include "plat_i2c.h"
 #include <shell/shell.h>
 #include "plat_clock.h"
+#include "plat_class.h"
 
 LOG_MODULE_REGISTER(clock_shell);
 bool clock_name_get(uint8_t index, uint8_t **name);
@@ -30,7 +31,6 @@ bool clock_name_get(uint8_t index, uint8_t **name);
 #define CLK_BUF_U85_ADDR (0xCE >> 1)
 #define CLK_BUF_U690_ADDR (0xD8 >> 1)
 #define CLK_BUF_U88_ADDR (0xDE >> 1)
-#define CLK_GEN_100M_U86_ADDR (0x12 >> 1)
 #define CLK_GEN_312_5M_U618_ADDR (0x10 >> 1)
 
 #define CLK_BUF_100M_WRITE_LOCK_CLEAR_LOS_EVENT_OFFSET 0x27
@@ -44,6 +44,7 @@ enum CLOCK_COMPONENT {
 	CLK_BUF_100M_U88,
 	CLK_GEN_100M_U86,
 	CLK_GEN_312_5M_U618,
+	CLK_GEN_100M_U200045,
 	CLK_COMPONENT_MAX
 };
 
@@ -60,14 +61,15 @@ clock_compnt_mapping clock_compnt_mapping_table[] = {
 	{ CLK_BUF_100M_U88, CLK_BUF_U88_ADDR, I2C_BUS3, "CLK_BUF_100M_U88" },
 	{ CLK_GEN_100M_U86, CLK_GEN_100M_U86_ADDR, I2C_BUS3, "CLK_GEN_100M_U86" },
 	{ CLK_GEN_312_5M_U618, CLK_GEN_312_5M_U618_ADDR, I2C_BUS3, "CLK_GEN_312_5M_U618" },
+	{ CLK_GEN_100M_U200045, CLK_U200045_I2C_ADDR, I2C_BUS2, "CLK_GEN_100M_U200045" },
 };
-
-
 
 int find_clock_address_and_bus_by_clock_name_index(uint8_t clock_index, uint8_t *addr, uint8_t *bus)
 {
 	CHECK_NULL_ARG_WITH_RETURN(addr, -1);
 	CHECK_NULL_ARG_WITH_RETURN(bus, -1);
+	if ((clock_index == CLK_GEN_100M_U200045) && (get_asic_board_id() != ASIC_BOARD_ID_EVB))
+		return -1;
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(clock_compnt_mapping_table); i++) {
 		if (clock_compnt_mapping_table[i].clock_name_index == clock_index) {
@@ -242,24 +244,35 @@ void handle_single_clock_status(const struct shell *shell, enum CLOCK_COMPONENT 
 
 	switch (clock_index) {
 	/* CLK GEN read APLL lock status */
-	case CLK_GEN_100M_U86:{
+	case CLK_GEN_100M_U86: {
 		uint8_t lock_status_100 = clk_100mhz_get_lock_status_u86();
-		if (lock_status_100 == 0xFF) 
+		if (lock_status_100 == 0xFF)
 			shell_error(shell, "Failed to get 100MHz clock(U86) lock status");
 		else if (lock_status_100 == 0)
-			shell_print(shell, "APLL lock status,  value = %d (unlock)", lock_status_100);
+			shell_print(shell, "APLL lock status,  value = %d (unlock)",
+				    lock_status_100);
 		else
 			shell_print(shell, "APLL lock status,  value = %d (lock)", lock_status_100);
 		return;
 	}
-	case CLK_GEN_312_5M_U618:{
+	case CLK_GEN_312_5M_U618: {
 		uint8_t lock_status_312 = clk_312_5mhz_get_lock_status_u618();
-		if (lock_status_312 == 0xFF) 
+		if (lock_status_312 == 0xFF)
 			shell_error(shell, "Failed to get 312.5MHz clock(U618) lock status");
 		else if (lock_status_312 == 0)
-			shell_print(shell, "APLL lock status,  value = %d (unlock)", lock_status_312);
+			shell_print(shell, "APLL lock status,  value = %d (unlock)",
+				    lock_status_312);
 		else
 			shell_print(shell, "APLL lock status,  value = %d (lock)", lock_status_312);
+		return;
+	}
+	case CLK_GEN_100M_U200045: {
+		uint8_t lock_status = clk_100mhz_get_lock_status_u200045();
+		if (lock_status == 0xFF)
+			shell_error(shell, "Failed to get 100MHz clock(U200045) lock status");
+		else
+			shell_print(shell, "APLL lock status, value = %d (%s)", lock_status,
+				    lock_status ? "lock" : "unlock");
 		return;
 	}
 	/* CLK BUF read WRITE_LOCK_CLEAR_LOS_EVENT register */
@@ -387,6 +400,7 @@ void cmd_clear_clock_status(const struct shell *shell, size_t argc, char **argv)
 		break;
 	case CLK_GEN_100M_U86:
 	case CLK_GEN_312_5M_U618:
+	case CLK_GEN_100M_U200045:
 		shell_print(shell, "clock clear %s not support!", argv[1]);
 		break;
 
@@ -408,6 +422,63 @@ bool clock_name_get(uint8_t index, uint8_t **name)
 
 	*name = (uint8_t *)clock_compnt_mapping_table[index].clock_name;
 	return true;
+}
+
+static void cmd_dump_clock_eeprom(const struct shell *shell, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+
+	uint8_t clock_index;
+	if (!clock_enum_get(argv[1], &clock_index)) {
+		shell_error(shell, "Invalid clock name: %s", argv[1]);
+		return;
+	}
+
+	uint8_t clock_addr = 0;
+	uint8_t bus = 0;
+	if (find_clock_address_and_bus_by_clock_name_index(clock_index, &clock_addr, &bus)) {
+		shell_error(shell, "Can't find clock address and bus by clock name");
+		return;
+	}
+	ARG_UNUSED(clock_addr);
+
+	uint32_t eeprom_addr = strtoul(argv[2], NULL, 0);
+	uint32_t offset = strtoul(argv[3], NULL, 0);
+	uint32_t length = strtoul(argv[4], NULL, 0);
+	if (eeprom_addr > 0x7F) {
+		shell_error(shell, "Invalid 7-bit EEPROM address: 0x%x", eeprom_addr);
+		return;
+	}
+	if (!length || offset > UINT16_MAX || length > (UINT16_MAX + 1U - offset)) {
+		shell_error(shell, "Invalid EEPROM range: offset=0x%x length=0x%x", offset, length);
+		return;
+	}
+
+	while (length) {
+		uint8_t read_size = MIN(length, 16U);
+		I2C_MSG msg = {
+			.bus = bus,
+			.target_addr = eeprom_addr,
+			.tx_len = 2,
+			.rx_len = read_size,
+		};
+		msg.data[0] = offset >> 8;
+		msg.data[1] = offset & 0xFF;
+
+		if (i2c_master_read(&msg, 3)) {
+			shell_error(shell, "EEPROM read failed: bus=%u addr=0x%02x offset=0x%04x",
+				    bus, eeprom_addr, offset);
+			return;
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "%04x: ", offset);
+		for (uint8_t i = 0; i < read_size; i++)
+			shell_fprintf(shell, SHELL_NORMAL, "%02x ", msg.data[i]);
+		shell_print(shell, "");
+
+		offset += read_size;
+		length -= read_size;
+	}
 }
 
 static void dynamic_clock_name_get(size_t idx, struct shell_static_entry *entry)
@@ -445,12 +516,14 @@ SHELL_DYNAMIC_CMD_CREATE(all_clock_name, all_dynamic_clock_name_get);
 
 /* Sub-command Level 1 of command clock */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_clock_cmds,
-			       SHELL_CMD_ARG(set, &clock_name,
-					     "set <clock> <reg-offset> <value>",
+			       SHELL_CMD_ARG(set, &clock_name, "set <clock> <reg-offset> <value>",
 					     cmd_set_clock, 4, 3),
 			       SHELL_CMD_ARG(get, &clock_name,
 					     "get <clock> <reg-offset> <read_length>",
 					     cmd_get_clock, 4, 0),
+			       SHELL_CMD_ARG(eeprom_dump, &clock_name,
+					     "eeprom_dump <clock> <eeprom_addr> <offset> <length>",
+					     cmd_dump_clock_eeprom, 5, 0),
 			       SHELL_SUBCMD_SET_END);
 
 /* Root of command clock */

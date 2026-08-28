@@ -20,6 +20,7 @@
 #include "plat_hook.h"
 #include "plat_util.h"
 #include "plat_clock.h"
+#include "plat_cpld.h"
 // pending
 #include <shell_plat_power_sequence.h>
 #include <logging/log.h>
@@ -70,6 +71,10 @@ static void clk_apll_check_work_handler(struct k_work *work)
 	ARG_UNUSED(work);
 
 	if (!is_mb_dc_on()) {
+		return;
+	}
+	if (!get_cpld_polling_enable_flag()) {
+		start_clk_apll_check_work();
 		return;
 	}
 
