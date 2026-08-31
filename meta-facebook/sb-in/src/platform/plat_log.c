@@ -46,52 +46,6 @@ static uint16_t next_log_position; // next RAM/EEPROM slot to write, 0-based
 static uint16_t next_index; // next value for err_log_data[].index, 0-based, wraps at LOG_MAX_INDEX
 static uint8_t log_num; // Number of logs in EEPROM
 
-typedef struct _vr_ubc_device_table_ {
-	uint8_t index;
-	uint8_t sensor_num_1;
-	uint8_t sensor_num_2;
-} vr_ubc_device_table;
-
-vr_ubc_device_table vr_device_table[] = {
-	// index, sensor_num_1(page 0), sensor_num_2(page 1)
-	{ VR_INDEX_E_1, SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_TEMP_C },
-
-	{ VR_INDEX_E_2, SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_TEMP_C },
-
-	{ VR_INDEX_E_3, SENSOR_NUM_ASIC_P0V9_OWL_E_TRVDD_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V75_OWL_E_TRVDD_TEMP_C },
-
-	{ VR_INDEX_E_4, SENSOR_NUM_ASIC_P0V75_MAX_M_VDD_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM1357_TEMP_C },
-
-	{ VR_INDEX_E_5, SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V4_VDDQL_HBM1357_TEMP_C },
-
-	{ VR_INDEX_E_6, SENSOR_NUM_ASIC_P1V05_VDDQC_HBM1357_TEMP_C,
-	  SENSOR_NUM_ASIC_P1V8_VPP_HBM1357_TEMP_C },
-
-	{ VR_INDEX_E_7, SENSOR_NUM_ASIC_P1V05_VDDQC_HBM1357_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_TEMP_C },
-
-	{ VR_INDEX_E_8, SENSOR_NUM_ASIC_P0V9_VDDQ_HBM1357_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V8_HAMSA_AVDD_PCIE_TEMP_C },
-
-	{ VR_INDEX_E_9, SENSOR_NUM_ASIC_P1V05_VDDQC_HBM0246_TEMP_C,
-	  SENSOR_NUM_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_TEMP_C },
-
-	{ VR_INDEX_E_10, SENSOR_NUM_ASIC_P1V05_VDDQC_HBM0246_TEMP_C,
-	  SENSOR_NUM_ASIC_P1V8_VPP_HBM0246_TEMP_C },
-
-	{ VR_INDEX_E_11, SENSOR_NUM_ASIC_P0V4_VDDQL_HBM0246_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM0246_TEMP_C },
-
-	{ VR_INDEX_E_12, SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V75_MAX_S_VDD_TEMP_C },
-
-	{ VR_INDEX_E_13, SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_TEMP_C,
-	  SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_TEMP_C },
-};
-
 typedef struct _vr_error_callback_info_ {
 	uint8_t cpld_offset;
 	uint8_t vr_status_word_access_map;
@@ -194,49 +148,6 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 		data[0] = gpio_get(RST_ASTRID_PWR_ON_PLD_R1_N);
 		return true;
 	}
-	}
-
-	// Extract CPLD offset and bit position from the error code
-	uint8_t cpld_offset = error_code & 0xFF;
-	uint8_t bit_position = (error_code >> 8) & 0x07;
-	LOG_DBG("cpld_offset: 0x%x, bit_position: 0x%x", cpld_offset, bit_position);
-
-	// Initialize sensor number
-	uint8_t sensor_num = 0x00;
-	uint8_t device_id = 0x00;
-
-	// Find the device_id associated with the error code
-	for (size_t i = 0; i < ARRAY_SIZE(vr_error_callback_info_table); i++) {
-		if (vr_error_callback_info_table[i].cpld_offset == cpld_offset) {
-			device_id = vr_error_callback_info_table[i]
-					    .bit_mapping_vr_sensor_num[bit_position];
-			break;
-		}
-	}
-
-	if (device_id == 0x00) {
-		LOG_DBG("No valid device_id for error_code: 0x%x", error_code);
-		return false;
-	}
-
-	// Find the sensor number associated with the device_id
-	for (size_t i = 0; i < ARRAY_SIZE(vr_device_table); i++) {
-		if (vr_device_table[i].index == device_id) {
-			sensor_num = vr_device_table[i].sensor_num_1;
-			break;
-		}
-	}
-
-	// If no valid sensor number is found, skip further data retrieval
-	if (sensor_num == 0x00) {
-		LOG_DBG("No valid sensor_num for error_code: 0x%x", error_code);
-		return false;
-	}
-
-	// Handle VR_FAULT_ASSERT errors and retrieve VR-specific data
-	if (!vr_fault_get_error_data(sensor_num, data)) {
-		LOG_ERR("Failed to retrieve VR fault data for sensor_num: 0x%x", sensor_num);
-		return false;
 	}
 
 	return true;
