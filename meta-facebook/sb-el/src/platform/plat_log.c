@@ -405,7 +405,7 @@ bool plat_get_extend_error_data(uint16_t error_code, uint8_t *data)
 
 	switch (error_code & 0xFF00) {
 	case CLOCK_APLL_UNLOCK_EVENT_CAUSE: {
-		if (!clock_get_error_data(CLOCK_APLL_UNLOCK_EVENT_CAUSE, data)) {
+		if (!clock_get_error_data(error_code, data)) {
 			LOG_ERR("Failed to get clock APLL unlock error data");
 			return false;
 		}
