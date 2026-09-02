@@ -341,22 +341,37 @@ bool plat_get_image_crc_checksum_from_flash(uint8_t index, uint32_t *data_ver, u
 
 #define ASIC_VERSION_BYTE 0x68
 #define I2C_MAX_RETRY 3
-void get_fw_version_boot0_from_asic()
+void get_fw_version_boot0_from_asic(void)
 {
 	I2C_MSG i2c_msg = { .bus = I2C_BUS12, .target_addr = 0x32 };
 	i2c_msg.tx_len = 1;
-	i2c_msg.rx_len = 11;
+	i2c_msg.rx_len = 10;
 	i2c_msg.data[0] = ASIC_VERSION_BYTE;
-	i2c_master_read(&i2c_msg, I2C_MAX_RETRY);
+	if (i2c_master_read_without_error_log(&i2c_msg, I2C_MAX_RETRY) != 0) {
+		version_boot0[BOOT0_HAMSA] = 0;
+		version_boot0[BOOT0_NUWA0] = 0;
+		version_boot0[BOOT0_NUWA1] = 0;
+		return;
+	}
 
-	LOG_INF(" boot0 VER : %02d.%02d.%02d", i2c_msg.data[8], i2c_msg.data[7], i2c_msg.data[6]);
 	uint32_t data_p = i2c_msg.data[8] << 16 | i2c_msg.data[7] << 8 | i2c_msg.data[6];
-	if (data_p) {
-		// update temp data
-		LOG_INF("update boot0 version read from asic");
-		version_boot0[0] = data_p;
-		version_boot0[1] = data_p;
-		version_boot0[2] = data_p;
+	if (data_p)
+		version_boot0[BOOT0_HAMSA] = data_p;
+
+	i2c_msg.tx_len = 1;
+	i2c_msg.rx_len = 5;
+	i2c_msg.data[0] = CIP_VERSION_BYTE;
+	if (i2c_master_read_without_error_log(&i2c_msg, I2C_MAX_RETRY) != 0) {
+		version_boot0[BOOT0_HAMSA] = 0;
+		version_boot0[BOOT0_NUWA0] = 0;
+		version_boot0[BOOT0_NUWA1] = 0;
+		return;
+	}
+
+	uint32_t data_cip = i2c_msg.data[1] << 16 | i2c_msg.data[2] << 8 | i2c_msg.data[3];
+	if (data_cip) {
+		version_boot0[BOOT0_NUWA0] = data_cip;
+		version_boot0[BOOT0_NUWA1] = data_cip;
 	}
 }
 

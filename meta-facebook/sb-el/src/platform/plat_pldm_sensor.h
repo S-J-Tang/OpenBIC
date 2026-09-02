@@ -32,6 +32,7 @@
 #define TOP_INLET_ADDR (0x92 >> 1)
 #define BOT_INLET_ADDR (0x94 >> 1)
 #define BOT_OUTLET_ADDR (0x96 >> 1)
+#define ARKE_SMBUS_ADDR (0x64 >> 1)
 // page 49
 // TMP_MODULE_TMP432 addr
 // U109
@@ -284,6 +285,20 @@ enum SENSOR_NUM_LIST {
 	SENSOR_NUM_P3V3_OSFP_VOLT_V,
 	SENSOR_NUM_P3V3_OSFP_CURR_A,
 	SENSOR_NUM_P3V3_OSFP_PWR_W,
+	// ARKE SMBus
+	SENSOR_NUM_ARKE_HAMSA_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA0_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA1_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_OWL_E_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_OWL_W_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA0_HBM0_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA0_HBM1_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA0_HBM2_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA0_HBM3_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA1_HBM0_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA1_HBM1_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA1_HBM2_REMOTE_TEMP_C,
+	SENSOR_NUM_ARKE_NUWA1_HBM3_REMOTE_TEMP_C,
 	SENSOR_NUM_NUMBERS,
 };
 
@@ -344,6 +359,7 @@ uint8_t get_plat_sensor_one_step_enable_flag();
 bool is_ubc_access(uint8_t sensor_num);
 bool is_ina238_access(uint8_t sensor_num);
 bool is_temp_access(uint8_t cfg_idx);
+bool is_arke_smbus_access(uint8_t sensor_num);
 bool is_vr_access(uint8_t sensor_num);
 size_t char16_strlen(const char16_t *str);
 char16_t *char16_strcpy(char16_t *dest, const char16_t *src);

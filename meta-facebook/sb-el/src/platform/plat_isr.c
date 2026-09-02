@@ -164,6 +164,8 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 			ast_pwm_set(0, PWM_PORT2);
 			ast_pwm_set(0, PWM_PORT6);
 		}
+		// set I3C_ELECTRA_ALERT_R_N to default
+		gpio_set(I3C_ELECTRA_ALERT_R_N, GPIO_HIGH);
 	}
 }
 
