@@ -11,6 +11,7 @@ FILE(GLOB common_sources ${common_path}/service/*.c ${common_path}/service/*/*.c
 
 target_sources(app PRIVATE ${app_sources})
 target_sources(app PRIVATE ${common_sources})
+target_sources(app PRIVATE ${common_path}/dev/arke_smbus.c)
 
 # Common Lib
 target_sources(app PRIVATE ${common_path}/lib/libutil.c)

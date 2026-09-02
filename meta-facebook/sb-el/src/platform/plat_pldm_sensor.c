@@ -29,7 +29,9 @@
 #include "plat_gpio.h"
 // #include "shell_plat_average_power.h"
 #include "plat_power_capping.h"
+#include "plat_pldm_fw_update.h"
 #include "ina238.h"
+#include "arke_smbus.h"
 
 LOG_MODULE_REGISTER(plat_pldm_sensor);
 
@@ -244,8 +246,42 @@ uint8_t check_sensor_type(uint8_t sensor_num)
 	if (sensor_num <= SENSOR_NUM_P3V3_OSFP_PWR_W)
 		return EVB_SENSOR_THREAD_ID;
 
+	/* ARKE SMBus temperature sensors */
+	if (sensor_num <= SENSOR_NUM_ARKE_NUWA1_HBM3_REMOTE_TEMP_C)
+		return TEMP_SENSOR_THREAD_ID;
+
 	return MAX_SENSOR_THREAD_ID;
 }
+
+#define ARKE_REMOTE_TEMP_SENSOR(sensor_num, reg)                                             \
+	{                                                                                     \
+		.pdr_numeric_sensor = {                                                         \
+			.pdr_common_header = { .record_handle = 0,                                \
+					       .PDR_header_version = 1,                            \
+					       .PDR_type = PLDM_NUMERIC_SENSOR_PDR },              \
+			.sensor_id = sensor_num,                                                    \
+			.entity_instance_number = sensor_num,                                      \
+			.sensor_auxiliary_names_pdr = 1,                                           \
+			.base_unit = 0x02,                                                         \
+			.unit_modifier = -3,                                                       \
+			.sensor_data_size = 0x04,                                                  \
+			.resolution = 1,                                                           \
+			.supported_thresholds = UP_THRESHOLD_CRIT | UP_THRESHOLD_WARN,              \
+			.update_interval = UPDATE_INTERVAL_1S,                                     \
+			.range_field_format = 0x04,                                                \
+			.warning_high = 90000,                                                     \
+			.critical_high = 95000,                                                    \
+		},                                                                                \
+		.pldm_sensor_cfg = { .num = sensor_num,                                         \
+				     .type = sensor_dev_arke_smbus,                               \
+				     .port = I2C_BUS12,                                           \
+				     .target_addr = ARKE_SMBUS_ADDR,                              \
+				     .offset = reg,                                                \
+				     .access_checker = is_arke_smbus_access,                       \
+				     .sample_count = SAMPLE_COUNT_DEFAULT,                         \
+				     .cache_status = PLDM_SENSOR_INITIALIZING,                     \
+				     .post_sensor_read_hook = post_arke_sensor_read },             \
+	}
 
 // clang-format off
 pldm_sensor_info plat_pldm_sensor_temp_table[] = {
@@ -1008,7 +1044,30 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.post_sensor_read_hook = post_tmp_read,
 		},
 	},
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_HAMSA_REMOTE_TEMP_C, ASIC_MONITOR_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA0_REMOTE_TEMP_C, ASIC_MONITOR_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA1_REMOTE_TEMP_C, ASIC_MONITOR_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_OWL_E_REMOTE_TEMP_C, ASIC_MONITOR_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_OWL_W_REMOTE_TEMP_C, ASIC_MONITOR_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA0_HBM0_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA0_HBM1_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA0_HBM2_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA0_HBM3_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA1_HBM0_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA1_HBM1_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA1_HBM2_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
+	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA1_HBM3_REMOTE_TEMP_C,
+				ASIC_MONITOR_HBM_TEMP_REG),
 };
+
+#undef ARKE_REMOTE_TEMP_SENSOR
 
 pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 	{
@@ -8996,7 +9055,44 @@ pldm_sensor_info plat_pldm_sensor_evb_table[] = {
 	},
 };
 
+#define ARKE_REMOTE_TEMP_AUX_NAME(sensor_num, sensor_name)                         \
+	{                                                                           \
+		.pdr_common_header = { .PDR_header_version = 1,                       \
+				       .PDR_type = PLDM_SENSOR_AUXILIARY_NAMES_PDR },  \
+		.sensor_id = sensor_num,                                                \
+		.sensor_count = 1,                                                      \
+		.nameStringCount = 1,                                                   \
+		.nameLanguageTag = "en",                                               \
+		.sensorName = u##sensor_name,                                           \
+	}
+
 PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_HAMSA_REMOTE_TEMP_C,
+				  "ARKE_HAMSA_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA0_REMOTE_TEMP_C,
+				  "ARKE_NUWA0_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA1_REMOTE_TEMP_C,
+				  "ARKE_NUWA1_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_OWL_E_REMOTE_TEMP_C,
+				  "ARKE_OWL_E_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_OWL_W_REMOTE_TEMP_C,
+				  "ARKE_OWL_W_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA0_HBM0_REMOTE_TEMP_C,
+				  "ARKE_NUWA0_HBM0_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA0_HBM1_REMOTE_TEMP_C,
+				  "ARKE_NUWA0_HBM1_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA0_HBM2_REMOTE_TEMP_C,
+				  "ARKE_NUWA0_HBM2_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA0_HBM3_REMOTE_TEMP_C,
+				  "ARKE_NUWA0_HBM3_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA1_HBM0_REMOTE_TEMP_C,
+				  "ARKE_NUWA1_HBM0_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA1_HBM1_REMOTE_TEMP_C,
+				  "ARKE_NUWA1_HBM1_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA1_HBM2_REMOTE_TEMP_C,
+				  "ARKE_NUWA1_HBM2_REMOTE_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA1_HBM3_REMOTE_TEMP_C,
+				  "ARKE_NUWA1_HBM3_REMOTE_TEMP_C"),
 	{
 		{
 			.record_handle = 0x00000000,
@@ -11561,6 +11657,13 @@ bool is_temp_access(uint8_t cfg_idx)
 		get_plat_sensor_polling_enable_flag() && is_update_state_idle());
 }
 
+bool is_arke_smbus_access(uint8_t sensor_num)
+{
+	return (is_dc_access(sensor_num) && get_plat_sensor_temp_polling_enable_flag() &&
+		get_plat_sensor_polling_enable_flag() && is_update_state_idle() &&
+		gpio_get(I3C_ELECTRA_ALERT_R_N) == GPIO_LOW);
+}
+
 bool is_vr_access(uint8_t sensor_num)
 {
 	if (get_plat_sensor_one_step_enable_flag() == ONE_STEP_POWER_MAGIC_NUMBER) {
@@ -11864,14 +11967,27 @@ void quick_sensor_poll_handler(void *arug0, void *arug1, void *arug2)
 	int quick_sensor_poll_interval_ms = 30;
 	uint8_t ot_warning_poll_count = 0;
 	uint8_t cycle_counter = 0;
+	int count = 0;
 
 	while (1) {
+		count++;
 		if (is_mb_dc_on() == false || !get_plat_sensor_polling_enable_flag())
 			cycle_counter = 5; //dc off will sleep 1000ms, 5*1000ms = 5s
 		else
 			cycle_counter = 167; // 167*30ms = 5s
+		if (count >= cycle_counter) {
+			count = 0;
+			get_fw_version_boot0_from_asic();
+			uint32_t asic_version = plat_get_image_version(BOOT0_HAMSA) & 0xFFFFFF;
+
+			if (asic_version != 0 && asic_version != 0xFFFFFF)
+				gpio_set(I3C_ELECTRA_ALERT_R_N, GPIO_LOW);
+			else
+				gpio_set(I3C_ELECTRA_ALERT_R_N, GPIO_HIGH);
+		}
 		//check dc on/off and polling enable/disable
-		if (is_mb_dc_on() == false || !get_plat_sensor_polling_enable_flag()) {
+		if (is_mb_dc_on() == false || !get_plat_sensor_polling_enable_flag() ||
+		    (get_sensor_poll_enable_flag() == false)) {
 			ot_warning_poll_count = 0;
 			//dc is off, sleep 1 second
 			k_msleep(1000);
