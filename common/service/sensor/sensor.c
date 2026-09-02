@@ -163,6 +163,7 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(raa229140a)
 	sensor_name_to_num(mp29526)
 	sensor_name_to_num(arke_smbus)
+	sensor_name_to_num(virtual_device)
 };
 // clang-format on
 
@@ -413,6 +414,9 @@ SENSOR_DRIVE_INIT_DECLARE(mp29526);
 #endif
 #ifdef ENABLE_ARKE_SMBUS
 SENSOR_DRIVE_INIT_DECLARE(arke_smbus);
+#endif
+#ifdef ENABLE_VIRTUAL_DEVICE
+SENSOR_DRIVE_INIT_DECLARE(virtual_device);
 #endif
 
 // The sequence needs to same with SENSOR_DEV ID
@@ -835,6 +839,11 @@ sensor_drive_api sensor_drive_tbl[] = {
 	SENSOR_DRIVE_TYPE_INIT_MAP(arke_smbus),
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(arke_smbus),
+#endif
+#ifdef ENABLE_VIRTUAL_DEVICE
+	SENSOR_DRIVE_TYPE_INIT_MAP(virtual_device),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(virtual_device),
 #endif
 
 };
