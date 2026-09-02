@@ -250,11 +250,15 @@ uint8_t check_sensor_type(uint8_t sensor_num)
 	if (sensor_num <= SENSOR_NUM_ARKE_NUWA1_HBM3_REMOTE_TEMP_C)
 		return TEMP_SENSOR_THREAD_ID;
 
+	/* TMP432 / EMC1413 local temperature sensors */
+	if (sensor_num <= SENSOR_NUM_ASIC_OWL_LOCAL_TEMP_C)
+		return TEMP_SENSOR_THREAD_ID;
+
 	return MAX_SENSOR_THREAD_ID;
 }
 
-#define ARKE_REMOTE_TEMP_SENSOR(sensor_num, reg)                                             \
-	{                                                                                     \
+#define ARKE_REMOTE_TEMP_SENSOR(sensor_num, reg)                                                   \
+	{                                                                                          \
 		.pdr_numeric_sensor = {                                                         \
 			.pdr_common_header = { .record_handle = 0,                                \
 					       .PDR_header_version = 1,                            \
@@ -280,7 +284,36 @@ uint8_t check_sensor_type(uint8_t sensor_num)
 				     .access_checker = is_arke_smbus_access,                       \
 				     .sample_count = SAMPLE_COUNT_DEFAULT,                         \
 				     .cache_status = PLDM_SENSOR_INITIALIZING,                     \
-				     .post_sensor_read_hook = post_arke_sensor_read },             \
+				     .post_sensor_read_hook = post_arke_sensor_read },  \
+	}
+
+#define TMP_LOCAL_TEMP_SENSOR(sensor_num, sensor_port, sensor_addr)                                \
+	{                                                                                          \
+		.pdr_numeric_sensor = {                                                         \
+			.pdr_common_header = { .record_handle = 0,                                \
+					       .PDR_header_version = 1,                            \
+					       .PDR_type = PLDM_NUMERIC_SENSOR_PDR },              \
+			.sensor_id = sensor_num,                                                    \
+			.entity_instance_number = sensor_num,                                      \
+			.sensor_auxiliary_names_pdr = 1,                                           \
+			.base_unit = 0x02,                                                         \
+			.unit_modifier = -3,                                                       \
+			.sensor_data_size = 0x04,                                                  \
+			.resolution = 1,                                                           \
+			.supported_thresholds = UP_THRESHOLD_CRIT,                                 \
+			.update_interval = UPDATE_INTERVAL_1S,                                     \
+			.range_field_format = 0x04,                                                \
+			.critical_high = 95000,                                                    \
+		},                                                                                \
+		.pldm_sensor_cfg = { .num = sensor_num,                                         \
+				     .type = sensor_dev_tmp431,                                     \
+				     .port = sensor_port,                                           \
+				     .target_addr = sensor_addr,                                    \
+				     .offset = TMP431_LOCAL_TEMPERATRUE,                             \
+				     .access_checker = is_temp_access,                               \
+				     .sample_count = SAMPLE_COUNT_DEFAULT,                           \
+				     .cache_status = PLDM_SENSOR_INITIALIZING,                       \
+				     .post_sensor_read_hook = post_tmp_read },  \
 	}
 
 // clang-format off
@@ -1065,9 +1098,17 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 				ASIC_MONITOR_HBM_TEMP_REG),
 	ARKE_REMOTE_TEMP_SENSOR(SENSOR_NUM_ARKE_NUWA1_HBM3_REMOTE_TEMP_C,
 				ASIC_MONITOR_HBM_TEMP_REG),
+	TMP_LOCAL_TEMP_SENSOR(SENSOR_NUM_ASIC_NUWA1_LOCAL_TEMP_C, I2C_BUS2,
+			      ASIC_NUWA1_SENSOR0_ADDR),
+	TMP_LOCAL_TEMP_SENSOR(SENSOR_NUM_ASIC_HAMSA_LOCAL_TEMP_C, I2C_BUS2,
+			      ASIC_HAMSA_CRM_ADDR),
+	TMP_LOCAL_TEMP_SENSOR(SENSOR_NUM_ASIC_NUWA0_LOCAL_TEMP_C, I2C_BUS3,
+			      ASIC_NUWA0_SENSOR0_ADDR),
+	TMP_LOCAL_TEMP_SENSOR(SENSOR_NUM_ASIC_OWL_LOCAL_TEMP_C, I2C_BUS3, ASIC_OWL_W_ADDR),
 };
 
 #undef ARKE_REMOTE_TEMP_SENSOR
+#undef TMP_LOCAL_TEMP_SENSOR
 
 pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 	{
@@ -9067,6 +9108,14 @@ pldm_sensor_info plat_pldm_sensor_evb_table[] = {
 	}
 
 PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_NUWA1_LOCAL_TEMP_C,
+				  "ASIC_NUWA1_LOCAL_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_HAMSA_LOCAL_TEMP_C,
+				  "ASIC_HAMSA_LOCAL_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_NUWA0_LOCAL_TEMP_C,
+				  "ASIC_NUWA0_LOCAL_TEMP_C"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_OWL_LOCAL_TEMP_C,
+				  "ASIC_OWL_LOCAL_TEMP_C"),
 	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_HAMSA_REMOTE_TEMP_C,
 				  "ARKE_HAMSA_REMOTE_TEMP_C"),
 	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ARKE_NUWA0_REMOTE_TEMP_C,
@@ -11334,9 +11383,12 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		for (uint8_t j = 0; j < tmp_count; j++) {
 			uint8_t num = tmp_table[j].pldm_sensor_cfg.num;
 
-			/* only update sensors 4..11 */
-			if (num < SENSOR_NUM_ASIC_NUWA0_SENSOR0_TEMP_C ||
-			    num > SENSOR_NUM_ASIC_HAMSA_LS_TEMP_C) {
+			bool is_remote_tmp = num >= SENSOR_NUM_ASIC_NUWA0_SENSOR0_TEMP_C &&
+					     num <= SENSOR_NUM_ASIC_HAMSA_LS_TEMP_C;
+			bool is_local_tmp = num >= SENSOR_NUM_ASIC_NUWA1_LOCAL_TEMP_C &&
+					    num <= SENSOR_NUM_ASIC_OWL_LOCAL_TEMP_C;
+
+			if (!is_remote_tmp && !is_local_tmp) {
 				continue;
 			}
 
@@ -11347,6 +11399,9 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 				}
 				else if (tmp_table[j].pldm_sensor_cfg.offset == TMP432_REMOTE_TEMPERATRUE_2) {
 					tmp_table[j].pldm_sensor_cfg.offset = EMC1413_REMOTE_TEMPERATRUE_2;
+				}
+				else if (tmp_table[j].pldm_sensor_cfg.offset == TMP431_LOCAL_TEMPERATRUE) {
+					tmp_table[j].pldm_sensor_cfg.offset = EMC1413_LOCAL_TEMPERATRUE;
 				}
 			} else {
 				/* default (old tmp432) or other types if needed */
