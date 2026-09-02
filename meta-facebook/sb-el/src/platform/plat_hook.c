@@ -26,6 +26,7 @@
 #include "raa229140a.h"
 #include "tmp431.h"
 #include "emc1413.h"
+#include "arke_smbus.h"
 #include "plat_gpio.h"
 #include "pldm_sensor.h"
 #include "plat_hook.h"
@@ -40,6 +41,72 @@
 #include "shell_plat_average_power.h"
 
 LOG_MODULE_REGISTER(plat_hook);
+
+static uint8_t arke_temp_data[ASIC_MONITOR_TEMP_REG_LEN];
+static uint8_t arke_hbm_temp_data[ASIC_MONITOR_HBM_TEMP_REG_LEN];
+
+bool post_arke_sensor_read(sensor_cfg *cfg, void *args, int *reading)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(reading, false);
+	ARG_UNUSED(args);
+
+	arke_smbus_priv_data_t *priv = (arke_smbus_priv_data_t *)cfg->priv_data;
+	if (!priv)
+		return false;
+
+	switch (cfg->num) {
+	case SENSOR_NUM_ARKE_HAMSA_REMOTE_TEMP_C:
+		memcpy(arke_temp_data, priv->temp, sizeof(arke_temp_data));
+		*reading = arke_temp_data[1];
+		break;
+	case SENSOR_NUM_ARKE_NUWA0_REMOTE_TEMP_C:
+		*reading = arke_temp_data[2];
+		break;
+	case SENSOR_NUM_ARKE_NUWA1_REMOTE_TEMP_C:
+		*reading = arke_temp_data[3];
+		break;
+	case SENSOR_NUM_ARKE_OWL_E_REMOTE_TEMP_C:
+		*reading = arke_temp_data[4];
+		break;
+	case SENSOR_NUM_ARKE_OWL_W_REMOTE_TEMP_C:
+		*reading = arke_temp_data[5];
+		break;
+	case SENSOR_NUM_ARKE_NUWA0_HBM0_REMOTE_TEMP_C:
+		memcpy(arke_hbm_temp_data, priv->hbm_temp, sizeof(arke_hbm_temp_data));
+		*reading = arke_hbm_temp_data[1];
+		break;
+	case SENSOR_NUM_ARKE_NUWA0_HBM1_REMOTE_TEMP_C:
+		*reading = arke_hbm_temp_data[2];
+		break;
+	case SENSOR_NUM_ARKE_NUWA0_HBM2_REMOTE_TEMP_C:
+		*reading = arke_hbm_temp_data[3];
+		break;
+	case SENSOR_NUM_ARKE_NUWA0_HBM3_REMOTE_TEMP_C:
+		*reading = arke_hbm_temp_data[4];
+		break;
+	case SENSOR_NUM_ARKE_NUWA1_HBM0_REMOTE_TEMP_C:
+		*reading = arke_hbm_temp_data[5];
+		break;
+	case SENSOR_NUM_ARKE_NUWA1_HBM1_REMOTE_TEMP_C:
+		*reading = arke_hbm_temp_data[6];
+		break;
+	case SENSOR_NUM_ARKE_NUWA1_HBM2_REMOTE_TEMP_C:
+		*reading = arke_hbm_temp_data[7];
+		break;
+	case SENSOR_NUM_ARKE_NUWA1_HBM3_REMOTE_TEMP_C:
+		*reading = arke_hbm_temp_data[8];
+		break;
+	default:
+		return false;
+	}
+
+	if (*reading < 0 || *reading > 150) {
+		cfg->cache_status = PLDM_SENSOR_UNAVAILABLE;
+		return false;
+	}
+	return true;
+}
 
 bool post_sensor_reading_hook_func(uint8_t sensor_number);
 

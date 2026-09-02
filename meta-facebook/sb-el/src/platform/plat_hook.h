@@ -302,6 +302,7 @@ bool plat_clear_vr_status(uint8_t rail);
 bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm);
 bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt);
 bool post_common_sensor_read(sensor_cfg *cfg, void *args, int *const reading);
+bool post_arke_sensor_read(sensor_cfg *cfg, void *args, int *reading);
 bool vr_vout_range_user_settings_init(void);
 bool plat_set_voffset_mmc_command(uint8_t rail, int16_t *millivolt, bool is_perm);
 bool plat_get_get_vout_offset(uint8_t rail, uint16_t *vout_offset);
