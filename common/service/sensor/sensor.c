@@ -164,6 +164,7 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(mp29526)
 	sensor_name_to_num(iris_smbus)
 	sensor_name_to_num(rsm3514e)
+	sensor_name_to_num(arke_smbus)
 };
 // clang-format on
 
@@ -417,6 +418,9 @@ SENSOR_DRIVE_INIT_DECLARE(iris_smbus);
 #endif
 #ifdef ENABLE_RSM3514E
 SENSOR_DRIVE_INIT_DECLARE(rsm3514e);
+#endif
+#ifdef ENABLE_ARKE_SMBUS
+SENSOR_DRIVE_INIT_DECLARE(arke_smbus);
 #endif
 
 // The sequence needs to same with SENSOR_DEV ID
@@ -844,6 +848,11 @@ sensor_drive_api sensor_drive_tbl[] = {
 	SENSOR_DRIVE_TYPE_INIT_MAP(rsm3514e),
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(rsm3514e),
+#endif
+#ifdef ENABLE_ARKE_SMBUS
+	SENSOR_DRIVE_TYPE_INIT_MAP(arke_smbus),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(arke_smbus),
 #endif
 };
 
