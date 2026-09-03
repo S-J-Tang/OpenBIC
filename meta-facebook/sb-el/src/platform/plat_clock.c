@@ -135,6 +135,7 @@ uint8_t clk_312_5mhz_get_lock_status_u618(void)
 
 #define U618_WORKAROUND_RETRY 5
 #define U618_WORKAROUND_WRITE_DELAY_MS 15
+#define U618_WORKAROUND_FM_P1V80_EN_BIT 4
 
 static bool u618_reg_read(uint16_t offset, uint8_t *data, uint8_t data_len)
 {
@@ -186,22 +187,22 @@ bool check_312_5MHz_init_status(void)
 	uint8_t read_00a8[sizeof(expected_00a8)] = { 0 };
 	uint8_t read_0080[sizeof(expected_0080)] = { 0 };
 	uint8_t read_0088[sizeof(expected_0088)] = { 0 };
-	uint8_t pwr_en = 0;
+	uint8_t fm_p1v80_en = 0;
 	uint8_t rev_id = get_board_rev_id();
 	bool has_error = false;
 
 	/* U618 workaround is required from EVT2 onward; board ID is intentionally ignored. */
-	if (rev_id < REV_ID_EVT2) {
+	if (rev_id < REV_ID_EVT2_FAB2) {
 		LOG_INF("Board rev %d does not require CLK U618 workaround", rev_id);
 		return true;
 	}
 
-	if (!plat_read_cpld(VR_EN_PIN_READING_5, &pwr_en, 1)) {
-		LOG_ERR("Failed to read PWR_EN before checking CLK U618 init status");
+	if (!plat_read_cpld(VR_EN_PIN_READING_5, &fm_p1v80_en, 1)) {
+		LOG_ERR("Failed to read FM_P1V80_EN before checking CLK U618 init status");
 		return false;
 	}
-	pwr_en &= BIT(0);
-	LOG_INF("Board rev: %d, PWR_EN: %d", rev_id, pwr_en);
+	fm_p1v80_en = !!(fm_p1v80_en & BIT(U618_WORKAROUND_FM_P1V80_EN_BIT));
+	LOG_INF("Board rev: %d, FM_P1V80_EN: %d", rev_id, fm_p1v80_en);
 
 	/* Follow the Rainbow flow: check all workaround registers first. */
 	if (!u618_reg_read(0x00a8, read_00a8, sizeof(read_00a8)))
@@ -228,14 +229,17 @@ bool check_312_5MHz_init_status(void)
 		return true;
 	}
 
-	/* Rainbow does not change the clock configuration after PWR_EN is asserted. */
-	if (pwr_en) {
-		LOG_ERR("CLK U618 values are unexpected while PWR_EN is asserted");
+	/* FM_P1V80_EN status is active low: bit 4 = 1 permits the workaround. */
+	if (!fm_p1v80_en) {
+		LOG_ERR("CLK U618 values are unexpected while FM_P1V80_EN is asserted");
 		error_log_event(CLK_312_5MHZ_REINIT_ERR_CODE, LOG_ASSERT);
 		return false;
 	}
 
-	LOG_WRN("Power is off with unexpected CLK U618 values; applying workaround");
+	LOG_WRN("FM_P1V80_EN=%d, CLK U618 registers require workaround: "
+		"0x00A8=%02x%02x%02x%02x, 0x0080=%02x, 0x0088=%02x%02x; applying workaround",
+		fm_p1v80_en, read_00a8[0], read_00a8[1], read_00a8[2], read_00a8[3], read_0080[0],
+		read_0088[0], read_0088[1]);
 	has_error = false;
 	if (!u618_reg_write(0x00a8, expected_00a8, sizeof(expected_00a8))) {
 		has_error = true;
@@ -281,16 +285,17 @@ bool check_312_5MHz_init_status(void)
 			has_error = true;
 	}
 
-	if (!plat_read_cpld(VR_EN_PIN_READING_5, &pwr_en, 1)) {
-		LOG_ERR("Failed to read PWR_EN after applying CLK U618 workaround");
+	if (!plat_read_cpld(VR_EN_PIN_READING_5, &fm_p1v80_en, 1)) {
+		LOG_ERR("Failed to read FM_P1V80_EN after applying CLK U618 workaround");
 		has_error = true;
 	} else {
-		pwr_en &= BIT(0);
+		fm_p1v80_en = !!(fm_p1v80_en & BIT(U618_WORKAROUND_FM_P1V80_EN_BIT));
 	}
 
-	/* Match Rainbow: retain the incident when power has come on after re-init. */
-	if (has_error || pwr_en) {
-		LOG_ERR("CLK U618 re-init result: error=%d, PWR_EN=%d", has_error, pwr_en);
+	/* Retain the incident if FM_P1V80_EN becomes asserted during re-init. */
+	if (has_error || !fm_p1v80_en) {
+		LOG_ERR("CLK U618 re-init result: error=%d, FM_P1V80_EN=%d", has_error,
+			fm_p1v80_en);
 		error_log_event(CLK_312_5MHZ_REINIT_ERR_CODE, LOG_ASSERT);
 		return false;
 	}
