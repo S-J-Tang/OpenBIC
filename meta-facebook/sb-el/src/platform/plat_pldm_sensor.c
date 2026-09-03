@@ -254,6 +254,10 @@ uint8_t check_sensor_type(uint8_t sensor_num)
 	if (sensor_num <= SENSOR_NUM_ASIC_OWL_LOCAL_TEMP_C)
 		return TEMP_SENSOR_THREAD_ID;
 
+	/* ADC-backed virtual current sensors */
+	if (sensor_num <= SENSOR_NUM_ASIC_IMON_NUWA1_VDD_CURR_A)
+		return VR_SENSOR_THREAD_ID;
+
 	return MAX_SENSOR_THREAD_ID;
 }
 
@@ -1109,6 +1113,35 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 
 #undef ARKE_REMOTE_TEMP_SENSOR
 #undef TMP_LOCAL_TEMP_SENSOR
+
+#define ADC_CURRENT_SENSOR(sensor_num)                                                        \
+	{                                                                                      \
+		.pdr_numeric_sensor = {                                                          \
+			.pdr_common_header = { .record_handle = 0,                                 \
+					       .PDR_header_version = 1,                             \
+					       .PDR_type = PLDM_NUMERIC_SENSOR_PDR },               \
+			.sensor_id = sensor_num,                                                     \
+			.entity_instance_number = sensor_num,                                       \
+			.sensor_auxiliary_names_pdr = 1,                                            \
+			.base_unit = 0x06,                                                          \
+			.unit_modifier = -3,                                                        \
+			.sensor_data_size = 0x04,                                                   \
+			.resolution = 1,                                                            \
+			.supported_thresholds = UP_THRESHOLD_CRIT,                                  \
+			.update_interval = UPDATE_INTERVAL_1S,                                      \
+			.range_field_format = 0x04,                                                 \
+			.critical_high = 1420000,                                                   \
+		},                                                                                 \
+		.pldm_sensor_cfg = { .num = sensor_num,                                          \
+				     .type = sensor_dev_virtual_device,                             \
+				     .port = I2C_BUS1,                                             \
+				     .target_addr = 0,                                             \
+				     .offset = PMBUS_READ_IOUT,                                    \
+				     .access_checker = is_adc_access,                               \
+				     .sample_count = SAMPLE_COUNT_DEFAULT,                           \
+				     .cache_status = PLDM_SENSOR_INITIALIZING,                       \
+				     .post_sensor_read_hook = post_adc_sensor_read },                 \
+	}
 
 pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 	{
@@ -7375,6 +7408,8 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			.post_sensor_read_args = &vr_pre_read_args[VR_INDEX_E_6 * 2 + 1],
 		},
 	},
+	ADC_CURRENT_SENSOR(SENSOR_NUM_ASIC_IMON_NUWA0_VDD_CURR_A),
+	ADC_CURRENT_SENSOR(SENSOR_NUM_ASIC_IMON_NUWA1_VDD_CURR_A),
 	{
 		{
 			// SENSOR_NUM_PDB1_VOLT_VBUS_A
@@ -7516,6 +7551,8 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		},
 	},
 };
+
+#undef ADC_CURRENT_SENSOR
 
 pldm_sensor_info plat_pldm_sensor_quick_vr_table[] = {
 	{
@@ -9108,6 +9145,10 @@ pldm_sensor_info plat_pldm_sensor_evb_table[] = {
 	}
 
 PDR_sensor_auxiliary_names plat_pdr_sensor_aux_names_table[] = {
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_IMON_NUWA0_VDD_CURR_A,
+				  "ASIC_IMON_NUWA0_VDD_CURR_A"),
+	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_IMON_NUWA1_VDD_CURR_A,
+				  "ASIC_IMON_NUWA1_VDD_CURR_A"),
 	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_NUWA1_LOCAL_TEMP_C,
 				  "ASIC_NUWA1_LOCAL_TEMP_C"),
 	ARKE_REMOTE_TEMP_AUX_NAME(SENSOR_NUM_ASIC_HAMSA_LOCAL_TEMP_C,
@@ -11434,6 +11475,9 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 			ina238_addr = get_ina238_addr();
 
 		for (uint8_t j = 0; j < count; j++) {
+			if (vr_table[j].pldm_sensor_cfg.type == sensor_dev_virtual_device)
+				continue;
+
 			uint8_t num = vr_table[j].pldm_sensor_cfg.num;
 
 			if (num == SENSOR_NUM_PDB1_VOLT_VBUS_A ||
@@ -11729,6 +11773,20 @@ bool is_vr_access(uint8_t sensor_num)
 		return (is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
 			get_plat_sensor_polling_enable_flag() && is_update_state_idle() && get_plat_vr_change_done_flag());
 	}
+}
+
+bool is_adc_access(uint8_t sensor_num)
+{
+	if (get_power_capping_source() != CAPPING_SOURCE_ADC)
+		return false;
+
+	if (get_plat_sensor_one_step_enable_flag() == ONE_STEP_POWER_MAGIC_NUMBER) {
+		return get_plat_sensor_vr_polling_enable_flag() &&
+		       get_plat_sensor_polling_enable_flag() && is_update_state_idle();
+	}
+
+	return is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
+	       get_plat_sensor_polling_enable_flag() && is_update_state_idle();
 }
 
 // uint32_t plat_pldm_sensor_get_quick_vr_poll_interval()
