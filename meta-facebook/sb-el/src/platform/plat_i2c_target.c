@@ -964,8 +964,10 @@ void plat_master_write_thread_handler()
 				// check set_value is out of range, set to min or max
 				if (reg_offset == CONTROL_VOL_VR_ASIC_P0V75_NUWA0_VDD_REG ||
 				    reg_offset == CONTROL_VOL_VR_ASIC_P0V75_NUWA1_VDD_REG) {
-					const uint16_t svs_voltage_min = 750;
-					const uint16_t svs_voltage_max = 850;
+					const uint16_t svs_voltage_min =
+						svs_voltage_range_command_get.vout_min[rail];
+					const uint16_t svs_voltage_max =
+						svs_voltage_range_command_get.vout_max[rail];
 					if (sensor_data->set_value < svs_voltage_min) {
 						LOG_INF("Set voltage out of range: %d mV(%d ~ %d), set to %d mV",
 							sensor_data->set_value, svs_voltage_min,
