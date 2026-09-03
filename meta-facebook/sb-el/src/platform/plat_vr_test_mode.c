@@ -523,14 +523,14 @@ static bool set_mps_vr_test_mode_reg(bool is_default)
 	return ret;
 }
 
-static bool check_vr_fast_ocp_match_test_mode(void)
+static bool check_vr_slow_ocp_match_test_mode(void)
 {
 	for (uint8_t i = 0; i < VR_RAIL_E_P3V3_OSFP_VOLT_V; i++) {
 		uint16_t val = 0;
-		if (!get_vr_test_mode_reg_value(i, VR_FAST_OCP_REG, &val))
+		if (!get_vr_test_mode_reg_value(i, VR_SLOW_OCP_REG, &val))
 			return false;
 
-		if (vr_test_mode_table[i].fast_ocp != val)
+		if (vr_test_mode_table[i].slow_ocp != val)
 			return false;
 	}
 
@@ -611,9 +611,9 @@ void vr_test_mode_handler(void *arg1, void *arg2, void *arg3)
 void init_vr_test_mode_polling(void)
 {
 	if (is_mb_dc_on()) {
-		if (check_vr_fast_ocp_match_test_mode()) {
+		if (check_vr_slow_ocp_match_test_mode()) {
 			vr_test_mode_enable(true);
-			LOG_INF("Fast OCP value is the same, start VR TEST MODE");
+			LOG_INF("Slow OCP value is the same, start VR TEST MODE");
 		}
 	}
 
