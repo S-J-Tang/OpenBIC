@@ -328,6 +328,7 @@ bool vr_vout_default_settings_init(void);
 
 // pwrlevel
 bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading);
+bool post_adc_sensor_read(sensor_cfg *cfg, void *args, int *reading);
 bool plat_get_alert_level_is_assert(void);
 
 // Bootstrape
