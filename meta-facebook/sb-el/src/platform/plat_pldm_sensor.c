@@ -11526,24 +11526,16 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 	case UBC_MODULE_DELTA:
 		LOG_INF("No need to change UBC type, DELTA is the default");
 		break;
-	case UBC_MODULE_MPS:
-		ubc_change_type = sensor_dev_mpc12109;
-		LOG_WRN("change UBC type to MPS");
-		break;
-	case UBC_MODULE_FLEX:
-		ubc_change_type = sensor_dev_bmr313;
-		LOG_WRN("change UBC type to FLEX");
-		break;
 	case UBC_MODULE_LUXSHARE:
 		ubc_change_type = sensor_dev_lx6301;
 		LOG_WRN("change UBC type to LUXSHARE");
 		break;
+	case UBC_MODULE_MPS:
+	case UBC_MODULE_FLEX:
 	case UBC_MODULE_CYNTEX:
-		// To Do
-		break;
 	case UBC_MODULE_UNKNOWN:
 	default:
-		LOG_WRN("unknown UBC module, keep default UBC type");
+		LOG_WRN("unsupported UBC module(%u), use DELTA type", ubc_module);
 		break;
 	}
 
