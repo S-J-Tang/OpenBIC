@@ -61,7 +61,9 @@
 #define CLK_BUF0_100M_LOSB_PLD 0x3
 #define CLK_BUF1_100M_LOSB_PLD 0x4
 #define CLK_BUF2_100M_LOSB_PLD 0x5
-// #define CLK_312_5MHZ_REINIT_ERR_IDX 0x6
+#define CLK_312_5MHZ_REINIT_ERR_IDX 0x6
+
+#define CLK_312_5MHZ_REINIT_ERR_CODE (CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_312_5MHZ_REINIT_ERR_IDX)
 
 #define CLOCK_APLL_UNLOCK_EVENT 0x5B
 #define CLK_312_5M_APLL_UNLOCK_EVENT 0x5C
@@ -72,6 +74,7 @@
 uint8_t clk_100mhz_get_lock_status_u86(void);
 uint8_t clk_100mhz_get_lock_status_u200045(void);
 uint8_t clk_312_5mhz_get_lock_status_u618(void);
+bool check_312_5MHz_init_status(void);
 void check_clk_buf_loss_status(void);
 bool clock_get_error_data(uint16_t error_code, uint8_t *data);
 
