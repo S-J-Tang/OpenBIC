@@ -22,9 +22,9 @@
 #include "plat_class.h"
 #include "plat_gpio.h"
 #include "plat_event.h"
-#include "plat_hook.h"
 #include "plat_cpld.h"
 #include "plat_vr_test_mode.h"
+#include "plat_user_setting.h"
 
 LOG_MODULE_REGISTER(plat_voltage_shell, LOG_LEVEL_DBG);
 
@@ -189,14 +189,14 @@ static void cmd_svs_flag_set(const struct shell *shell, size_t argc, char **argv
 		    (argc == 3) ? "non-" : "");
 }
 
-void cmd_get_medha_vout_offset(const struct shell *shell, size_t argc, char **argv)
+static void cmd_get_vout_offset(const struct shell *shell, size_t argc, char **argv)
 {
 	uint16_t vout_offset_value = 0;
 	uint8_t *rail_name = NULL;
 
 	shell_print(shell, "  id|rail_name                               |vout_offset(mV)");
 
-	/* Print all rail vout offsets from VR_RAIL_E_ASIC_P0V75_NUWA0_VDD to VR_RAIL_E_ASIC_P0V75_OWL_W_TRVDD */
+	/* Print the cached VOUT offset for every supported ASIC rail. */
 	for (int i = VR_RAIL_E_ASIC_P0V75_NUWA0_VDD; i <= VR_RAIL_E_ASIC_P0V75_OWL_W_TRVDD; i++) {
 		vout_offset_value = 0;
 		if (!voltage_offset_get((uint8_t)i, &vout_offset_value)) {
@@ -224,7 +224,7 @@ void cmd_svs_asic_voltage_set(const struct shell *shell, size_t argc, char **arg
 	uint8_t svs_asic_voltage_flag = strtol(argv[1], NULL, 0);
 	//flag only support 0 or 1
 	if (svs_asic_voltage_flag > 1) {
-		shell_error(shell, "Only 0 or 1 is allowed.", svs_asic_voltage_flag);
+		shell_error(shell, "Only 0 or 1 is allowed.");
 		return;
 	}
 	set_svs_asic_voltage_flag(svs_asic_voltage_flag);
@@ -283,7 +283,7 @@ static bool ovp_uvp_check(const struct shell *shell, const char *rail_str, enum 
 		return false;
 	}
 	if (*rail != VR_RAIL_E_ASIC_P0V75_NUWA0_VDD && *rail != VR_RAIL_E_ASIC_P0V75_NUWA1_VDD) {
-		shell_error(shell, "Please input medha0/1 voltage rail");
+		shell_error(shell, "Please input NUWA0/1 voltage rail");
 		return false;
 	}
 	return true;
@@ -426,6 +426,93 @@ static int cmd_voffset_mmc_set(const struct shell *shell, size_t argc, char **ar
 	return 0;
 }
 
+static bool svs_voltage_range_check(const struct shell *shell, const char *rail_str,
+				    enum VR_RAIL_E *rail)
+{
+	if (!is_mb_dc_on()) {
+		shell_error(shell, "VR no power");
+		return false;
+	}
+
+	if (!vr_rail_enum_get((uint8_t *)rail_str, (uint8_t *)rail)) {
+		shell_error(shell, "Invalid rail: %s", rail_str);
+		return false;
+	}
+
+	if (*rail != VR_RAIL_E_ASIC_P0V75_NUWA0_VDD && *rail != VR_RAIL_E_ASIC_P0V75_NUWA1_VDD) {
+		shell_error(shell, "Please input NUWA0/1 voltage rail");
+		return false;
+	}
+
+	return true;
+}
+
+static int cmd_svs_voltage_range_get(const struct shell *shell, size_t argc, char **argv)
+{
+	for (int i = VR_RAIL_E_ASIC_P0V75_NUWA0_VDD; i <= VR_RAIL_E_ASIC_P0V75_NUWA1_VDD; i++) {
+		uint8_t *rail_name = NULL;
+		if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
+			shell_print(shell, "Can't find vr_rail_name by rail index: %d", i);
+			continue;
+		}
+
+		uint16_t vmin = svs_voltage_range_command_get.vout_min[i];
+		uint16_t vmax = svs_voltage_range_command_get.vout_max[i];
+		shell_print(shell, "%4d|%-40s|min:%4dmV max:%4dmV", i, rail_name, vmin, vmax);
+	}
+
+	return 0;
+}
+
+static int cmd_svs_voltage_range_set(const struct shell *shell, size_t argc, char **argv)
+{
+	bool is_perm = false;
+
+	if (argc >= 5) {
+		if (!strcmp(argv[4], "perm")) {
+			is_perm = true;
+		} else {
+			shell_error(shell, "The last argument must be <perm>");
+			return -1;
+		}
+	}
+
+	if (argc < 4) {
+		shell_error(shell, "Usage: svs_voltage_range set <rail> <min-mV> <max-mV> [perm]");
+		return -1;
+	}
+
+	enum VR_RAIL_E rail;
+	if (!svs_voltage_range_check(shell, argv[1], &rail))
+		return -1;
+
+	uint16_t set_value_min = strtol(argv[2], NULL, 10);
+	uint16_t set_value_max = strtol(argv[3], NULL, 10);
+	if (set_value_min > set_value_max) {
+		shell_error(shell, "min value should be less than max value");
+		return -1;
+	}
+
+	svs_voltage_range_command_get.vout_min[rail] = set_value_min;
+	svs_voltage_range_command_get.vout_max[rail] = set_value_max;
+
+	if (is_perm) {
+		svs_voltage_range_user_settings.vout_min[rail] = set_value_min;
+		svs_voltage_range_user_settings.vout_max[rail] = set_value_max;
+		if (!set_user_settings_svs_voltage_range_to_eeprom(
+			    &svs_voltage_range_user_settings,
+			    sizeof(svs_voltage_range_user_settings))) {
+			shell_error(shell, "Can't set svs_voltage_range user settings");
+			return -1;
+		}
+	}
+
+	shell_info(shell, "Set %s min:%4dmV max:%4dmV, %svolatile", argv[1], set_value_min,
+		   set_value_max, is_perm ? "non-" : "");
+
+	return 0;
+}
+
 SHELL_DYNAMIC_CMD_CREATE(voltage_rname, voltage_rname_get);
 
 /* OVP/UVP level 2 */
@@ -464,6 +551,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_voffset_mmc_cmds,
 			       SHELL_CMD(get, NULL, "voffset_mmc get", cmd_voffset_mmc_get),
 			       SHELL_SUBCMD_SET_END);
 
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_svs_voltage_range_cmds,
+	SHELL_CMD(get, NULL, "get NUWA0/1 SVS voltage ranges", cmd_svs_voltage_range_get),
+	SHELL_CMD_ARG(set, &voltage_rname, "svs_voltage_range set <rail> <min-mV> <max-mV> [perm]",
+		      cmd_svs_voltage_range_set, 4, 1),
+	SHELL_SUBCMD_SET_END);
+
 /* level 1 */
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_voltage_cmds, SHELL_CMD(get, &sub_voltage_get_cmds, "get voltage all", NULL),
@@ -472,10 +566,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(svs_apply_offset, &sub_svs_cmds, "svs apply commands", NULL),
 	SHELL_CMD(svs_asic_voltage, &sub_svs_asic_voltage, "svs asic voltage setting commands",
 		  NULL),
-	SHELL_CMD(get_medha_vout_offset, NULL, "get medha vout offset", cmd_get_medha_vout_offset),
+	SHELL_CMD(get_vout_offset, NULL, "get ASIC rail VOUT offsets", cmd_get_vout_offset),
 	SHELL_CMD(voffset_mmc, &sub_voffset_mmc_cmds, "Voffset_mmc set/get commands", NULL),
-	SHELL_CMD(ovp, &sub_ovp_cmds, "OVP get/set commands (MPS medha0/1 only)", NULL),
-	SHELL_CMD(uvp, &sub_uvp_cmds, "UVP get/set commands (MPS medha0/1 only)", NULL),
+	SHELL_CMD(ovp, &sub_ovp_cmds, "OVP get/set commands (MPS NUWA0/1 only)", NULL),
+	SHELL_CMD(uvp, &sub_uvp_cmds, "UVP get/set commands (MPS NUWA0/1 only)", NULL),
+	SHELL_CMD(svs_voltage_range, &sub_svs_voltage_range_cmds,
+		  "svs_voltage_range get/set commands (NUWA0/1 only)", NULL),
 	SHELL_SUBCMD_SET_END);
 
 /* Root of command test */

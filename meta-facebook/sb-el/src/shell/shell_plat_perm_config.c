@@ -146,6 +146,21 @@ static int cmd_perm_config_get(const struct shell *shell, size_t argc, char **ar
 		}
 	}
 
+	for (int i = VR_RAIL_E_ASIC_P0V75_NUWA0_VDD; i <= VR_RAIL_E_ASIC_P0V75_NUWA1_VDD; i++) {
+		if (svs_voltage_range_user_settings.vout_max[i] != UINT16_MAX &&
+		    svs_voltage_range_user_settings.vout_min[i] != UINT16_MAX) {
+			uint8_t *rail_name = NULL;
+			if (!vr_rail_name_get((uint8_t)i, &rail_name)) {
+				LOG_ERR("Can't find vr_rail_name by rail index: %d", i);
+				continue;
+			}
+			shell_print(shell, "[%2d]%-50s svs_voltage_range max=%d min=%d", i,
+				    rail_name, svs_voltage_range_user_settings.vout_max[i],
+				    svs_voltage_range_user_settings.vout_min[i]);
+			config_count++;
+		}
+	}
+
 	if (!config_count) {
 		shell_print(shell, "no perm parameter exist");
 	}

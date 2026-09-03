@@ -1234,6 +1234,10 @@ err:
 bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt)
 {
 	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
+	if (rail >= VR_RAIL_E_MAX) {
+		LOG_ERR("invalid rail %d", rail);
+		return false;
+	}
 
 	bool ret = false;
 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
@@ -1322,10 +1326,16 @@ vr_vout_user_settings_struct vr_vout_user_settings = { 0 };
 vr_vout_range_user_settings_struct vout_range_user_settings = { 0 };
 vr_voffset_mmc_command_get_struct vr_voffset_mmc_command_get = { 0 };
 vr_voffset_mmc_user_settings_struct vr_voffset_mmc_user_settings = { 0 };
+svs_voltage_range_user_settings_struct svs_voltage_range_command_get = { 0 };
+svs_voltage_range_user_settings_struct svs_voltage_range_user_settings = { 0 };
 
 bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm)
 {
 	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
+	if (rail >= VR_RAIL_E_MAX) {
+		LOG_ERR("invalid rail %d", rail);
+		return false;
+	}
 
 	bool ret = false;
 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
@@ -1407,6 +1417,10 @@ err:
 bool plat_get_get_vout_offset(uint8_t rail, uint16_t *vout_offset)
 {
 	CHECK_NULL_ARG_WITH_RETURN(vout_offset, false);
+	if (rail >= VR_RAIL_E_MAX) {
+		LOG_ERR("invalid rail %d", rail);
+		return false;
+	}
 
 	bool ret = false;
 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
@@ -2094,6 +2108,10 @@ bool plat_get_vout_range(uint8_t rail, uint16_t *vout_max_millivolt, uint16_t *v
 bool plat_set_voffset_mmc_command(uint8_t rail, int16_t *millivolt, bool is_perm)
 {
 	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
+	if (rail >= VR_RAIL_E_MAX) {
+		LOG_ERR("invalid rail %d", rail);
+		return false;
+	}
 
 	bool ret = false;
 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
