@@ -261,6 +261,14 @@ typedef struct bootstrap_user_settings_struct {
 extern bootstrap_user_settings_struct bootstrap_user_settings;
 extern const uint8_t dbb_bootstrap_settings[STRAP_INDEX_EXCEPT_EVB_MAX];
 
+typedef struct svs_voltage_range_user_settings_struct {
+	uint16_t vout_max[2];
+	uint16_t vout_min[2];
+} svs_voltage_range_user_settings_struct;
+
+extern svs_voltage_range_user_settings_struct svs_voltage_range_command_get;
+extern svs_voltage_range_user_settings_struct svs_voltage_range_user_settings;
+
 extern vr_vout_range_user_settings_struct vout_range_user_settings;
 extern mp2971_init_arg mp2971_init_args[];
 

@@ -34,6 +34,7 @@
 #define DELAY_MODULE_PG_USER_SETTINGS_OFFSET 0x8800
 #define SVS_FLAG_USER_SETTINGS_OFFSET 0x8900
 #define VR_VOFFSET_MMC_USER_SETTINGS_OFFSET 0x8A00
+#define SVS_VOLTAGE_RANGE_USER_SETTINGS_OFFSET 0x8C00
 
 #define CPLD_THROTTLE_SWITCH_ADDR 0x25
 #define CPLD_THERMALTRIP_SWITCH_ADDR 0x3A
@@ -158,6 +159,8 @@ bool get_user_settings_vr_vout_from_eeprom(void *user_settings, uint8_t data_len
 //svs
 bool set_user_settings_svs_flag_to_eeprom(void *user_settings, uint8_t data_length);
 bool get_user_settings_svs_flag_from_eeprom(void *thermaltrip_user_settings, uint8_t data_length);
+bool set_user_settings_svs_voltage_range_to_eeprom(void *user_settings, uint8_t data_length);
+bool get_user_settings_svs_voltage_range_from_eeprom(void *user_settings, uint8_t data_length);
 
 //vout offset
 bool set_user_settings_vr_voffset_mmc_to_eeprom(void *user_settings, uint8_t data_length);

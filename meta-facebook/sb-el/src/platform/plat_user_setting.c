@@ -793,6 +793,35 @@ static bool svs_flag_user_settings_init(void)
 	return true;
 }
 
+static void svs_voltage_range_default_settings_init(void)
+{
+	for (int i = VR_RAIL_E_ASIC_P0V75_NUWA0_VDD; i <= VR_RAIL_E_ASIC_P0V75_NUWA1_VDD; i++) {
+		svs_voltage_range_command_get.vout_max[i] = 850;
+		svs_voltage_range_command_get.vout_min[i] = 750;
+	}
+}
+
+static bool svs_voltage_range_user_settings_init(void)
+{
+	if (!get_user_settings_svs_voltage_range_from_eeprom(
+		    &svs_voltage_range_user_settings, sizeof(svs_voltage_range_user_settings))) {
+		LOG_ERR("get svs_voltage_range user settings failed");
+		return false;
+	}
+
+	for (int i = VR_RAIL_E_ASIC_P0V75_NUWA0_VDD; i <= VR_RAIL_E_ASIC_P0V75_NUWA1_VDD; i++) {
+		if (svs_voltage_range_user_settings.vout_max[i] != UINT16_MAX &&
+		    svs_voltage_range_user_settings.vout_min[i] != UINT16_MAX) {
+			svs_voltage_range_command_get.vout_max[i] =
+				svs_voltage_range_user_settings.vout_max[i];
+			svs_voltage_range_command_get.vout_min[i] =
+				svs_voltage_range_user_settings.vout_min[i];
+		}
+	}
+
+	return true;
+}
+
 // vout
 bool get_user_settings_vr_vout_from_eeprom(void *user_settings, uint8_t data_length)
 {
@@ -802,6 +831,32 @@ bool get_user_settings_vr_vout_from_eeprom(void *user_settings, uint8_t data_len
 		LOG_ERR("Failed to read vout from eeprom");
 		return false;
 	}
+	return true;
+}
+
+bool get_user_settings_svs_voltage_range_from_eeprom(void *user_settings, uint8_t data_length)
+{
+	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
+
+	if (!plat_eeprom_read(SVS_VOLTAGE_RANGE_USER_SETTINGS_OFFSET, user_settings, data_length)) {
+		LOG_ERR("Failed to read svs_voltage_range from eeprom");
+		return false;
+	}
+
+	return true;
+}
+
+bool set_user_settings_svs_voltage_range_to_eeprom(void *user_settings, uint8_t data_length)
+{
+	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
+
+	if (!plat_eeprom_write(SVS_VOLTAGE_RANGE_USER_SETTINGS_OFFSET, user_settings,
+			       data_length)) {
+		LOG_ERR("svs_voltage_range failed to write eeprom");
+		return false;
+	}
+	k_msleep(EEPROM_MAX_WRITE_TIME);
+
 	return true;
 }
 
@@ -947,6 +1002,14 @@ bool perm_config_clear(void)
 		return false;
 	}
 
+	/* clear svs voltage range perm parameters */
+	memset(&svs_voltage_range_user_settings, 0xFF, sizeof(svs_voltage_range_user_settings));
+	if (!set_user_settings_svs_voltage_range_to_eeprom(
+		    &svs_voltage_range_user_settings, sizeof(svs_voltage_range_user_settings))) {
+		LOG_ERR("The perm_config clear failed");
+		return false;
+	}
+
 	return true;
 }
 
@@ -966,4 +1029,6 @@ void user_settings_init(void)
 	vr_vout_user_settings_init();
 	svs_flag_user_settings_init();
 	vr_voffset_mmc_user_settings_init();
+	svs_voltage_range_default_settings_init();
+	svs_voltage_range_user_settings_init();
 }
