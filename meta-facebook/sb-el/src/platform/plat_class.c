@@ -135,16 +135,16 @@ void init_board_stage(void)
 
 	//print board stage word
 	switch (board_stage_data) {
-	case REV_ID_EVT1A:
-		board_rev_id = REV_ID_EVT1A;
+	case REV_ID_EVT1A_FAB1:
+		board_rev_id = REV_ID_EVT1A_FAB1;
 		LOG_INF("BOARD_STAGE(0x%02X) = EVT1A", board_rev_id);
 		break;
-	case REV_ID_EVT1B:
-		board_rev_id = REV_ID_EVT1B;
+	case REV_ID_EVT1B_FAB2:
+		board_rev_id = REV_ID_EVT1B_FAB2;
 		LOG_INF("BOARD_STAGE(0x%02X) = EVT1B", board_rev_id);
 		break;
-	case REV_ID_EVT2:
-		board_rev_id = REV_ID_EVT2;
+	case REV_ID_EVT2_FAB2:
+		board_rev_id = REV_ID_EVT2_FAB2;
 		LOG_INF("BOARD_STAGE(0x%02X) = EVT2", board_rev_id);
 		break;
 	case REV_ID_DVT:
@@ -198,7 +198,8 @@ void init_vr_vendor_type(void)
 	vr_module = (vr_vendor_module & 0x01);
 	ubc_module = (vr_vendor_module >> 1) & 0x07;
 
-	bool is_evt1a_luxshare_quirk = (vr_vendor_module == 0x08 && board_rev_id == REV_ID_EVT1A);
+	bool is_evt1a_luxshare_quirk =
+		(vr_vendor_module == 0x08 && board_rev_id == REV_ID_EVT1A_FAB1);
 
 	if (is_evt1a_luxshare_quirk) {
 		vr_module = 0x01;
@@ -276,18 +277,18 @@ void pal_show_board_types(const struct shell *shell)
 
 	if (asic_board_id == ASIC_BOARD_ID_EVB) {
 		shell_print(shell, "* BOARD_STAGE:   (0x%02X)%s", board_rev_id,
-			    (board_rev_id == REV_ID_EVT1A) ? "REV_ID_EVT1A" :
-			    (board_rev_id == REV_ID_EVT1B) ? "REV_ID_EVT1B" :
-			    (board_rev_id == REV_ID_EVT2)  ? "REV_ID_EVT2" :
+			    (board_rev_id == REV_ID_EVT1A_FAB1) ? "REV_ID_EVT1A_FAB1" :
+			    (board_rev_id == REV_ID_EVT1B_FAB2) ? "REV_ID_EVT1B_FAB2" :
+			    (board_rev_id == REV_ID_EVT2_FAB2)  ? "REV_ID_EVT2_FAB2" :
 			    (board_rev_id == REV_ID_DVT)   ? "REV_ID_DVT" :
 			    (board_rev_id == REV_ID_PVT)   ? "REV_ID_PVT" :
 			    (board_rev_id == REV_ID_MP)	   ? "REV_ID_MP" :
 							     "not supported");
 	} else if (asic_board_id == ASIC_BOARD_ID_ELECTRA) {
 		shell_print(shell, "* BOARD_STAGE:   (0x%02X)%s", board_rev_id,
-			    (board_rev_id == REV_ID_EVT1A) ? "REV_ID_EVT1A" :
-			    (board_rev_id == REV_ID_EVT1B) ? "REV_ID_EVT1B" :
-			    (board_rev_id == REV_ID_EVT2)  ? "REV_ID_EVT2" :
+			    (board_rev_id == REV_ID_EVT1A_FAB1) ? "REV_ID_EVT1A_FAB1" :
+			    (board_rev_id == REV_ID_EVT1B_FAB2) ? "REV_ID_EVT1B_FAB2" :
+			    (board_rev_id == REV_ID_EVT2_FAB2)  ? "REV_ID_EVT2_FAB2" :
 			    (board_rev_id == REV_ID_DVT)   ? "REV_ID_DVT" :
 			    (board_rev_id == REV_ID_PVT)   ? "REV_ID_PVT" :
 			    (board_rev_id == REV_ID_MP)	   ? "REV_ID_MP" :
@@ -304,7 +305,8 @@ void pal_show_board_types(const struct shell *shell)
 		    (vr_vendor_module == LUXSHURE_UBC_AND_MPS_VR) ? "LUXSHURE_UBC_AND_MPS_VR" :
 		    (vr_vendor_module == LUXSHURE_UBC_AND_RNS_VR) ? "LUXSHURE_UBC_AND_RNS_VR" :
 			(vr_vendor_module == CYNTEX_UBC_AND_MPS_VR) ?
-			((board_rev_id    == REV_ID_EVT1A) ? "LUXSHARE_UBC_AND_RNS_VR" : "CYNTEX_UBC_AND_MPS_VR") :
+			((board_rev_id == REV_ID_EVT1A_FAB1) ? "LUXSHARE_UBC_AND_RNS_VR" :
+							       "CYNTEX_UBC_AND_MPS_VR") :
 		    (vr_vendor_module == CYNTEX_UBC_AND_RNS_VR) ? "CYNTEX_UBC_AND_RNS_VR" :
 								    "not supported");
 	shell_print(shell, "* UBC_TYPE:      (0x%02X)%s", ubc_module,

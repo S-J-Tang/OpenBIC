@@ -662,7 +662,7 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 	}
 
 	/* EVT1A PDB1 power comes from BMC through CPLD */
-	if (board_rev_id == REV_ID_EVT1A) {
+	if (board_rev_id == REV_ID_EVT1A_FAB1) {
 		int reading = 0;
 		get_cpld_polling_power_info(&reading);
 		uint16_t val = (uint16_t)reading;
