@@ -16,15 +16,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include "plat_clock.h"
 #include "plat_i2c.h"
 #include "plat_util.h"
 #include <logging/log.h>
 #include "plat_cpld.h"
+#include "plat_class.h"
 #include "pldm_oem.h"
 #include "plat_log.h"
 
 LOG_MODULE_REGISTER(plat_clock);
+
+#define CLK_312_5MHZ_REINIT_EVENT_DATA_LEN 7
+
+static uint8_t clk_312_5_reinit_event_data[CLK_312_5MHZ_REINIT_EVENT_DATA_LEN];
 
 static uint8_t clk_100mhz_get_lock_status(uint8_t bus, uint8_t addr)
 {
@@ -127,6 +133,172 @@ uint8_t clk_312_5mhz_get_lock_status_u618(void)
 	return i2c_msg.data[0] & 0x01; //bit 0 is the APLL lock status
 }
 
+#define U618_WORKAROUND_RETRY 5
+#define U618_WORKAROUND_WRITE_DELAY_MS 15
+
+static bool u618_reg_read(uint16_t offset, uint8_t *data, uint8_t data_len)
+{
+	I2C_MSG i2c_msg = { 0 };
+
+	k_msleep(10);
+	i2c_msg.bus = CLK_U618_I2C_BUS;
+	i2c_msg.target_addr = CLK_GEN_312_5M_U618_ADDR;
+	i2c_msg.tx_len = 2;
+	i2c_msg.rx_len = data_len;
+	i2c_msg.data[0] = (offset >> 8) & 0xff;
+	i2c_msg.data[1] = offset & 0xff;
+
+	if (i2c_master_read(&i2c_msg, U618_WORKAROUND_RETRY)) {
+		LOG_ERR("Failed to read CLK U618 register 0x%04x", offset);
+		return false;
+	}
+
+	memcpy(data, i2c_msg.data, data_len);
+	return true;
+}
+
+static bool u618_reg_write(uint16_t offset, const uint8_t *data, uint8_t data_len)
+{
+	I2C_MSG i2c_msg = { 0 };
+
+	k_msleep(10);
+	i2c_msg.bus = CLK_U618_I2C_BUS;
+	i2c_msg.target_addr = CLK_GEN_312_5M_U618_ADDR;
+	i2c_msg.tx_len = data_len + 2;
+	i2c_msg.data[0] = (offset >> 8) & 0xff;
+	i2c_msg.data[1] = offset & 0xff;
+	memcpy(&i2c_msg.data[2], data, data_len);
+
+	if (i2c_master_write(&i2c_msg, U618_WORKAROUND_RETRY)) {
+		LOG_ERR("Failed to write CLK U618 register 0x%04x", offset);
+		return false;
+	}
+
+	return true;
+}
+
+bool check_312_5MHz_init_status(void)
+{
+	static const uint8_t expected_00a8[] = { 0x4d, 0xc8, 0x04, 0x0b };
+	static const uint8_t expected_0080[] = { 0x6d };
+	static const uint8_t expected_0088[] = { 0x00, 0x20 };
+	static const uint8_t apll_reinit[] = { 0x00, 0x02, 0x00 };
+	uint8_t read_00a8[sizeof(expected_00a8)] = { 0 };
+	uint8_t read_0080[sizeof(expected_0080)] = { 0 };
+	uint8_t read_0088[sizeof(expected_0088)] = { 0 };
+	uint8_t pwr_en = 0;
+	uint8_t rev_id = get_board_rev_id();
+	bool has_error = false;
+
+	/* U618 workaround is required from EVT2 onward; board ID is intentionally ignored. */
+	if (rev_id < REV_ID_EVT2) {
+		LOG_INF("Board rev %d does not require CLK U618 workaround", rev_id);
+		return true;
+	}
+
+	if (!plat_read_cpld(VR_EN_PIN_READING_5, &pwr_en, 1)) {
+		LOG_ERR("Failed to read PWR_EN before checking CLK U618 init status");
+		return false;
+	}
+	pwr_en &= BIT(0);
+	LOG_INF("Board rev: %d, PWR_EN: %d", rev_id, pwr_en);
+
+	/* Follow the Rainbow flow: check all workaround registers first. */
+	if (!u618_reg_read(0x00a8, read_00a8, sizeof(read_00a8)))
+		return false;
+	memcpy(&clk_312_5_reinit_event_data[0], read_00a8, sizeof(read_00a8));
+	LOG_INF("Read CLK U618 reg 0x00A8: %02x%02x%02x%02x", read_00a8[0], read_00a8[1],
+		read_00a8[2], read_00a8[3]);
+	has_error |= memcmp(read_00a8, expected_00a8, sizeof(expected_00a8)) != 0;
+
+	if (!u618_reg_read(0x0080, read_0080, sizeof(read_0080)))
+		return false;
+	memcpy(&clk_312_5_reinit_event_data[4], read_0080, sizeof(read_0080));
+	LOG_INF("Read CLK U618 reg 0x0080: %02x", read_0080[0]);
+	has_error |= memcmp(read_0080, expected_0080, sizeof(expected_0080)) != 0;
+
+	if (!u618_reg_read(0x0088, read_0088, sizeof(read_0088)))
+		return false;
+	memcpy(&clk_312_5_reinit_event_data[5], read_0088, sizeof(read_0088));
+	LOG_INF("Read CLK U618 reg 0x0088: %02x%02x", read_0088[0], read_0088[1]);
+	has_error |= memcmp(read_0088, expected_0088, sizeof(expected_0088)) != 0;
+
+	if (!has_error) {
+		LOG_INF("CLK U618 workaround values are already correct");
+		return true;
+	}
+
+	/* Rainbow does not change the clock configuration after PWR_EN is asserted. */
+	if (pwr_en) {
+		LOG_ERR("CLK U618 values are unexpected while PWR_EN is asserted");
+		error_log_event(CLK_312_5MHZ_REINIT_ERR_CODE, LOG_ASSERT);
+		return false;
+	}
+
+	LOG_WRN("Power is off with unexpected CLK U618 values; applying workaround");
+	has_error = false;
+	if (!u618_reg_write(0x00a8, expected_00a8, sizeof(expected_00a8))) {
+		has_error = true;
+	} else if (!u618_reg_read(0x00a8, read_00a8, sizeof(read_00a8))) {
+		has_error = true;
+	} else {
+		memcpy(&clk_312_5_reinit_event_data[0], read_00a8, sizeof(read_00a8));
+	}
+	if (memcmp(read_00a8, expected_00a8, sizeof(expected_00a8)) != 0) {
+		LOG_ERR("CLK U618 reg 0x00A8 workaround verification failed");
+		has_error = true;
+	}
+	k_msleep(U618_WORKAROUND_WRITE_DELAY_MS);
+
+	if (!u618_reg_write(0x0080, expected_0080, sizeof(expected_0080))) {
+		has_error = true;
+	} else if (!u618_reg_read(0x0080, read_0080, sizeof(read_0080))) {
+		has_error = true;
+	} else {
+		memcpy(&clk_312_5_reinit_event_data[4], read_0080, sizeof(read_0080));
+	}
+	if (memcmp(read_0080, expected_0080, sizeof(expected_0080)) != 0) {
+		LOG_ERR("CLK U618 reg 0x0080 workaround verification failed");
+		has_error = true;
+	}
+	k_msleep(U618_WORKAROUND_WRITE_DELAY_MS);
+
+	if (!u618_reg_write(0x0088, expected_0088, sizeof(expected_0088))) {
+		has_error = true;
+	} else if (!u618_reg_read(0x0088, read_0088, sizeof(read_0088))) {
+		has_error = true;
+	} else {
+		memcpy(&clk_312_5_reinit_event_data[5], read_0088, sizeof(read_0088));
+	}
+	if (memcmp(read_0088, expected_0088, sizeof(expected_0088)) != 0) {
+		LOG_ERR("CLK U618 reg 0x0088 workaround verification failed");
+		has_error = true;
+	}
+
+	/* Re-initialize APLL with the intended Rainbow 0x00 -> 0x02 -> 0x00 sequence. */
+	for (uint8_t i = 0; i < ARRAY_SIZE(apll_reinit); i++) {
+		if (!u618_reg_write(0x0d00, &apll_reinit[i], 1))
+			has_error = true;
+	}
+
+	if (!plat_read_cpld(VR_EN_PIN_READING_5, &pwr_en, 1)) {
+		LOG_ERR("Failed to read PWR_EN after applying CLK U618 workaround");
+		has_error = true;
+	} else {
+		pwr_en &= BIT(0);
+	}
+
+	/* Match Rainbow: retain the incident when power has come on after re-init. */
+	if (has_error || pwr_en) {
+		LOG_ERR("CLK U618 re-init result: error=%d, PWR_EN=%d", has_error, pwr_en);
+		error_log_event(CLK_312_5MHZ_REINIT_ERR_CODE, LOG_ASSERT);
+		return false;
+	}
+
+	LOG_INF("CLK U618 workaround applied successfully");
+	return true;
+}
+
 /* get clock error data and send to bmc*/
 bool clock_get_error_data(uint16_t error_code, uint8_t *data)
 {
@@ -170,6 +342,10 @@ bool clock_get_error_data(uint16_t error_code, uint8_t *data)
 		if (!plat_read_cpld(CLK_100MHZ_BUF_LOSS_REG, &data[0], 1))
 			ret = false;
 		break;
+	case CLK_312_5MHZ_REINIT_ERR_IDX:
+		memcpy(data, clk_312_5_reinit_event_data, CLK_312_5MHZ_REINIT_EVENT_DATA_LEN);
+		/* 0x8A06 is stored in blackbox only; do not emit another BMC event. */
+		return true;
 	default:
 		LOG_ERR("Unsupported clock error code: 0x%04x", error_code);
 		return false;
