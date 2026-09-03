@@ -36,6 +36,7 @@
 #include "plat_user_setting.h"
 #include "plat_vr_test_mode.h"
 #include "plat_pldm_sensor.h"
+#include "plat_clock.h"
 
 LOG_MODULE_REGISTER(plat_isr);
 
@@ -122,6 +123,9 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 	// dc on
 	if (gpio_get(RST_ARKE_PWR_ON_PLD_R1_N)) {
 		plat_switch_pin_a12(false); /* HIGH -> A12 = SPIP1_CS */
+		/* CLK U618 is accessible only after ARKE power-on reset is deasserted. */
+		if (!check_312_5MHz_init_status())
+			LOG_ERR("Failed to apply CLK U618 workaround after DC on");
 		ioexp_init();
 		/* Retry FAB2 VR address detection after the VRs become accessible. */
 		refresh_fab2_mps_nuwa_addr();

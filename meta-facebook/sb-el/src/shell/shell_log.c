@@ -431,6 +431,14 @@ uint8_t extend_error_code_dump(const struct shell *shell, uint16_t err_code, uin
 			shell_print(shell, "read cpld reg 0x31: 0x%02x", data[0]);
 			err_data_len = 1;
 			break;
+		case CLK_312_5MHZ_REINIT_ERR_IDX:
+			shell_print(shell, "\tCLK_312_5MHZ_REINIT_ERR");
+			shell_print(shell,
+				    "register snapshot: 0x00A8=%02x %02x %02x %02x, "
+				    "0x0080=%02x, 0x0088=%02x %02x",
+				    data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+			err_data_len = 7;
+			break;
 		default:
 			shell_print(shell, "\tCLOCK_APLL_UNLOCK_EVENT_CAUSE: UNKNOWN");
 			break;
