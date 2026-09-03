@@ -154,6 +154,8 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 		//set perm vout command when DC on
 		if (!set_all_vout_command())
 			LOG_ERR("set all vout command fail!");
+		//check RNS vr CML status
+		check_rns_vr_cml_status();
 	} else {
 		plat_switch_pin_a12(true); /* LOW -> A12 = GPIO73 output low */
 		// vr_test_mode_enable(false);

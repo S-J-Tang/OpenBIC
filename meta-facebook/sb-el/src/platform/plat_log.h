@@ -121,4 +121,5 @@ enum LOG_ERROR_TRIGGER_CAUSE_EXTEND {
 
 void packaged_bmc_log(uint8_t event_type, uint8_t event_data_1, uint8_t event_data_2,
 		      uint8_t event_data_3);
+void check_rns_vr_cml_status(void);
 #endif
