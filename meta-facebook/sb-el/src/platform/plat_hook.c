@@ -39,6 +39,7 @@
 #include "plat_class.h"
 #include "plat_util.h"
 #include "shell_plat_average_power.h"
+#include "plat_adc.h"
 
 LOG_MODULE_REGISTER(plat_hook);
 
@@ -105,6 +106,40 @@ bool post_arke_sensor_read(sensor_cfg *cfg, void *args, int *reading)
 		cfg->cache_status = PLDM_SENSOR_UNAVAILABLE;
 		return false;
 	}
+	return true;
+}
+
+bool post_adc_sensor_read(sensor_cfg *cfg, void *args, int *reading)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(reading, false);
+	ARG_UNUSED(args);
+
+	float vref = 0;
+	float val = 0;
+	sensor_val *sval = (sensor_val *)reading;
+	uint8_t adc_type = get_adc_type();
+
+	if (adc_type == ADI_AD4058)
+		vref = get_ad4058_vref();
+	else if (adc_type == TIC_ADS7066)
+		vref = get_ads7066_vref();
+	else {
+		LOG_ERR("invalid adc type %d", adc_type);
+		return false;
+	}
+
+	if (cfg->num == SENSOR_NUM_ASIC_IMON_NUWA0_VDD_CURR_A)
+		val = adc_raw_v_to_apms(get_adc_averge_val(ADC_IDX_NUWA0_2), vref);
+	else if (cfg->num == SENSOR_NUM_ASIC_IMON_NUWA1_VDD_CURR_A)
+		val = adc_raw_v_to_apms(get_adc_averge_val(ADC_IDX_NUWA1_2), vref);
+	else
+		return false;
+
+	sval->integer = val;
+	sval->fraction = (val - sval->integer) * 1000;
+	cfg->cache_status = SENSOR_READ_SUCCESS;
+
 	return true;
 }
 
