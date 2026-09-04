@@ -16,8 +16,6 @@
 #ifndef PLAT_POWER_CAPPING_H
 #define PLAT_POWER_CAPPING_H
 
-#define CPLD_LV1_TIME_WINDOW_NUM 8
-
 enum {
 	CAPPING_M_LOOK_UP_TABLE = 0,
 	CAPPING_M_CREDIT_BASE,
@@ -48,7 +46,6 @@ enum {
 void set_power_capping_lv_switch_en_val(uint8_t val);
 void power_capping_syn_vr_oc_warn_limit();
 void add_sync_oc_warn_to_work();
-bool find_cpld_lv1_time_window_idx_by_value(uint8_t *idx, uint16_t value);
 uint16_t get_power_capping_avg_power(uint8_t vr_idx, uint8_t lv);
 uint8_t get_power_capping_method();
 void set_power_capping_method(uint8_t value);
