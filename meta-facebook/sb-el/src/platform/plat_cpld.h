@@ -124,7 +124,6 @@
 #define CLK_100MHZ_BUF_LOSS_REG 0x31
 
 // vr hot
-#define VR_HOT_EVB_BIT HAMSA_MFIO19_BIT
 #define VR_HOT_ELECTRA_BIT 0
 
 typedef struct _cpld_info_ cpld_info;
