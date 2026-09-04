@@ -413,66 +413,37 @@ bool get_plat_vr_hot_mask_flag()
 
 int get_vr_hot(void)
 {
-	const bool is_evb =
-        (get_asic_board_id() == ASIC_BOARD_ID_EVB);
 	uint8_t reg_val = 0;
-	uint8_t bit_pos = is_evb ?
-        VR_HOT_EVB_BIT : VR_HOT_ELECTRA_BIT;
 
-	if(is_evb) {
-		if (!tca6424a_i2c_read(TCA6424A_OUTPUT_PORT_0, &reg_val, 1)) {
-			LOG_ERR("read VR_HOT via IO exp failed");
-			return -1;
-		}
-	} else {
-		if (!plat_read_cpld(ASIC_VR_HOT_SWITCH, &reg_val, 1)) {
-			LOG_ERR("read VR_HOT via CPLD failed");
-			return -1;
-		}
+	if (!plat_read_cpld(ASIC_VR_HOT_SWITCH, &reg_val, 1)) {
+		LOG_ERR("read VR_HOT via CPLD failed");
+		return -1;
 	}
-	bool vr_hot_enabled = (reg_val & BIT(bit_pos)) != 0;
+
+	bool vr_hot_enabled = (reg_val & BIT(VR_HOT_ELECTRA_BIT)) != 0;
 	return vr_hot_enabled;
 }
 
 bool set_vr_hot(bool enable)
 {
-    const bool is_evb =
-        (get_asic_board_id() == ASIC_BOARD_ID_EVB);
+	uint8_t reg_val;
 
-    uint8_t reg_val;
-    uint8_t bit_pos = is_evb ?
-        VR_HOT_EVB_BIT : VR_HOT_ELECTRA_BIT;
-
-    if (is_evb) {
-        if (!tca6424a_i2c_read(TCA6424A_OUTPUT_PORT_0, &reg_val, 1)) {
-		LOG_ERR("read VR_HOT via IO exp failed");
-            return false;
-		}
-    } else {
-        if (!plat_read_cpld(ASIC_VR_HOT_SWITCH, &reg_val, 1)) {
+	if (!plat_read_cpld(ASIC_VR_HOT_SWITCH, &reg_val, 1)) {
 		LOG_ERR("read VR_HOT via CPLD failed");
-            return false;
-		}
-    }
+		return false;
+	}
 
-    if (enable)
-        reg_val |= BIT(bit_pos);
-    else
-        reg_val &= ~BIT(bit_pos);
+	if (enable)
+		reg_val |= BIT(VR_HOT_ELECTRA_BIT);
+	else
+		reg_val &= ~BIT(VR_HOT_ELECTRA_BIT);
 
-    if (is_evb) {
-        if (!tca6424a_i2c_write(TCA6424A_OUTPUT_PORT_0, &reg_val, 1)) {
-			LOG_ERR("write VR_HOT via IO exp failed");
-			return false;
-		}
-    } else {
-        if (!plat_write_cpld(ASIC_VR_HOT_SWITCH, &reg_val)) {
-			LOG_ERR("write VR_HOT via CPLD failed");
-			return false;
-		}
-    }
+	if (!plat_write_cpld(ASIC_VR_HOT_SWITCH, &reg_val)) {
+		LOG_ERR("write VR_HOT via CPLD failed");
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
 bool trigger_vr_hot()

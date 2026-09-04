@@ -20,8 +20,6 @@
 #include <logging/log.h>
 #include "plat_i2c.h"
 #include "plat_cpld.h"
-#include "plat_class.h"
-#include "plat_ioexp.h"
 
 LOG_MODULE_REGISTER(power_capping_control, LOG_LEVEL_DBG);
 
@@ -31,7 +29,6 @@ LOG_MODULE_REGISTER(power_capping_control, LOG_LEVEL_DBG);
 
 #define POWER_CAPPING_LV1_CPLD_OFFSET 0xA6
 #define POWER_CAPPING_LV2_LV3_CPLD_OFFSET 0x25
-#define VR_HOT_EVB_IOEXP_OUTPUT_OFFSET TCA6424A_OUTPUT_PORT_0
 
 /* Bit mapping */
 #define NUWA0_PWR_CAP_LV1_BIT 1
@@ -41,7 +38,6 @@ LOG_MODULE_REGISTER(power_capping_control, LOG_LEVEL_DBG);
 #define NUWA0_PWR_CAP_LV3_BIT 5
 #define NUWA1_PWR_CAP_LV3_BIT 4
 #define VR_HOT_ELECTRA_BIT 0
-#define VR_HOT_EVB_BIT HAMSA_MFIO19_BIT
 
 #define POWER_CAPPING_SET_BIT(orig, bit) ((uint8_t)((orig) | (1u << (bit))))
 #define POWER_CAPPING_CLR_BIT(orig, bit) ((uint8_t)((orig) & ~(1u << (bit))))
@@ -74,31 +70,15 @@ static int cmd_power_capping_get(const struct shell *shell, size_t argc, char **
 		return -1;
 	}
 
-	uint8_t board_id = get_asic_board_id();
-
 	for (int i = 0; i < ARRAY_SIZE(pwr_cap_list); i++) {
 		const cpld_pin_map_t *item = &pwr_cap_list[i];
-		uint8_t bit_val = 0;
+		uint8_t reg_val = 0;
 
-		if (!strcmp(item->name, "VR_HOT") && (board_id == ASIC_BOARD_ID_EVB)) {
-			uint8_t io_val = 0;
-
-			if (!tca6424a_i2c_read(VR_HOT_EVB_IOEXP_OUTPUT_OFFSET, &io_val, 1)) {
-				shell_error(shell, "read VR_HOT via IO exp failed");
-				return -1;
-			}
-
-			bit_val = (io_val >> VR_HOT_EVB_BIT) & 0x1;
-
-		} else {
-			uint8_t reg_val = 0;
-
-			if (!plat_read_cpld(item->offset, &reg_val, 1)) {
-				return -1;
-			}
-
-			bit_val = (reg_val >> item->bit) & 0x1;
+		if (!plat_read_cpld(item->offset, &reg_val, 1)) {
+			return -1;
 		}
+
+		uint8_t bit_val = (reg_val >> item->bit) & 0x1;
 
 		shell_print(shell, "%s : %d", item->name, bit_val);
 	}
@@ -113,7 +93,6 @@ static int cmd_power_capping_set(const struct shell *shell, size_t argc, char **
 		return -1;
 	}
 
-	uint8_t board_id = get_asic_board_id();
 	const char *name = argv[1];
 	long set_val = strtol(argv[2], NULL, 10);
 
@@ -126,17 +105,6 @@ static int cmd_power_capping_set(const struct shell *shell, size_t argc, char **
 	if (!item) {
 		shell_error(shell, "Unknown name: %s", name);
 		return -1;
-	}
-
-	if (!strcmp(name, "VR_HOT") && (board_id == ASIC_BOARD_ID_EVB)) {
-		if (!tca6424a_i2c_write_bit(VR_HOT_EVB_IOEXP_OUTPUT_OFFSET, VR_HOT_EVB_BIT,
-					    (uint8_t)set_val)) {
-			shell_error(shell, "write VR_HOT via IO exp failed");
-			return -1;
-		}
-
-		shell_print(shell, "set %s to %ld done (EVB IO exp)", name, set_val);
-		return 0;
 	}
 
 	uint8_t reg_val = 0;
