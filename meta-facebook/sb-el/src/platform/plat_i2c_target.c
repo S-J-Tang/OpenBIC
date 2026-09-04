@@ -65,7 +65,7 @@ LOG_MODULE_REGISTER(plat_i2c_target);
 #define CPLD_VERSION_GET_REG 0x32
 #define CPLD_VERSION_GET_REG_LEN 4
 #define STRAP_SET_TYPE 0x44 // 01000100
-#define VR_PWR_BUF_SIZE 38
+#define VR_PWR_BUF_SIZE 56
 #define I2C_TARGET_BUS_ASIC I2C_BUS7 // asic HAMSA
 #define I2C_TARGET_BUS_ASIC_NUWA0 I2C_BUS4 // asic nuwa0
 #define I2C_TARGET_BUS_ASIC_NUWA1 I2C_BUS5 // asic nuwa1
@@ -536,6 +536,8 @@ uint8_t vr_pwr_sensor_table[] = {
 	SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_PWR_W,
 	SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_PWR_W,
 	SENSOR_NUM_P3V3_OSFP_PWR_W,
+	SENSOR_NUM_ASIC_P0V9_VDDQ_HBM0246_PWR_W,
+	SENSOR_NUM_ASIC_P0V9_VDDQ_HBM1357_PWR_W,
 };
 
 void vr_power_reading(uint8_t *buffer, size_t buf_size)
@@ -563,6 +565,15 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 	[36:37] - PDB1_P52V_ASIC_SENSE_PWR (Unit: W)
 				EVT1A: Read from BMC through CPLD
 				EVT1B and later: Read from INA238 sensor cache
+	[38:39] - P0V9_OWL_E_TRVDD (Unit: W)
+	[40:41] - P0V75_OWL_E_TRVDD (Unit: W)
+	[42:43] - P0V9_OWL_W_TRVDD (Unit: W)
+	[44:45] - P0V75_OWL_W_TRVDD (Unit: W)
+	[46:47] - P0V8_HAMSA_AVDD_PCIE (Unit: W)
+	[48:49] - P1V2_HAMSA_VDDHRXTX_PCIE (Unit: W)
+	[50:51] - P0V85_HAMSA_VDD (Unit: W)
+	[52:53] - P0V9_VDDQ_HBM0246 (Unit: W)
+	[54:55] - P0V9_VDDQ_HBM1357 (Unit: W)
 	each data is 2 bytes
 	*/
 	float x = 0;
@@ -650,6 +661,33 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 			break;
 		case SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_PWR_W:
 			memcpy(&buffer[34], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V9_OWL_E_TRVDD_PWR_W:
+			memcpy(&buffer[38], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V75_OWL_E_TRVDD_PWR_W:
+			memcpy(&buffer[40], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_PWR_W:
+			memcpy(&buffer[42], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_PWR_W:
+			memcpy(&buffer[44], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V8_HAMSA_AVDD_PCIE_PWR_W:
+			memcpy(&buffer[46], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_PWR_W:
+			memcpy(&buffer[48], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W:
+			memcpy(&buffer[50], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V9_VDDQ_HBM0246_PWR_W:
+			memcpy(&buffer[52], &val, 2);
+			break;
+		case SENSOR_NUM_ASIC_P0V9_VDDQ_HBM1357_PWR_W:
+			memcpy(&buffer[54], &val, 2);
 			break;
 		default:
 			// do nothing
