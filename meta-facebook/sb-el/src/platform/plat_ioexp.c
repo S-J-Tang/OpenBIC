@@ -100,7 +100,7 @@ bool tca6424a_init(void)
 	if (!tca6424a_i2c_write(TCA6424A_CONFIG_0, data, 3))
 		return false;
 
-	//set HAMSA_MFIO19(VR_HOT_EVB_BIT) to default 0
+	//set HAMSA_MFIO19 to default 0
 	if (!tca6424a_i2c_write_bit(TCA6424A_OUTPUT_PORT_0, HAMSA_MFIO19_BIT, 0)) {
 		return false;
 	}
