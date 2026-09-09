@@ -260,12 +260,12 @@ static void update_adc_info(uint16_t raw_data, uint8_t base_idx, float vref)
 		if (base_idx == ADC_EL_IDX_NUWA0) {
 			temp_voltage_value = get_cached_sensor_reading_by_sensor_number(
 						     SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_VOLT_V) /
-					     1000.0;
+					     10000.0;
 			inst_nuwa0 = temp_voltage_value;
 		} else if (base_idx == ADC_EL_IDX_NUWA1) {
 			temp_voltage_value = get_cached_sensor_reading_by_sensor_number(
 						     SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_VOLT_V) /
-					     1000.0;
+					     10000.0;
 			inst_nuwa1 = temp_voltage_value;
 		}
 		// transfer to uint16_t
