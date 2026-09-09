@@ -321,6 +321,38 @@ uint8_t normal_error_code_dump(const struct shell *shell, uint16_t err_code, uin
 			shell_print(shell, "\t%s", reg_name);
 			shell_print(shell, "\t\t%s", bit_name);
 			break;
+		} else if (cpld_offset == MFIO_FOR_ELECTRA) {
+			shell_print(shell, "\tASIC_REMOTE_TEMP_ERROR");
+			switch (bit_position) {
+			case HAMSA_MFIO22:
+				shell_print(shell, "\tHAMSA_MFIO22");
+				err_data_len = 2;
+				break;
+			case NUWA0_MFIO24:
+				shell_print(shell, "\tNUWA0_MFIO24");
+				err_data_len = 2;
+				break;
+			case NUWA1_MFIO28:
+				shell_print(shell, "\tNUWA1_MFIO28");
+				err_data_len = 2;
+				break;
+			case HAMSA_MFIO23:
+				shell_print(shell, "\tHAMSA_MFIO23");
+				err_data_len = 1;
+				break;
+			case NUWA0_MFIO31:
+				shell_print(shell, "\tNUWA0_MFIO31");
+				err_data_len = 1;
+				break;
+			case NUWA1_MFIO30:
+				shell_print(shell, "\tNUWA1_MFIO30");
+				err_data_len = 1;
+				break;
+			default:
+				break;
+			}
+			shell_print(shell, "cpld offset(0x%x): 0x%02x", MFIO_FOR_ELECTRA, data[0]);
+			shell_print(shell, "asic temp data: 0x%02x", data[1]);
 		} else {
 			shell_print(shell, "\t%s", reg_name);
 			shell_print(shell, "\t\t%s", bit_name);
