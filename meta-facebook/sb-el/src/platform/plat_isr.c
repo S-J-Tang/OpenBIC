@@ -37,6 +37,7 @@
 #include "plat_vr_test_mode.h"
 #include "plat_pldm_sensor.h"
 #include "plat_clock.h"
+#include "plat_adc.h"
 
 LOG_MODULE_REGISTER(plat_isr);
 
@@ -65,13 +66,26 @@ void ISR_GPIO_ALL_VR_PM_ALERT_R_N()
 
 void ISR_GPIO_FM_PLD_UBC_EN_R()
 {
-	// check step on setting flag
-	if (get_pwr_steps_on_flag() == 1)
-		return;
+	LOG_DBG("FM_PLD_UBC_EN_R GPIO ISR, value: %d", gpio_get(FM_PLD_UBC_EN_R));
+}
 
-	LOG_INF("FM_PLD_UBC_EN_R = %d\nDC ON", gpio_get(FM_PLD_UBC_EN_R));
+bool ubc_en_changed_callback(cpld_info *info, uint8_t *data)
+{
+	CHECK_NULL_ARG_WITH_RETURN(info, false);
+	CHECK_NULL_ARG_WITH_RETURN(data, false);
 
-	if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) {
+	if (get_pwr_steps_on_flag())
+		return false;
+
+	bool ubc_en = !!(*data & info->bit_check_mask);
+	bool last_ubc_en = !!(info->last_polling_value & info->bit_check_mask);
+
+	if (ubc_en == last_ubc_en)
+		return false;
+
+	LOG_INF("UBC_EN changed: %d -> %d", last_ubc_en, ubc_en);
+
+	if (ubc_en) {
 		plat_set_dc_on_log(LOG_ASSERT);
 		plat_handle_pwr_sequence_event();
 	} else {
@@ -79,6 +93,8 @@ void ISR_GPIO_FM_PLD_UBC_EN_R()
 	}
 
 	plat_update_ubc_status();
+
+	return true;
 }
 
 /* Pin A12 (GPIO73 / SPIP1_CS) dynamic mux switching
@@ -123,12 +139,7 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 	// dc on
 	if (gpio_get(RST_ARKE_PWR_ON_PLD_R1_N)) {
 		plat_switch_pin_a12(false); /* HIGH -> A12 = SPIP1_CS */
-		/* CLK U618 is accessible only after ARKE power-on reset is deasserted. */
-		if (!check_312_5MHz_init_status())
-			LOG_ERR("Failed to apply CLK U618 workaround after DC on");
 		ioexp_init();
-		/* Retry FAB2 VR address detection after the VRs become accessible. */
-		refresh_fab2_mps_nuwa_addr();
 		if (get_asic_board_id() == ASIC_BOARD_ID_EVB) {
 			// Ensure U200053 is initialized before initializing U200051.
 			init_U200052_IO();
@@ -150,19 +161,24 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 		// when dc on clear cpld polling alert status
 		uint8_t err_type = CPLD_UNEXPECTED_VAL_TRIGGER_CAUSE;
 		reset_error_log_states(err_type);
+		// re-init adc
+		set_is_adc_init(0);
 
-		/* getting VR VOUT settings */
+		/* Refresh offsets and restore permanent VOUT settings on every DC on. */
 		vr_vout_offset_get_init();
-		vr_vout_default_settings_init();
-		vr_vout_user_settings_init();
-		//set perm vout command when DC on
 		if (!set_all_vout_command())
 			LOG_ERR("set all vout command fail!");
+
 		//check RNS vr CML status
 		check_rns_vr_cml_status();
 	} else {
 		plat_switch_pin_a12(true); /* LOW -> A12 = GPIO73 output low */
-		// vr_test_mode_enable(false);
+		gpio_conf(SPI_ADC_CS1_N, GPIO_OUTPUT);
+		gpio_set(SPI_ADC_CS1_N, GPIO_LOW);
+		if (get_vr_test_mode_flag()) {
+			LOG_INF("dc off, exit the vr test mode");
+			vr_test_mode_enable(false);
+		}
 		// if board id == EVB , ctrl fan pwm
 		if (get_asic_board_id() == ASIC_BOARD_ID_EVB) {
 			LOG_INF("dc off, set fan pwm 0");

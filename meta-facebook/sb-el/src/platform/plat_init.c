@@ -36,13 +36,22 @@
 #include "plat_event.h"
 #include "plat_hwmon.h"
 #include "plat_gpio.h"
+#include "plat_isr.h"
 #include "plat_vr_test_mode.h"
+#include "plat_clock.h"
 #include "shell_arke_power.h"
 
 LOG_MODULE_REGISTER(plat_init);
 
 void pal_pre_init()
 {
+	/* Restore A12 mux from the current DC state, including MMC warm resets. */
+	if (is_mb_dc_on()) {
+		plat_switch_pin_a12(false); /* A12 = SPIP1_CS */
+	} else {
+		plat_switch_pin_a12(true); /* A12 = GPIO73 output low */
+	}
+
 	/* init i2c target */
 	for (int index = 0; index < MAX_TARGET_NUM; index++) {
 		if (I2C_TARGET_ENABLE_TABLE[index])
@@ -86,11 +95,14 @@ void pal_post_init()
 	init_thermal_polling();
 
 	init_vr_test_mode_polling();
+	// Check CLK 312.5MHz initialization while PWR_EN is low.
+	if (!check_312_5MHz_init_status())
+		LOG_ERR("Failed to check CLK U618 initialization status");
+	ast_pwm_set(100, PWM_PORT2);
+	ast_pwm_set(100, PWM_PORT6);
+	vr_vout_offset_get_init();
 
 	if (is_mb_dc_on() == true) {
-		ast_pwm_set(100, PWM_PORT2);
-		ast_pwm_set(100, PWM_PORT6);
-		vr_vout_offset_get_init();
 		//set perm vout command when DC on
 		if (!set_all_vout_command())
 			LOG_ERR("set all vout command fail!");

@@ -29,9 +29,15 @@ LOG_MODULE_REGISTER(plat_average_power_shell, LOG_LEVEL_DBG);
 
 static int cmd_power_get(const struct shell *shell, size_t argc, char **argv)
 {
-	/* is_ubc_enabled_delayed_enabled() is to wait for all VR to be enabled  */
-	/* (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) is to shut down polling immediately when UBC is disabled */
-	if (!((gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) && plat_get_ubc_status())) {
+	uint8_t ubc_en = 0;
+	if (!plat_read_cpld(VR_EN_PIN_READING_5, &ubc_en, 1)) {
+		shell_error(shell,
+			    "Can't get power command because UBC enable status read failed.");
+		return -1;
+	}
+
+	/* Require both current UBC_EN and the delayed status for VR power readiness. */
+	if (!(ubc_en & BIT(0)) || !plat_get_ubc_status()) {
 		shell_error(shell, "Can't get power command because VR has no power yet.");
 		return -1;
 	}

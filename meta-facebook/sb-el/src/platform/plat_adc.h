@@ -49,6 +49,7 @@ uint16_t get_adc_ucr(uint8_t idx);
 void set_adc_ucr(uint8_t idx, uint16_t ucr);
 bool get_adc_ucr_status(uint8_t idx);
 void plat_adc_electra_init(void);
+void set_is_adc_init(uint8_t value);
 uint8_t get_adc_type();
 float get_ads7066_vref();
 float get_ad4058_vref();
