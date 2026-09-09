@@ -24,6 +24,10 @@
 #define RESET_CPLD_ON 0x3F
 #define RESET_CPLD_OFF 0x00
 
+#define CPLD_OFFSET_CLK_312MHZ_EN 0xC5
+#define CLK_312MHZ_ENABLE 0x80
+#define CLK_312MHZ_DISABLE 0x00
+
 /* Clock EEPROM firmware update */
 #define CLK_U618_EEPROM_ADDR 0x50
 #define CLK_U86_EEPROM_ADDR 0x50
