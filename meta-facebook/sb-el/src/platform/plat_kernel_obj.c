@@ -98,15 +98,29 @@ We expect UBC ON will trigger DC ON. */
 bool ubc_status = false; // "ubc_enabled_delayed_status" in rainbow
 void plat_check_ubc_delayed_timer_handler(struct k_timer *timer);
 K_TIMER_DEFINE(check_ubc_delayed_timer, plat_check_ubc_delayed_timer_handler, NULL);
+static void plat_check_ubc_delayed_work_handler(struct k_work *work);
+K_WORK_DEFINE(check_ubc_delayed_work, plat_check_ubc_delayed_work_handler);
 
 void plat_check_ubc_delayed_timer_handler(struct k_timer *timer)
 {
-	/* FM_PLD_UBC_EN_R
+	ARG_UNUSED(timer);
+	k_work_submit(&check_ubc_delayed_work);
+}
+
+static void plat_check_ubc_delayed_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/* VR_EN_PIN_READING_5[0]
 	 * 1 -> UBC is enabled
 	 * 0 -> UBC is disabled
 	 */
-	bool is_ubc_enabled = (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH);
-	ubc_status = is_ubc_enabled;
+	uint8_t data = 0;
+	if (!plat_read_cpld(VR_EN_PIN_READING_5, &data, 1)) {
+		LOG_ERR("Failed to read UBC enable status from CPLD");
+		return;
+	}
+	ubc_status = !!(data & BIT(0));
 }
 
 void plat_update_ubc_status(void)

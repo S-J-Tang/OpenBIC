@@ -40,12 +40,9 @@ static bool plat_sensor_ubc_polling_enable_flag = true;
 static bool plat_sensor_temp_polling_enable_flag = true;
 static bool plat_sensor_vr_polling_enable_flag = true;
 static bool plat_sensor_ina238_polling_enable_flag = true;
-static bool plat_vr_change_done_flag = false;
 static uint8_t plat_sensor_one_step_power_enable_flag = 0;
 uint8_t pwr_capping_pollng_rate_type = 0;
 static uint8_t ina238_polling_rate_type = 0;
-void set_plat_vr_change_done_flag(bool value);
-bool get_plat_vr_change_done_flag(void);
 
 static ina238_init_arg ina238_pwr_w_init_args = {
 	.is_init = false,
@@ -11515,9 +11512,6 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 			LOG_INF("change VR sensors 0x%x address to 0x%x",
 				vr_table[j].pldm_sensor_cfg.num, vr_table[j].pldm_sensor_cfg.target_addr);
 
-			if (is_mb_dc_on()){
-				set_plat_vr_change_done_flag(true);
-			}
 		}
 	}
 
@@ -11570,51 +11564,6 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 	}
 }
 
-void refresh_fab2_mps_nuwa_addr(void)
-{
-	uint8_t board_id = get_asic_board_id();
-	if ((board_id != ASIC_BOARD_ID_EVB && board_id != ASIC_BOARD_ID_ELECTRA) ||
-	    get_board_rev_id() < REV_ID_EVT2_FAB2 || get_vr_module() != VR_MODULE_MPS){
-			set_plat_vr_change_done_flag(true);
-			return;
-		}
-
-	uint8_t nuwa0_addr = convert_vr_addr(I2C_BUS3, ASIC_P0V75_NUWA0_VDD_ADDR,
-					     FAB2_1ND_MPS);
-	uint8_t nuwa1_addr = convert_vr_addr(I2C_BUS2, ASIC_P0V75_NUWA1_VDD_ADDR,
-					     FAB2_1ND_MPS);
-
-	for (uint8_t thread_id = VR_SENSOR_THREAD_ID; thread_id <= QUICK_VR_SENSOR_THREAD_ID;
-	     thread_id++) {
-		pldm_sensor_info *table = plat_pldm_sensor_load(thread_id);
-		int count = plat_pldm_sensor_get_sensor_count(thread_id);
-		if (table == NULL || count < 0)
-			continue;
-
-		for (uint8_t i = 0; i < count; i++) {
-			uint8_t num = table[i].pldm_sensor_cfg.num;
-			if ((num >= SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_TEMP_C &&
-			     num <= SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W)) {
-				table[i].pldm_sensor_cfg.target_addr = nuwa0_addr;
-				if (fab2_mps_ic_second_source == true) {
-					table[i].pldm_sensor_cfg.type = sensor_dev_mp29526;
-				}
-			} else if ((num >= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_TEMP_C &&
-				    num <= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W)) {
-				table[i].pldm_sensor_cfg.target_addr = nuwa1_addr;
-				if (fab2_mps_ic_second_source == true) {
-					table[i].pldm_sensor_cfg.type = sensor_dev_mp29526;
-				}
-			}
-		}
-	}
-
-	set_plat_vr_change_done_flag(true);
-
-	LOG_DBG("refresh FAB2 MPS NUWA address: NUWA0=0x%x, NUWA1=0x%x", nuwa0_addr,
-		nuwa1_addr);
-}
-
 bool is_dc_access(uint8_t sensor_num)
 {
 	return is_mb_dc_on();
@@ -11650,11 +11599,6 @@ void set_plat_sensor_one_step_enable_flag(uint8_t value)
 	plat_sensor_one_step_power_enable_flag = value;
 }
 
-void set_plat_vr_change_done_flag(bool value)
-{
-	plat_vr_change_done_flag = value;
-}
-
 bool get_plat_sensor_polling_enable_flag()
 {
 	return plat_sensor_polling_enable_flag;
@@ -11683,11 +11627,6 @@ bool get_plat_sensor_vr_polling_enable_flag()
 uint8_t get_plat_sensor_one_step_enable_flag()
 {
 	return plat_sensor_one_step_power_enable_flag;
-}
-
-bool get_plat_vr_change_done_flag()
-{
-	return plat_vr_change_done_flag;
 }
 
 bool is_ubc_access(uint8_t sensor_num)
@@ -11763,7 +11702,7 @@ bool is_vr_access(uint8_t sensor_num)
 
 	} else {
 		return (is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
-			get_plat_sensor_polling_enable_flag() && is_update_state_idle() && get_plat_vr_change_done_flag());
+			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
 	}
 }
 

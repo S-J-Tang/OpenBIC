@@ -13,6 +13,7 @@
 #include "plat_class.h"
 #include "pldm_oem.h"
 #include "arke_smbus.h"
+#include "plat_isr.h"
 
 #define CPLD_ADDR (0x4C >> 1)
 #define I2C_BUS_CPLD I2C_BUS11
@@ -27,6 +28,7 @@
 #define CHECK_BITS_78 0xC0
 #define CHECK_BITS_8 0x80
 #define CHECK_BITS_012356 0x6F
+#define CHECK_BITS_0 0x01
 
 LOG_MODULE_REGISTER(plat_cpld);
 
@@ -111,6 +113,7 @@ bool asic_temp_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value)
 
 // clang-format off
 cpld_info cpld_info_table[] = {
+	{ VR_EN_PIN_READING_5, 						0x00, 0xFE, true, 0x00, false, 0x00,  .status_changed_cb = ubc_en_changed_callback, .bit_check_mask = CHECK_BITS_0 },
 	{ VR_POWER_FAULT_1_REG, 						0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
 	{ VR_POWER_FAULT_2_REG, 						0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
 	{ VR_POWER_FAULT_3_REG, 						0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },

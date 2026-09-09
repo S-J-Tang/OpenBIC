@@ -440,7 +440,7 @@ void cmd_arke_power_off(const struct shell *shell, size_t argc, char **argv)
 		shell_warn(shell, "arke power off set cpld fail!");
 	// wait 1s
 	k_msleep(DC_ON_DELAY_TIMMING);
-	if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_LOW) {
+	if (gpio_get(RST_ARKE_PWR_ON_PLD_R1_N) == GPIO_LOW) {
 		shell_print(shell, "arke power off success!");
 	} else {
 		shell_warn(shell, "arke power off fail!");
