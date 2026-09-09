@@ -25,6 +25,8 @@
 #include "plat_log.h"
 #include "plat_led.h"
 #include "pmbus.h"
+#include "plat_i2c.h"
+#include "arke_smbus.h"
 
 LOG_MODULE_REGISTER(plat_event);
 
@@ -254,6 +256,26 @@ void plat_asic_thermtrip_error_log(bool is_assert)
 		LOG_INF("Generated thermtrip error code: 0x%x", error_code);
 	}
 	k_msleep(500);
+}
+
+#define ASIC_I2C_BUS I2C_BUS12
+#define ASIC_I2C_ADDR 0x32
+#define ASIC_I2C_MAX_RETRY 3
+int read_asic_reg(uint8_t reg, uint8_t *data, uint8_t len)
+{
+	I2C_MSG i2c_msg = {
+		.bus = ASIC_I2C_BUS,
+		.target_addr = ASIC_I2C_ADDR,
+	};
+	i2c_msg.tx_len = 1;
+	i2c_msg.rx_len = len;
+	i2c_msg.data[0] = reg;
+	if (i2c_master_read(&i2c_msg, ASIC_I2C_MAX_RETRY)) {
+		LOG_ERR("Can't get data from ASIC, reg: 0x%02x", reg);
+		return -1;
+	}
+	memcpy(data, i2c_msg.data, len);
+	return 0;
 }
 
 void plat_asic_error_error_log(bool is_assert, plat_asic_error_event event)

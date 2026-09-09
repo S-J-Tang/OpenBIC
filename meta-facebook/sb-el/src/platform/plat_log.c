@@ -37,6 +37,7 @@
 #include "plat_led.h"
 #include "plat_clock.h"
 #include "pldm_oem.h"
+#include "arke_smbus.h"
 
 LOG_MODULE_REGISTER(plat_log);
 
@@ -525,6 +526,44 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 	uint8_t bit_position = (error_code >> 8) & 0x07;
 	// LOG_DBG("cpld_offset: 0x%x, bit_position: 0x%x", cpld_offset, bit_position);
 
+	// check Asic temp error code
+	if (cpld_offset == MFIO_FOR_ELECTRA) {
+		uint8_t data_read_back = 0;
+		if (!plat_read_cpld(MFIO_FOR_ELECTRA, &data_read_back, 1)) {
+			LOG_ERR("Fail read cpld reg 0x%x", MFIO_FOR_ELECTRA);
+		}
+		uint8_t asic_temp_data[ASIC_MONITOR_TEMP_REG_LEN] = { 0 };
+		if (read_asic_reg(ASIC_MONITOR_TEMP_REG, (uint8_t *)asic_temp_data,
+				  ASIC_MONITOR_TEMP_REG_LEN) != 0) {
+			LOG_ERR("Can't get max asic temp data from ASIC, reg: 0x%02x",
+				ASIC_MONITOR_TEMP_REG);
+		}
+		switch (bit_position) {
+		case HAMSA_MFIO22:
+			data[0] = data_read_back;
+			data[1] = asic_temp_data[1];
+			break;
+		case NUWA0_MFIO24:
+			data[0] = data_read_back;
+			data[1] = asic_temp_data[2];
+			break;
+		case NUWA1_MFIO28:
+			data[0] = data_read_back;
+			data[1] = asic_temp_data[3];
+			break;
+		case HAMSA_MFIO23:
+		case NUWA0_MFIO31:
+		case NUWA1_MFIO30:
+			data[0] = data_read_back;
+			break;
+		default:
+			LOG_ERR("unsupported Asic temp error code with cpld_offset: 0x%x, bit_position: 0x%x",
+				cpld_offset, bit_position);
+			return false;
+		}
+		return true;
+	}
+
 	// Initialize sensor number
 	uint8_t sensor_num = 0x00;
 	uint8_t device_id = 0x00;
@@ -586,15 +625,27 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 void error_log_event(uint16_t error_code, bool log_status)
 {
 	bool log_todo = false;
+	static uint64_t hamsa_remote_err_last_time_stamp = 0;
+	static uint64_t nuwa0_remote_err_last_time_stamp = 0;
+	static uint64_t nuwa1_remote_err_last_time_stamp = 0;
 
 	// Check if the error_code is already logged
 	for (uint8_t i = 1; i < ARRAY_SIZE(err_code_caches); i++) {
 		if (err_code_caches[i] == error_code) {
 			if (log_status == LOG_ASSERT) {
-				log_todo = false; // Duplicate error, no need to log again
-				LOG_INF("Duplicate error_code: 0x%x, log_status: %d", error_code,
-					log_status);
-				return;
+				// check if is ASIC remote temp error
+				if (error_code == HAMSA_MFIO22_ERROR_CODE) {
+					hamsa_remote_err_last_time_stamp = k_uptime_get();
+				} else if (error_code == NUWA0_MFIO24_ERROR_CODE) {
+					nuwa0_remote_err_last_time_stamp = k_uptime_get();
+				} else if (error_code == NUWA1_MFIO28_ERROR_CODE) {
+					nuwa1_remote_err_last_time_stamp = k_uptime_get();
+				} else {
+					log_todo = false; // Duplicate error, no need to log again
+					LOG_INF("Duplicate error_code: 0x%x, log_status: %d",
+						error_code, log_status);
+					return;
+				}
 			} else if (log_status == LOG_DEASSERT) {
 				log_todo = true; // The error needs to be cleared
 				err_code_caches[i] = 0; // Remove the error code from the cache
@@ -602,6 +653,53 @@ void error_log_event(uint16_t error_code, bool log_status)
 					log_status);
 				return;
 			}
+		}
+	}
+
+	// check asic remote temp error time
+	if (error_code == HAMSA_MFIO22_ERROR_CODE) {
+		uint64_t current_time_get = k_uptime_get();
+		//overflow case
+		if (current_time_get < hamsa_remote_err_last_time_stamp) {
+			log_todo = false;
+			hamsa_remote_err_last_time_stamp = current_time_get;
+		}
+		// 2 same error need diff 10s
+		if ((current_time_get - hamsa_remote_err_last_time_stamp) > 10000) {
+			log_todo = true;
+			hamsa_remote_err_last_time_stamp = current_time_get;
+		} else {
+			LOG_INF("same asic remote temp error within 10s, current_time_get: %lld, hamsa_remote_err_last_time_stamp: %lld",
+				current_time_get, hamsa_remote_err_last_time_stamp);
+			return;
+		}
+	} else if (error_code == NUWA0_MFIO24_ERROR_CODE) {
+		uint64_t current_time_get = k_uptime_get();
+		if (current_time_get < nuwa0_remote_err_last_time_stamp) {
+			log_todo = false;
+			nuwa0_remote_err_last_time_stamp = current_time_get;
+		}
+		if ((current_time_get - nuwa0_remote_err_last_time_stamp) > 10000) {
+			log_todo = true;
+			nuwa0_remote_err_last_time_stamp = current_time_get;
+		} else {
+			LOG_INF("same asic remote temp error within 10s, current_time_get: %lld, nuwa0_remote_err_last_time_stamp: %lld",
+				current_time_get, nuwa0_remote_err_last_time_stamp);
+			return;
+		}
+	} else if (error_code == NUWA1_MFIO28_ERROR_CODE) {
+		uint64_t current_time_get = k_uptime_get();
+		if (current_time_get < nuwa1_remote_err_last_time_stamp) {
+			log_todo = false;
+			nuwa1_remote_err_last_time_stamp = current_time_get;
+		}
+		if ((current_time_get - nuwa1_remote_err_last_time_stamp) > 10000) {
+			log_todo = true;
+			nuwa1_remote_err_last_time_stamp = current_time_get;
+		} else {
+			LOG_INF("same asic remote temp error within 10s, current_time_get: %lld, nuwa1_remote_err_last_time_stamp: %lld",
+				current_time_get, nuwa1_remote_err_last_time_stamp);
+			return;
 		}
 	}
 
