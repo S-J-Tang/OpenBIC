@@ -18,6 +18,13 @@
 
 #include "plat_cpld.h"
 
+#define HAMSA_MFIO22_ERR_EVENT 0x90
+#define NUWA0_MFIO24_ERR_EVENT 0x91
+#define NUWA1_MFIO28_ERR_EVENT 0x92
+#define HAMSA_MFIO23_ERR_EVENT 0x93
+#define NUWA0_MFIO31_ERR_EVENT 0x94
+#define NUWA1_MFIO30_ERR_EVENT 0x95
+
 #define HAMSA_SMB_ERR_EVENT_HEADER 0x60
 typedef struct _vr_fault_info {
 	uint8_t mtia_event_source;
@@ -46,4 +53,5 @@ void plat_set_arke_temp_error_log(bool is_assert, uint8_t sensor_id);
 void plat_asic_thermtrip_error_log(bool is_assert);
 void plat_asic_error_error_log(bool is_assert, plat_asic_error_event event);
 plat_asic_error_event *plat_get_asic_error_event();
+int read_asic_reg(uint8_t reg, uint8_t *data, uint8_t len);
 #endif

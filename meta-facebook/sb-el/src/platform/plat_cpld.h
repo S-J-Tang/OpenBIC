@@ -20,6 +20,7 @@
 #define SYSTEM_ALERT_FAULT_REG 0x28
 #define ASIC_TEMP_OVER_REG 0x29
 #define TEMP_IC_OVER_FAULT_REG 0x2A
+#define MFIO_FOR_ELECTRA 0xA8
 
 // CPLD VR hot registers
 #define ASIC_VR_HOT_SWITCH 0x12
