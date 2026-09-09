@@ -756,6 +756,11 @@ uint8_t pldm_pre_clk_u618_update(void *fw_update_param)
 	set_cpld_polling_enable_flag(false);
 	k_msleep(PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS);
 
+	uint8_t value = CLK_312MHZ_ENABLE;
+	if (!plat_write_cpld(CPLD_OFFSET_CLK_312MHZ_EN, &value)) {
+		return false;
+	}
+
 	ret = gpio_set(U694_EN_R, GPIO_HIGH);
 	if (ret) {
 		LOG_ERR("Failed to enable CLK U618 EEPROM path (%d)", ret);
@@ -1071,6 +1076,11 @@ uint8_t pldm_post_clk_u618_update(void *fw_update_param)
 		return 1;
 	}
 
+	uint8_t value = CLK_312MHZ_DISABLE;
+	if (!plat_write_cpld(CPLD_OFFSET_CLK_312MHZ_EN, &value)) {
+		return false;
+	}
+
 	ret = clk_u618_restore_access();
 	if (ret)
 		result = ret;
@@ -1267,7 +1277,7 @@ static uint8_t pldm_post_clk_rc210xx_update(void *fw_update_param, uint8_t bus, 
 uint8_t pldm_pre_clk_u86_update(void *fw_update_param)
 {
 	return pldm_pre_clk_rc210xx_update(fw_update_param, CLK_U86_I2C_BUS, CLK_GEN_100M_U86_ADDR,
-					   CLK_U86_EEPROM_ADDR, "U86", true);
+					   CLK_U86_EEPROM_ADDR, "U86", false);
 }
 
 uint8_t pldm_post_clk_u86_update(void *fw_update_param)
