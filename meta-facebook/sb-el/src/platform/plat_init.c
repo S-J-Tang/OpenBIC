@@ -88,6 +88,8 @@ void pal_post_init()
 	init_vr_test_mode_polling();
 
 	if (is_mb_dc_on() == true) {
+		ast_pwm_set(100, PWM_PORT2);
+		ast_pwm_set(100, PWM_PORT6);
 		vr_vout_offset_get_init();
 		//set perm vout command when DC on
 		if (!set_all_vout_command())
