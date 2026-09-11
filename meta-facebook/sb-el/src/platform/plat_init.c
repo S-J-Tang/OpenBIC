@@ -22,7 +22,6 @@
 #include "plat_i2c_target.h"
 #include "plat_mctp.h"
 #include "plat_hook.h"
-#include "plat_fru.h"
 #include "plat_adc.h"
 #include "flash_shell.h"
 #include "plat_class.h"
@@ -76,7 +75,6 @@ void pal_post_init()
 {
 	plat_mctp_init();
 	user_settings_init();
-	init_fru_info();
 	plat_adc_electra_init();
 	plat_power_capping_init();
 	init_load_eeprom_log();
