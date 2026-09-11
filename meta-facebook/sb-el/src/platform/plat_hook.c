@@ -650,18 +650,20 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 	}
 
 	/* set reading val to 0 if reading val is negative */
-	sensor_val tmp_reading;
-	tmp_reading.integer = (int16_t)(*reading & 0xFFFF);
-	tmp_reading.fraction = (int16_t)((*reading >> 16) & 0xFFFF);
+	if (reading != NULL) {
+		sensor_val tmp_reading;
+		tmp_reading.integer = (int16_t)(*reading & 0xFFFF);
+		tmp_reading.fraction = (int16_t)((*reading >> 16) & 0xFFFF);
 
-	/* sensor_value = 1000 times of true value */
-	int32_t sensor_value = tmp_reading.integer * 1000 + tmp_reading.fraction;
+		/* sensor_value = 1000 times of true value */
+		int32_t sensor_value = tmp_reading.integer * 1000 + tmp_reading.fraction;
 
-	if (sensor_value < 0) {
-		// LOG_DBG("Original sensor reading: integer = %d, fraction = %d (combined value * 1000: %d)",
-		// 	tmp_reading.integer, tmp_reading.fraction, sensor_value);
-		*reading = 0;
-		// LOG_DBG("Negative sensor reading detected. Set reading to 0x%x", *reading);
+		if (sensor_value < 0) {
+			// LOG_DBG("Original sensor reading: integer = %d, fraction = %d (combined value * 1000: %d)",
+			// 	tmp_reading.integer, tmp_reading.fraction, sensor_value);
+			*reading = 0;
+			// LOG_DBG("Negative sensor reading detected. Set reading to 0x%x", *reading);
+		}
 	}
 
 	post_sensor_reading_hook_func(cfg->num);
