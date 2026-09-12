@@ -1348,7 +1348,17 @@ bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm)
 	}
 
 	const vr_pre_proc_arg *pre_sensor_read_args = cfg->pre_sensor_read_args;
-	uint16_t setting_millivolt = *millivolt;
+	/* Apply the saved MMC offset when a new voltage is requested. */
+	int32_t target_millivolt =
+		(int32_t)(*millivolt) + (int32_t)vr_voffset_mmc_command_get.voffset_mmc[rail];
+
+	if (target_millivolt < 0)
+		target_millivolt = 0;
+	else if (target_millivolt > UINT16_MAX)
+		target_millivolt = UINT16_MAX;
+
+	uint16_t setting_millivolt = (uint16_t)target_millivolt;
+	*millivolt = setting_millivolt;
 	// get page from sensor_cfg
 	uint8_t page = pre_sensor_read_args->vr_page;
 
