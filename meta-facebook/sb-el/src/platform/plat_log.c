@@ -55,12 +55,6 @@ static uint16_t next_log_position = 0; // Next position to write in the eeprom, 
 static uint16_t next_index = 0; // Next global index to use for logs, 1-based, defaut 0
 static uint8_t log_num; // Number of logs in EEPROM
 
-typedef struct _vr_ubc_device_table_ {
-	uint8_t index;
-	uint8_t sensor_num_1;
-	uint8_t sensor_num_2;
-} vr_ubc_device_table;
-
 typedef struct vr_smbus_alrt_sensor_map {
 	uint8_t bit_number;
 	uint8_t vr_cnt;
