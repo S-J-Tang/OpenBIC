@@ -31,6 +31,7 @@
 #include "plat_power_capping.h"
 #include "plat_pldm_fw_update.h"
 #include "ina238.h"
+#include "sq52206.h"
 #include "arke_smbus.h"
 
 LOG_MODULE_REGISTER(plat_pldm_sensor);
@@ -48,6 +49,14 @@ static ina238_init_arg ina238_pwr_w_init_args = {
 	.is_init = false,
 	.r_shunt = 0.0005,
 	.adc_range = 0,
+	.alert_latch = 0,
+	.i_max = 55.0,
+};
+
+static sq52206_init_arg sq52206_pwr_w_init_args = {
+	.is_init = false,
+	.r_shunt = 0.0005,
+	.adc_range = SQ52206_ADC_RANGE_PN_163,
 	.alert_latch = 0,
 	.i_max = 55.0,
 };
@@ -11369,6 +11378,33 @@ static uint8_t get_ina238_addr(void)
 	}
 }
 
+/*
+ * SQ52206 is register compatible with INA238 for the offsets both parts
+ * implement, but doesn't have a MANUFACTURER_ID/DEVICE_ID register. Probe
+ * INA238's DEVICE_ID (0x3F) at the PDB1 address and check DIEID (bits
+ * 15:4, reset = 0x238): if it reads back correctly it's INA238, otherwise
+ * (NACK or a mismatched value) assume it's SQ52206.
+ */
+static uint8_t get_pdb1_sensor_type(uint8_t bus, uint8_t addr)
+{
+	I2C_MSG msg = {
+		.bus = bus,
+		.target_addr = addr,
+		.tx_len = 1,
+		.rx_len = 2,
+	};
+	msg.data[0] = INA238_DEVICE_ID_OFFSET;
+
+	if (i2c_master_read_without_error_log(&msg, 0) == 0) {
+		uint16_t device_id = (msg.data[0] << 8) | msg.data[1];
+		if ((device_id >> 4) == INA238_DEVICE_ID_DIEID)
+			return sensor_dev_ina238;
+	}
+
+	LOG_WRN("PDB1 power monitor at bus %d addr 0x%x is not INA238, assume SQ52206", bus, addr);
+	return sensor_dev_sq52206;
+}
+
 void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_module, uint8_t ubc_module,
 		       uint8_t board_rev_id)
 {
@@ -11458,6 +11494,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 
 	// VR sensor
 	uint8_t ina238_addr = 0;
+	uint8_t pdb1_sensor_type = SENSOR_CFG_UNKNOW;
 	LOG_INF("vr change mode: 0x%x", vr_change_mode);
 	for (uint8_t i = VR_SENSOR_THREAD_ID; i <= QUICK_VR_SENSOR_THREAD_ID; i++) {
 		pldm_sensor_info *vr_table = plat_pldm_sensor_load(i);
@@ -11483,8 +11520,20 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 				uint8_t old_addr = vr_table[j].pldm_sensor_cfg.target_addr;
 				vr_table[j].pldm_sensor_cfg.target_addr = ina238_addr;
 
-				LOG_DBG("change INA238 sensor 0x%x addr 0x%x -> 0x%x",
-					num, old_addr, ina238_addr);
+				if (pdb1_sensor_type == SENSOR_CFG_UNKNOW)
+					pdb1_sensor_type = get_pdb1_sensor_type(
+						vr_table[j].pldm_sensor_cfg.port, ina238_addr);
+
+				if (pdb1_sensor_type == sensor_dev_sq52206) {
+					vr_table[j].pldm_sensor_cfg.type = sensor_dev_sq52206;
+					vr_table[j].pldm_sensor_cfg.init_args = &sq52206_pwr_w_init_args;
+				} else {
+					vr_table[j].pldm_sensor_cfg.type = sensor_dev_ina238;
+					vr_table[j].pldm_sensor_cfg.init_args = &ina238_pwr_w_init_args;
+				}
+
+				LOG_DBG("change PDB1 power monitor sensor 0x%x addr 0x%x -> 0x%x, type -> 0x%x",
+					num, old_addr, ina238_addr, pdb1_sensor_type);
 				continue;
 			}
 
@@ -11659,14 +11708,16 @@ bool is_ina238_access(uint8_t sensor_num)
 	if (cfg == NULL || cfg->target_addr == 0)
 		return false;
 
-	/* Check I2C address using the no-log read before allowing polling */
+	/* Check I2C address using the no-log read before allowing polling.
+	 * Use CONFIG (0x00) rather than INA238's DEVICE_ID (0x3F): SQ52206
+	 * doesn't implement DEVICE_ID, but both chips implement CONFIG. */
 	I2C_MSG msg = {
 		.bus = cfg->port,
 		.target_addr = cfg->target_addr,
 		.rx_len = 2,
 		.tx_len = 1,
 	};
-	msg.data[0] = INA238_DEVICE_ID_OFFSET;
+	msg.data[0] = INA238_CFG_OFFSET;
 
 	if (i2c_master_read_without_error_log(&msg, 0) != 0)
 		return false;
