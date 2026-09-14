@@ -81,7 +81,6 @@ enum VR_ERR_LOG_DEVICE_INDEX_E {
 	VR_ERR_DEVICE_DONT_CARE,
 };
 
-uint16_t error_log_count(void);
 void init_load_eeprom_log(void);
 
 void plat_log_read(uint8_t *log_data, uint8_t cmd_size, uint16_t order);
