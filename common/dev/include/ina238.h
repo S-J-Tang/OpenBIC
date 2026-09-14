@@ -51,6 +51,14 @@ enum INA238_OFFSET {
 	INA238_DEVICE_ID_OFFSET = 0x3F,
 };
 
+/* DEVICE_ID[15:4] (DIEID) reset value identifying the part as an INA238.
+ * SQ52206 is register compatible with INA238 for the offsets both parts
+ * implement, but has no MANUFACTURER_ID/DEVICE_ID register, so this can be
+ * used to tell the two apart when they share a socket. DEVICE_ID[3:0]
+ * (REV_ID) is excluded from the check since it may change across silicon
+ * revisions. */
+#define INA238_DEVICE_ID_DIEID 0x238
+
 enum INA238_ADC_RANGE {
 	/* IN+ and IN–, 0:±163.84 mV, 1:±40.96 mV */
 	INA238_ADC_RANGE_PN_163 = 0x00,
