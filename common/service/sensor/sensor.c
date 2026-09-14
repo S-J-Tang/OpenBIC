@@ -166,6 +166,7 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(rsm3514e)
 	sensor_name_to_num(arke_smbus)
 	sensor_name_to_num(virtual_device)
+	sensor_name_to_num(sq52206)
 };
 // clang-format on
 
@@ -325,6 +326,9 @@ SENSOR_DRIVE_INIT_DECLARE(hdc1080);
 #endif
 #ifdef ENABLE_INA238
 SENSOR_DRIVE_INIT_DECLARE(ina238);
+#endif
+#ifdef ENABLE_SQ52206
+SENSOR_DRIVE_INIT_DECLARE(sq52206);
 #endif
 #ifdef ENABLE_NCT214
 SENSOR_DRIVE_INIT_DECLARE(nct214);
@@ -868,6 +872,11 @@ sensor_drive_api sensor_drive_tbl[] = {
 	SENSOR_DRIVE_TYPE_INIT_MAP(virtual_device),
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(virtual_device),
+#endif
+#ifdef ENABLE_SQ52206
+	SENSOR_DRIVE_TYPE_INIT_MAP(sq52206),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(sq52206),
 #endif
 };
 

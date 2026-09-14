@@ -203,6 +203,7 @@ enum SENSOR_DEV {
 	sensor_dev_rsm3514e = 0x55,
 	sensor_dev_arke_smbus = 0x56,
 	sensor_dev_virtual_device = 0x57,
+	sensor_dev_sq52206 = 0x58,
 	sensor_dev_max
 };
 
