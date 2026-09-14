@@ -27,7 +27,6 @@
 #define BYTE_MASK 0xff
 
 // Hamsa boot1 binary at 0x94008000
-#define HAMSA_BOOT1_ASIC_MEM_ADDR 0x94008000
 #define HAMSA_BOOT1_ADDR 0x32 //0x32(7-bit)
 
 // smbus2.0 spec restrict max bytes in an atomic transfer to 32
