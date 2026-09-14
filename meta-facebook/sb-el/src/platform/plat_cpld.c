@@ -90,10 +90,6 @@ bool set_cpld_bit(uint8_t cpld_offset, uint8_t bit, uint8_t value)
 	return true;
 }
 
-// cpld polling
-void check_cpld_handler();
-K_WORK_DELAYABLE_DEFINE(check_cpld_work, check_cpld_handler);
-
 K_THREAD_STACK_DEFINE(cpld_polling_stack, POLLING_CPLD_STACK_SIZE);
 struct k_thread cpld_polling_thread;
 k_tid_t cpld_polling_tid;
@@ -382,18 +378,6 @@ void plat_poll_cpld_registers()
 		}
 
 	}
-}
-
-void check_cpld_handler()
-{
-	uint8_t data[4] = { 0 };
-	uint32_t version = 0;
-	if (!plat_i2c_read(I2C_BUS_CPLD, CPLD_ADDR, CPLD_OFFSET_USERCODE, data, 4)) {
-		LOG_ERR("Failed to read cpld version from cpld");
-	}
-	version = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
-
-	k_work_schedule(&check_cpld_work, K_MSEC(5000));
 }
 
 void init_cpld_polling(void)
