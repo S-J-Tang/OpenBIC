@@ -16,9 +16,10 @@
 
 #include <kernel.h>
 #include <logging/log.h>
+#include "mp29526.h"
+#include "mp29816a.h"
 #include "raa228249.h"
 #include "raa229140a.h"
-#include "mp29816a.h"
 #include "pldm_sensor.h"
 #include "plat_adc.h"
 #include "plat_class.h"
@@ -51,6 +52,45 @@ const static uint8_t volt_sensor_id_list[2] = { SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_
 static uint8_t lv_switch_en_val = 0;
 
 K_WORK_DELAYABLE_DEFINE(sync_vr_oc_work, power_capping_syn_vr_oc_warn_limit);
+
+static bool mps_get_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t *value)
+{
+	switch (cfg->type) {
+	case sensor_dev_mp29816a:
+		return mp29816a_get_iout_oc_warn_limit(cfg, value);
+	case sensor_dev_mp29526:
+		return mp29526_get_iout_oc_warn_limit(cfg, 0, value);
+	default:
+		LOG_ERR("Unsupported MPS VR type: 0x%x", cfg->type);
+		return false;
+	}
+}
+
+static bool mps_set_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t value)
+{
+	switch (cfg->type) {
+	case sensor_dev_mp29816a:
+		return mp29816a_set_iout_oc_warn_limit(cfg, value);
+	case sensor_dev_mp29526:
+		return mp29526_set_iout_oc_warn_limit(cfg, 0, value);
+	default:
+		LOG_ERR("Unsupported MPS VR type: 0x%x", cfg->type);
+		return false;
+	}
+}
+
+static bool mps_get_vout_command(sensor_cfg *cfg, uint16_t *millivolt)
+{
+	switch (cfg->type) {
+	case sensor_dev_mp29816a:
+		return mp29816a_get_vout_command(cfg, 0, millivolt);
+	case sensor_dev_mp29526:
+		return mp29526_get_vout_command(cfg, 0, millivolt);
+	default:
+		LOG_ERR("Unsupported MPS VR type: 0x%x", cfg->type);
+		return false;
+	}
+}
 
 void set_power_capping_lv_switch_en_val(uint8_t val)
 {
@@ -97,8 +137,8 @@ void power_capping_syn_vr_oc_warn_limit()
 		uint16_t voltage_value = 0;
 		float float_value = 0;
 		if (get_vr_module() == VR_MODULE_MPS) {
-			if (mp29816a_get_iout_oc_warn_limit(cfg, &value)) {
-				if (mp29816a_get_vout_command(cfg, 0, &voltage_value)) {
+			if (mps_get_iout_oc_warn_limit(cfg, &value)) {
+				if (mps_get_vout_command(cfg, &voltage_value)) {
 					float_value = voltage_value / 1000.0;
 					power_capping_info.current_threshold[i] = value;
 					power_capping_info.threshold[i][CAPPING_LV_IDX_LV1] =
@@ -185,13 +225,13 @@ bool set_power_capping_vr_oc_warn_limit(uint8_t vr_idx, uint16_t value)
 	if (get_vr_module() == VR_MODULE_MPS) {
 		uint16_t voltage_value = 0;
 		float float_value = 0;
-		ret = mp29816a_get_vout_command(cfg, 0, &voltage_value);
+		ret = mps_get_vout_command(cfg, &voltage_value);
 		if (ret) {
 			float_value = voltage_value / 1000.0;
 			uint16_t current_val = value / float_value;
-			ret = mp29816a_set_iout_oc_warn_limit(cfg, current_val);
+			ret = mps_set_iout_oc_warn_limit(cfg, current_val);
 			if (ret) {
-				mp29816a_get_iout_oc_warn_limit(cfg, &current_val);
+				mps_get_iout_oc_warn_limit(cfg, &current_val);
 				power_capping_info.current_threshold[vr_idx] = current_val;
 			} else {
 				LOG_ERR("Can't set IOUT_OC_WARN 0x%x", sensor_id);
