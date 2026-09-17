@@ -141,6 +141,8 @@ void reset_error_log_states(uint8_t err_type)
 {
 	// Reset cpld_info_table
 	for (size_t i = 0; i < ARRAY_SIZE(cpld_info_table); i++) {
+		if (cpld_info_table[i].status_changed_cb == ubc_en_changed_callback)
+			continue;
 		cpld_info_table[i].is_fault_bit_map = 0x00;
 		cpld_info_table[i].last_polling_value = 0x00;
 	}
