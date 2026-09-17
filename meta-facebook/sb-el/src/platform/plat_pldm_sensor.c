@@ -11423,7 +11423,8 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		tmp_module, vr_module);
 	// Sensor check version
 	if (asic_board_id == ASIC_BOARD_ID_EVB || asic_board_id == ASIC_BOARD_ID_ELECTRA) {
-		if (board_rev_id >= REV_ID_EVT2_FAB2)
+		if (board_rev_id >= REV_ID_EVT2_FAB2 ||
+		    get_vr_vendor_module() == DELTA_UBC_AND_FAB2_MPS_VR)
 			vr_change_mode = FAB2_1ND_MPS;
 		if (tmp_module == TMP_MODULE_EMC1413) {
 			LOG_WRN("change TMP address to EMC1413");

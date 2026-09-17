@@ -56,6 +56,9 @@ const char *vr_vendor_module_name[] = {
 	"LUXSHURE_UBC_AND_RNS_VR",
 	"CYNTEX_UBC_AND_MPS_VR",
 	"CYNTEX_UBC_AND_RNS_VR",
+	"RESERVED",
+	"RESERVED",
+	"DELTA_UBC_AND_FAB2_MPS_VR",
 	"VENDOR_TYPE_UNKNOWN",
 };
 
@@ -195,8 +198,16 @@ void init_vr_vendor_type(void)
 	}
 
 	vr_vendor_module &= 0x0F;
-	vr_module = (vr_vendor_module & 0x01);
-	ubc_module = (vr_vendor_module >> 1) & 0x07;
+
+	if (vr_vendor_module == DELTA_UBC_AND_FAB2_MPS_VR) {
+		// DELTA_UBC_AND_FAB2_MPS_VR (0x0C) only changes the VR pairing (mp2971 + mp29526);
+		// UBC stays DELTA, so it doesn't fit the generic (value >> 1) & 0x07 UBC decode.
+		vr_module = VR_MODULE_MPS;
+		ubc_module = UBC_MODULE_DELTA;
+	} else {
+		vr_module = (vr_vendor_module & 0x01);
+		ubc_module = (vr_vendor_module >> 1) & 0x07;
+	}
 
 	bool is_evt1a_luxshare_quirk =
 		(vr_vendor_module == 0x08 && board_rev_id == REV_ID_EVT1A_FAB1);
@@ -232,6 +243,11 @@ void init_plat_config()
 uint8_t get_vr_module()
 {
 	return vr_module;
+}
+
+uint8_t get_vr_vendor_module()
+{
+	return vr_vendor_module;
 }
 
 uint8_t get_ubc_module()
@@ -308,6 +324,7 @@ void pal_show_board_types(const struct shell *shell)
 			((board_rev_id == REV_ID_EVT1A_FAB1) ? "LUXSHARE_UBC_AND_RNS_VR" :
 							       "CYNTEX_UBC_AND_MPS_VR") :
 		    (vr_vendor_module == CYNTEX_UBC_AND_RNS_VR) ? "CYNTEX_UBC_AND_RNS_VR" :
+			(vr_vendor_module == DELTA_UBC_AND_FAB2_MPS_VR) ? "DELTA_UBC_AND_FAB2_MPS_VR" :
 								    "not supported");
 	shell_print(shell, "* UBC_TYPE:      (0x%02X)%s", ubc_module,
 		    (ubc_module == UBC_MODULE_DELTA)	? "UBC_DELTA_S54SS4P1A2" :
