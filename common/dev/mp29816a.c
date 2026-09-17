@@ -351,7 +351,7 @@ bool mp29816a_get_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t *value)
 		*value = 8 * (data[0] | (data[1] << 8)) * 2;
 	} else if (scale_bit < 6 && scale_bit > 0) {
 		// 1/32, 1/16, 1/8 ...
-		*value = 8 * (data[0] | (data[1] << 8)) / (2 ^ (6 - scale_bit));
+		*value = 8 * (data[0] | (data[1] << 8)) / (1 << (6 - scale_bit));
 	} else {
 		// 1A
 		*value = 8 * (data[0] | (data[1] << 8));
@@ -378,7 +378,7 @@ bool mp29816a_set_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t value)
 		value = (value / 2) / 8;
 	} else if (scale_bit < 6 && scale_bit > 0) {
 		// 1/32, 1/16, 1/8 ...
-		value = (value * (2 ^ (6 - scale_bit))) / 8;
+		value = (value * (1 << (6 - scale_bit))) / 8;
 	} else {
 		// 1A
 		value = value / 8;
