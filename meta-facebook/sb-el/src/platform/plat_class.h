@@ -30,6 +30,7 @@ enum EL_VR_VENDER_MODULE {
 	LUXSHURE_UBC_AND_RNS_VR,
 	CYNTEX_UBC_AND_MPS_VR,
 	CYNTEX_UBC_AND_RNS_VR,
+	DELTA_UBC_AND_FAB2_MPS_VR = 0x0C,
 	VENDOR_TYPE_UNKNOWN,
 };
 
@@ -82,6 +83,7 @@ enum REV_ID {
 
 void init_plat_config();
 uint8_t get_vr_module();
+uint8_t get_vr_vendor_module();
 uint8_t get_ubc_module();
 uint8_t get_tmp_module();
 uint8_t get_mmc_slot();
