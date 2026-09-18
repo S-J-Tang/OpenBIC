@@ -151,12 +151,14 @@ void power_capping_syn_vr_oc_warn_limit()
 			}
 		} else if (get_vr_module() == VR_MODULE_RNS) {
 			bool get_iout_ok = (cfg->type == sensor_dev_raa229140a) ?
-					   raa229140a_get_iout_oc_warn_limit(cfg, &value) :
-					   raa228249_get_iout_oc_warn_limit(cfg, &value);
+						   raa229140a_get_iout_oc_warn_limit(cfg, &value) :
+						   raa228249_get_iout_oc_warn_limit(cfg, &value);
 			if (get_iout_ok) {
-				bool get_vout_ok = (cfg->type == sensor_dev_raa229140a) ?
-						   raa229140a_get_vout_command(cfg, 0, &voltage_value) :
-						   raa228249_get_vout_command(cfg, 0, &voltage_value);
+				bool get_vout_ok =
+					(cfg->type == sensor_dev_raa229140a) ?
+						raa229140a_get_vout_command(cfg, 0,
+									    &voltage_value) :
+						raa228249_get_vout_command(cfg, 0, &voltage_value);
 				if (get_vout_ok) {
 					float_value = voltage_value / 1000.0;
 					power_capping_info.current_threshold[i] = value;
@@ -543,12 +545,7 @@ void plat_power_capping_init()
 	k_sem_init(&power_capping_sem, 0, 1);
 
 	// sync avg_times
-	uint8_t data = 0x64;
-	LOG_INF("set cpld lv1 time 0x%02x", data);
-	// set LV1 time = 100us
-	if (!plat_write_cpld(CPLD_OFFSET_POWER_CAPPING_LV1_TIME, &data)) {
-		LOG_ERR("can't w cpld offset %d", CPLD_OFFSET_POWER_CAPPING_LV1_TIME);
-	}
+	uint8_t data = 0;
 	if (plat_read_cpld(CPLD_OFFSET_POWER_CAPPING_LV1_TIME, &data, 1)) {
 		LOG_INF("read cpld lv1 time 0x%02x", data);
 		if (data >= 10 && data <= 100) {
