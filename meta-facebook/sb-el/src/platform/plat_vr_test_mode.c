@@ -496,7 +496,7 @@ static bool set_mps_vr_test_mode_reg(bool is_default)
 		for (size_t j = 0; j < ARRAY_SIZE(regs); j++) {
 			set_val = regs[j].val;
 			if (i < VR_RAIL_E_ASIC_P0V9_OWL_E_TRVDD) {
-				if (!fab2_mps_ic_second_source) {
+				if (!fab2_mps_ic_second_source[cfg->vr_rail]) {
 					if (set_vr_mp29816a_reg(cfg->vr_rail, &set_val,
 								regs[j].function)) {
 						LOG_ERR("MPS29816a VR rail %x set %s to %d failed",
@@ -568,7 +568,7 @@ void vr_test_mode_enable(bool onoff)
 		}
 		for (uint8_t i = 0; i <= VR_RAIL_E_ASIC_P0V75_NUWA1_VDD; i++) {
 			// set ovp2 action to no action
-			if (!fab2_mps_ic_second_source) {
+			if (!fab2_mps_ic_second_source[i]) {
 				if (set_vr_mp29816a_reg(i, &action, OVP_2_ACTION))
 					LOG_ERR("set vr %d ovp2 action fail!", i);
 			} else {
