@@ -650,7 +650,7 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 	}
 
 	/* set reading val to 0 if reading val is negative */
-	if (reading != NULL) {
+	if (reading != NULL && cfg->offset != PMBUS_READ_TEMPERATURE_1) {
 		sensor_val tmp_reading;
 		tmp_reading.integer = (int16_t)(*reading & 0xFFFF);
 		tmp_reading.fraction = (int16_t)((*reading >> 16) & 0xFFFF);
@@ -686,7 +686,7 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 
 		float tmp_reading_value = (float)integer + fraction;
 
-		if (tmp_reading_value < 0) {
+		if (tmp_reading_value < 0 && cfg->offset != PMBUS_READ_TEMPERATURE_1) {
 			tmp_reading_value = 0;
 			*reading = 0;
 			// LOG_DBG("Original sensor reading: integer = %d, fraction = %f", integer,
@@ -1250,7 +1250,7 @@ bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt)
 		return false;
 	}
 
-	vr_pre_proc_arg *pre_proc_args = vr_pre_read_args + rail;
+	const vr_pre_proc_arg *pre_proc_args = cfg->pre_sensor_read_args;
 
 	if (cfg->pre_sensor_read_hook) {
 		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
