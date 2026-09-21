@@ -237,7 +237,7 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 		// not include P3V3
 		for (uint8_t i = 0; i <= VR_RAIL_E_ASIC_P0V75_NUWA1_VDD; i++) {
 			uint8_t *rail_name = NULL;
-			if (!fab2_mps_ic_second_source){
+			if (!fab2_mps_ic_second_source[i]) {
 				get_vr_mp29816a_reg(i, &uvp, UVP);
 				get_vr_mp29816a_reg(i, &vout_max, VOUT_MAX);
 				get_vr_mp29816a_reg(i, &vout_command, VOUT_COMMAND);

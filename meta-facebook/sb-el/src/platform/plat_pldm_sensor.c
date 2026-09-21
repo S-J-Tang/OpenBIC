@@ -198,7 +198,7 @@ uint8_t convert_tmp_addr(uint8_t bus, uint8_t addr, uint8_t tmp_change_mode)
 	return addr;
 }
 
-bool fab2_mps_ic_second_source = false;
+bool fab2_mps_ic_second_source[2] = { false, false };
 
 uint8_t convert_vr_addr(uint8_t bus, uint8_t addr, uint8_t vr_change_mode)
 {
@@ -217,8 +217,22 @@ uint8_t convert_vr_addr(uint8_t bus, uint8_t addr, uint8_t vr_change_mode)
 				};
 				msg.data[0] = PMBUS_REVISION;
 
+				/*
+				 * NUWA0 and NUWA1 are separate physical chips on
+				 * separate buses/addresses; each rail's probe result
+				 * must be tracked independently, or a success on one
+				 * rail incorrectly marks the other rail as MPS too
+				 * even when its own probe failed and its address was
+				 * never actually switched.
+				 */
 				if (i2c_master_read_without_error_log(&msg, 0) == 0) {
-					fab2_mps_ic_second_source = true;
+					if (bus == I2C_BUS3 && addr == ASIC_P0V75_NUWA0_VDD_ADDR)
+						fab2_mps_ic_second_source
+							[VR_RAIL_E_ASIC_P0V75_NUWA0_VDD] = true;
+					else if (bus == I2C_BUS2 &&
+						 addr == ASIC_P0V75_NUWA1_VDD_ADDR)
+						fab2_mps_ic_second_source
+							[VR_RAIL_E_ASIC_P0V75_NUWA1_VDD] = true;
 					return vr_addr_map_table[i].fab2_1nd_addr;
 				}
 				return vr_addr_map_table[i].fab1_1nd_addr;
@@ -11554,9 +11568,12 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 			bus = vr_table[j].pldm_sensor_cfg.port;
 			vr_table[j].pldm_sensor_cfg.target_addr = convert_vr_addr(
 				bus, vr_table[j].pldm_sensor_cfg.target_addr, vr_change_mode);
-			if (fab2_mps_ic_second_source == true &&
-			    ((num >= SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_TEMP_C &&
-			      num <= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W))) {
+			if ((num >= SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_TEMP_C &&
+			     num <= SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W &&
+			     fab2_mps_ic_second_source[VR_RAIL_E_ASIC_P0V75_NUWA0_VDD]) ||
+			    (num >= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_TEMP_C &&
+			     num <= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W &&
+			     fab2_mps_ic_second_source[VR_RAIL_E_ASIC_P0V75_NUWA1_VDD])) {
 				vr_table[j].pldm_sensor_cfg.type = sensor_dev_mp29526;
 			}
 			LOG_INF("change VR sensors 0x%x address to 0x%x",
