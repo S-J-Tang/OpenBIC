@@ -286,9 +286,9 @@ ioe_power_good_status ioe_pwrgd_status_table[] = {
 	{ U200052_IO_I2C_BUS, U200052_IO_ADDR, 5, "PWRGD_P3V3_OSFP_P6" },
 };
 
-bool check_p3v3_p5v_pwrgd(void)
+bool check_p3v3_pwrgd(void)
 {
-	// read p3v3_pwrgf and p5v_pwrgf
+	// Read P3V3 power good.
 	// PWRGD_P3V3_R, bit-4, VR_PWRGD_PIN_READING_5_REG
 	uint8_t offset = VR_PWRGD_PIN_READING_5_REG;
 	uint8_t reg_data = 0;
@@ -296,10 +296,7 @@ bool check_p3v3_p5v_pwrgd(void)
 		LOG_ERR("Read CPLD offset 0x%x failed", offset);
 	}
 	uint8_t p3v3_value = (reg_data >> 4) & 0x01;
-	// PWRGD_P5V_R, bit-5, VR_PWRGD_PIN_READING_5_REG
-	uint8_t p5v_value = (reg_data >> 5) & 0x01;
-	//if both p3v3 and p5v are all 1, return true
-	if (p3v3_value == 1 && p5v_value == 1)
+	if (p3v3_value == 1)
 		return true;
 	return false;
 }
@@ -587,7 +584,7 @@ void cmd_arke_steps_on(const struct shell *shell, size_t argc, char **argv)
 			ast_pwm_set(100, PWM_PORT2);
 			ast_pwm_set(100, PWM_PORT6);
 		}
-		if (check_p3v3_p5v_pwrgd()) {
+		if (check_p3v3_pwrgd()) {
 			set_plat_sensor_one_step_enable_flag(ONE_STEP_POWER_MAGIC_NUMBER);
 		}
 	}
