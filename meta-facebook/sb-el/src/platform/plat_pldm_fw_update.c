@@ -1542,7 +1542,7 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 	uint8_t sensor_id = 0;
 	char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
 
-	if (is_mb_dc_on() == false)
+	if (check_p3v3_pwrgd() == false)
 		return ret;
 
 	/* block getting vr fw version during update */

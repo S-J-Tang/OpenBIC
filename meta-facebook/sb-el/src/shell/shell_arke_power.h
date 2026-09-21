@@ -107,7 +107,7 @@ typedef struct steps_on_struct {
 	uint8_t pwrgd_idx;
 } steps_on_struct;
 
-bool check_p3v3_p5v_pwrgd(void);
+bool check_p3v3_pwrgd(void);
 void pwer_gd_get_status(const struct shell *shell);
 void clear_clock_status(const struct shell *shell, uint8_t clock_index);
 bool arke_power_control(uint8_t onoff);

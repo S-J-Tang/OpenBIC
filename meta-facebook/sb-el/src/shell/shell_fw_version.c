@@ -66,9 +66,8 @@ void cmd_get_fw_version_vr(const struct shell *shell, size_t argc, char **argv)
 		uint8_t sensor_id = 0;
 		char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
 
-		if (check_p3v3_p5v_pwrgd() == false) {
-			shell_warn(shell,
-				   "PWRGD_P3V3_R and PWRGD_P5V_R is not on, skip get VR version");
+		if (!check_p3v3_pwrgd()) {
+			shell_warn(shell, "PWRGD_P3V3_R is not on, skip get VR version");
 			continue;
 		}
 
