@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#include "plat_def.h"
+
+#ifdef ENABLE_SHELL_PCIE_PERST_CONTROL
+
 #include <shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
@@ -150,3 +154,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie_perst_control, &pcie_perst_subcmds, "PCIe PERST control via CPLD", NULL);
+
+#endif // ENABLE_SHELL_PCIE_PERST_CONTROL

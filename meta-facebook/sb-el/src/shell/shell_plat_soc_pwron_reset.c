@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#include "plat_def.h"
+
+#ifdef ENABLE_SHELL_SOC_PWRON_RESET
+
 #include <shell/shell.h>
 #include <stdlib.h>
 #include <logging/log.h>
@@ -258,3 +262,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 /* Root */
 SHELL_CMD_REGISTER(soc_pwron_reset, &sub_soc_pwron_reset_cmds, "soc_pwron_reset commands", NULL);
+
+#endif // ENABLE_SHELL_SOC_PWRON_RESET
