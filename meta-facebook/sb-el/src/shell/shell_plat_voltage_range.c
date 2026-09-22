@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#include "plat_def.h"
+
+#ifdef ENABLE_SHELL_VOLTAGE_RANGE
+
 #include <shell/shell.h>
 #include <stdlib.h>
 #include <logging/log.h>
@@ -121,3 +125,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_voltage_range_cmds,
 
 /* Root of command test */
 SHELL_CMD_REGISTER(voltage_range, &sub_voltage_range_cmds, "voltage_range set/get commands", NULL);
+
+#endif // ENABLE_SHELL_VOLTAGE_RANGE

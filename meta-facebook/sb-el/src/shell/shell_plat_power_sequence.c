@@ -23,8 +23,11 @@
 #include "plat_i2c.h"
 #include "plat_cpld.h"
 #include "shell_plat_power_sequence.h"
+#include "plat_def.h"
 
 LOG_MODULE_REGISTER(shell_plat_power_sequence, LOG_LEVEL_INF);
+
+#ifdef ENABLE_SHELL_POWER_SEQUENCE
 
 power_sequence power_sequence_on_table[] = {
 	{ 0, P12V_ON_REG, "P12V", 0x00 },
@@ -128,6 +131,12 @@ power_sequence power_sequence_off_table[] = {
 	{ 43, P3V3_DOWN_REG, "P3V3", 0x00 },
 	{ 44, P12V_UBC_DOWN_REG, "P12V_UBC", 0x00 },
 };
+
+size_t power_sequence_on_table_size = ARRAY_SIZE(power_sequence_on_table);
+size_t power_sequence_off_table_size = ARRAY_SIZE(power_sequence_off_table);
+
+#endif // ENABLE_SHELL_POWER_SEQUENCE
+
 power_sequence_event_pwrgd power_sequence_event_pwrgd_table[] = {
 	{ 0, PWRGD_EVENT_LATCH_1_REG, "P12V_UBC1", 7 },
 	{ 1, PWRGD_EVENT_LATCH_1_REG, "P12V_UBC2", 6 },
@@ -172,10 +181,10 @@ power_sequence_event_pwrgd power_sequence_event_pwrgd_table[] = {
 	{ 40, PWRGD_EVENT_LATCH_6_REG, "PVDD1P5", 7 },
 	{ 41, PWRGD_EVENT_LATCH_6_REG, "HAMSA_VDDHRXTX_PCIE", 6 },
 };
-size_t power_sequence_on_table_size = ARRAY_SIZE(power_sequence_on_table);
-size_t power_sequence_off_table_size = ARRAY_SIZE(power_sequence_off_table);
 size_t power_sequence_event_pwrgd_table_size = ARRAY_SIZE(power_sequence_event_pwrgd_table);
 static uint8_t power_seq_fail_id = 0xFF;
+
+#ifdef ENABLE_SHELL_POWER_SEQUENCE
 
 void bubble_sort_power_sequence_table(const struct shell *shell,
 				      const power_sequence *power_sequence_table, size_t size)
@@ -261,6 +270,8 @@ int cmd_power_sequence(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+#endif // ENABLE_SHELL_POWER_SEQUENCE
+
 bool plat_find_power_seq_fail()
 {
 	for (uint8_t i = 0; i < power_sequence_event_pwrgd_table_size; i++) {
@@ -289,6 +300,8 @@ uint8_t plat_get_power_seq_fail_id()
 	return power_seq_fail_id;
 }
 
+#ifdef ENABLE_SHELL_POWER_SEQUENCE
+
 void plat_get_power_seq_fail_name(uint8_t idx, uint8_t **name)
 {
 	if ((idx != 0xFF) && (idx < power_sequence_on_table_size)) {
@@ -297,6 +310,8 @@ void plat_get_power_seq_fail_name(uint8_t idx, uint8_t **name)
 		LOG_ERR("wrong idx: %x", idx);
 	}
 }
+
+#endif // ENABLE_SHELL_POWER_SEQUENCE
 
 void plat_get_power_seq_pwrgd_event_fail_name(uint8_t idx, uint8_t **name)
 {
@@ -307,6 +322,8 @@ void plat_get_power_seq_pwrgd_event_fail_name(uint8_t idx, uint8_t **name)
 	}
 }
 
+#ifdef ENABLE_SHELL_POWER_SEQUENCE
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_power_sequence_cmds,
 			       SHELL_CMD(power_up, NULL, "power_sequence power_up command",
 					 cmd_power_sequence),
@@ -316,3 +333,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_power_sequence_cmds,
 
 SHELL_CMD_REGISTER(power_sequence, &sub_power_sequence_cmds, "power_sequence <power_up|power_down>",
 		   NULL);
+
+#endif // ENABLE_SHELL_POWER_SEQUENCE
