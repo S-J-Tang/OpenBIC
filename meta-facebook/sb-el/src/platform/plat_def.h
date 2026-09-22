@@ -103,6 +103,12 @@
 
 #define MP29816C_MTP_MUTI_CONFIG_PROGRAM_ENABLE
 
+/* Disabled to save flash space. Uncomment to bring the shell command back. */
+// #define ENABLE_SHELL_SOC_PWRON_RESET
+// #define ENABLE_SHELL_PCIE_PERST_CONTROL
+// #define ENABLE_SHELL_POWER_SEQUENCE
+// #define ENABLE_SHELL_VOLTAGE_RANGE
+
 #define PLDM_MSG_TIMEOUT_MS 5000
 #define PLAT_MCTP_MSG_MAX_SIZE 64
 #define PLDM_FW_UPDATE_TIMEOUT_MS 5000
