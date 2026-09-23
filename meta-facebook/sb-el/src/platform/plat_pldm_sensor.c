@@ -27,6 +27,7 @@
 #include "plat_log.h"
 #include "plat_cpld.h"
 #include "plat_gpio.h"
+#include "plat_isr.h"
 // #include "shell_plat_average_power.h"
 #include "plat_power_capping.h"
 #include "plat_pldm_fw_update.h"
@@ -11703,7 +11704,8 @@ bool is_ubc_access(uint8_t sensor_num)
 			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
 	} else {
 		return (is_dc_access(sensor_num) && get_plat_sensor_ubc_polling_enable_flag() &&
-			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
+			get_plat_sensor_polling_enable_flag() && is_update_state_idle() &&
+			get_sensor_polling_delay_elapsed());
 	}
 }
 
@@ -11771,7 +11773,8 @@ bool is_vr_access(uint8_t sensor_num)
 
 	} else {
 		return (is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
-			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
+			get_plat_sensor_polling_enable_flag() && is_update_state_idle() &&
+			get_sensor_polling_delay_elapsed());
 	}
 }
 
