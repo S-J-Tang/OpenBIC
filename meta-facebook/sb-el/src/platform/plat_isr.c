@@ -43,6 +43,26 @@ LOG_MODULE_REGISTER(plat_isr);
 
 uint8_t pwr_steps_on_flag = 0;
 
+static bool sensor_polling_delay_elapsed;
+
+static void sensor_polling_delay_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	sensor_polling_delay_elapsed = is_mb_dc_on();
+}
+
+K_WORK_DELAYABLE_DEFINE(sensor_polling_delay_work, sensor_polling_delay_work_handler);
+
+bool get_sensor_polling_delay_elapsed(void)
+{
+	return sensor_polling_delay_elapsed;
+}
+
+void set_sensor_polling_delay_elapsed(bool elapsed)
+{
+	sensor_polling_delay_elapsed = elapsed;
+}
+
 void set_pwr_steps_on_flag(uint8_t flag_value)
 {
 	pwr_steps_on_flag = flag_value;
@@ -171,7 +191,12 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 
 		//check RNS vr CML status
 		check_rns_vr_cml_status();
+		// Allow VR/UBC polling one second after DC power becomes stable.
+		set_sensor_polling_delay_elapsed(false);
+		k_work_reschedule(&sensor_polling_delay_work, K_SECONDS(1));
 	} else {
+		k_work_cancel_delayable(&sensor_polling_delay_work);
+		set_sensor_polling_delay_elapsed(false);
 		plat_switch_pin_a12(true); /* LOW -> A12 = GPIO73 output low */
 		gpio_conf(SPI_ADC_CS1_N, GPIO_OUTPUT);
 		gpio_set(SPI_ADC_CS1_N, GPIO_LOW);

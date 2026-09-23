@@ -104,6 +104,8 @@ void pal_post_init()
 		//set perm vout command when DC on
 		if (!set_all_vout_command())
 			LOG_ERR("set all vout command fail!");
+		// DC was already on during initialization; no additional delay is needed.
+		set_sensor_polling_delay_elapsed(true);
 	}
 
 	// check the thermtrip open-circuit
