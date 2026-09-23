@@ -62,11 +62,11 @@ const cpld_bit_name_table_t cpld_bit_name_table[] = {
 	  {
 		  "VDDPHY_HBM1_HBM3_HBM5_HBM7",
 		  "VPP_HBM1_HBM3_HBM5_HBM7",
-		  "VDDQC_HBM1_HBM3_HBM5_HBM7",
+		  "VDDC_HBM1_HBM3_HBM5_HBM7",
 		  "VDDQL_HBM1_HBM3_HBM5_HBM7",
 		  "VDDPHY_HBM0_HBM2_HBM4_HBM6",
 		  "VPP_HBM0_HBM2_HBM4_HBM6",
-		  "VDDQC_HBM0_HBM2_HBM4_HBM6",
+		  "VDDC_HBM0_HBM2_HBM4_HBM6",
 		  "VDDQL_HBM0_HBM2_HBM4_HBM6",
 	  } },
 	{ VR_POWER_FAULT_4_REG,
@@ -110,7 +110,7 @@ const cpld_bit_name_table_t cpld_bit_name_table[] = {
 	  {
 		  "VDDQ_01234567_SMBALRT_N",
 		  "MAX_N_SMBALRT_N",
-		  "VDDQC_VDDQL_0246_SMBALRT_N",
+		  "VDDC_VDDQL_0246_SMBALRT_N",
 		  "MAX_M_VDDC_1357_SMBALRT_N",
 		  "OWL_W_SMBALRT_N",
 		  "OWL_E_SMBALRT_N",

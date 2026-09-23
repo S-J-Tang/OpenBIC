@@ -11837,10 +11837,10 @@ void plat_pldm_sensor_set_quick_vr_poll_interval(uint8_t type, uint8_t capping_s
 	1 = NUWA0/1_VDD power every 5ms
 	2 = NUWA0/1_VDD power every 2ms
 	3 = NUWA0/1_VDD power every 1ms
-	4 = NUWA0/1_VDD power every 2ms, VDDQC0246/VDDQC1357 every 10ms
-	5 = NUWA0/1_VDD power every 5ms, VDDQC0246/VDDQC1357 every 10ms
-	6 = NUWA0/1_VDD power every 5ms, VDDQC0246/VDDQC1357 every 5ms
-	7 = NUWA0/1_VDD power every 2ms, VDDQC0246/VDDQC1357 every 10ms, OWL_E_VDD/OWL_W_VDD/HAMSA_VDD every 100ms
+	4 = NUWA0/1_VDD power every 2ms, VDDC0246/VDDC1357 every 10ms
+	5 = NUWA0/1_VDD power every 5ms, VDDC0246/VDDC1357 every 10ms
+	6 = NUWA0/1_VDD power every 5ms, VDDC0246/VDDC1357 every 5ms
+	7 = NUWA0/1_VDD power every 2ms, VDDC0246/VDDC1357 every 10ms, OWL_E_VDD/OWL_W_VDD/HAMSA_VDD every 100ms
 	*/
 	pldm_sensor_info *vr_table = plat_pldm_sensor_load(QUICK_VR_SENSOR_THREAD_ID);
 	int count = plat_pldm_sensor_get_sensor_count(QUICK_VR_SENSOR_THREAD_ID);
