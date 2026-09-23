@@ -38,6 +38,7 @@
 #include "plat_pldm_sensor.h"
 #include "plat_clock.h"
 #include "plat_adc.h"
+#include "plat_mctp.h"
 
 LOG_MODULE_REGISTER(plat_isr);
 
@@ -218,29 +219,129 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 
 void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 {
-	uint8_t data[ERROR_CODE_LEN] = { 0 };
+	uint8_t data[FATAL_ERROR_LEN] = { 0 };
 	LOG_INF("smb hamsa mmc lvc33 alert triggered");
-	//i2c_burst_read(smb_hamsa_i2c_dev, HAMSA_BOOT1_ADDR, SMBUS_ERROR, data, ERROR_CODE_LEN);
 
-	// bus, uint8_t addr, uint8_t offset, uint8_t *data, uint8_t len
-	plat_i2c_read(I2C_BUS12, HAMSA_BOOT1_ADDR, SMBUS_ERROR, data, ERROR_CODE_LEN);
+	if (!plat_i2c_read(I2C_BUS12, HAMSA_BOOT1_ADDR, SMBUS_ERROR, data, FATAL_ERROR_LEN)) {
+		LOG_ERR("Read ASIC offset 0x%x fail", SMBUS_ERROR);
+		return;
+	}
+
+	LOG_HEXDUMP_DBG(data, FATAL_ERROR_LEN, "smb hamsa mmc lvc33 alert data");
+
+	sb_cmd_fatal_error rec = { 0 };
+	memcpy(&rec, data, sizeof(rec));
+
+	if (rec.length != ERROR_CODE_LEN) {
+		LOG_ERR("Invalid event record length: %d", rec.length);
+		return;
+	}
+
+	if (!plat_i2c_read(I2C_BUS12, HAMSA_BOOT1_ADDR, SMBUS_ASIC_ID, data,
+			   sizeof(struct smb_cmd_id))) {
+		LOG_ERR("Read ASIC offset 0x%x fail", SMBUS_ASIC_ID);
+		return;
+	}
+
+	struct smb_cmd_id smb_cmd_id = { 0 };
+	memcpy(&smb_cmd_id, data, sizeof(smb_cmd_id));
+
 	plat_asic_error_event asic_event = { 0 };
-	asic_event.event_id_0 = data[1];
-	asic_event.event_id_1 = data[2];
-	asic_event.chip_id = data[3];
-	asic_event.module_id = data[4];
+	asic_event.event_id_0 = rec.event_record_data.common.event_id & 0xFF;
+	asic_event.event_id_1 = (rec.event_record_data.common.event_id >> 8) & 0xFF;
+	asic_event.chip_id = rec.event_record_data.common.chiplet_id;
+	asic_event.module_id = rec.event_record_data.common.module_id;
 	plat_asic_error_error_log(LOG_ASSERT, asic_event);
 
 	struct pldm_addsel_data smb_hamsa_sel_msg = { 0 };
 	smb_hamsa_sel_msg.assert_type = LOG_ASSERT;
 	smb_hamsa_sel_msg.event_type = ARKE_FAULT;
 	smb_hamsa_sel_msg.event_data_1 = HAMSA_SMB_ERR_EVENT_HEADER;
-	smb_hamsa_sel_msg.event_data_2 = data[1]; // 123
-	smb_hamsa_sel_msg.event_data_3 = data[2]; // 124
+	smb_hamsa_sel_msg.event_data_2 = asic_event.event_id_0;
+	smb_hamsa_sel_msg.event_data_3 = asic_event.event_id_1;
 	if (send_event_log_to_bmc(smb_hamsa_sel_msg) != PLDM_SUCCESS) {
 		LOG_ERR("Failed to send hamsa smb error code to bmc, event data: 0x%x 0x%x 0x%x\n",
 			smb_hamsa_sel_msg.event_data_1, smb_hamsa_sel_msg.event_data_2,
 			smb_hamsa_sel_msg.event_data_3);
+	}
+
+	uint8_t eid = 0x08;
+	uint8_t resp_buf[PLDM_MAX_DATA_SIZE] = { 0 };
+	pldm_msg pmsg = { 0 };
+	mctp *mctp_inst = NULL;
+
+	pmsg.hdr.msg_type = MCTP_MSG_TYPE_PLDM;
+	pmsg.hdr.pldm_type = PLDM_TYPE_PLAT_MON_CTRL;
+	pmsg.hdr.cmd = PLDM_MONITOR_CMD_CODE_PLATFORM_EVENT_MESSAGE;
+	pmsg.hdr.rq = PLDM_REQUEST;
+
+	uint8_t event_buf[sizeof(struct pldm_platform_event_msg) +
+			  sizeof(struct pldm_cper_event_data) +
+			  sizeof(struct mtia_oem_cper_event)] = { 0 };
+
+	struct pldm_platform_event_msg *evt = (struct pldm_platform_event_msg *)event_buf;
+	evt->format_version = 0x01;
+	evt->tid = 0x01;
+	evt->event_class = PLDM_CPER_EVENT;
+
+	struct pldm_cper_event_data *cper_evt = (struct pldm_cper_event_data *)evt->event_data;
+	cper_evt->cper_format_version = CPER_FORMAT_VERSION;
+	cper_evt->cper_format_type = FULL_CPER_SECTION;
+	cper_evt->cper_data_length = sizeof(struct mtia_oem_cper_event);
+
+	// clang-format off
+	const uint8_t guid_mmc[16] = { 0x6c, 0x7f, 0x57, 0x2f, 0x8a, 0xdd, 0x85, 0x48,
+				       0x99, 0xfd, 0x0b, 0x66, 0xe8, 0xac, 0xa0, 0x3f };
+	const uint8_t guid_mtia_header[16] = { 0x7c, 0x09, 0xc0, 0xbe, 0x45, 0x55, 0x24, 0x48,
+					       0x90, 0x1a, 0xd9, 0x6c, 0x8c, 0x9e, 0xcc, 0x2d };
+	const uint8_t guid_mtia_section[16] = { 0xdf, 0x7d, 0xf6, 0xc8, 0x84, 0xe7, 0x1d, 0x47,
+					        0xa0, 0x5f, 0x7c, 0x70, 0xa7, 0xa1, 0x1a, 0xd6 };
+	// clang-format on
+
+	struct event_record_common *asic_event_data = &rec.event_record_data.common;
+	struct mtia_oem_cper_event *cper_record =
+		(struct mtia_oem_cper_event *)cper_evt->cper_record;
+
+	cper_record->record_header.signatureStart = 0x52455043;
+	cper_record->record_header.Revision = 0x0101;
+	cper_record->record_header.SignatureEnd = 0xFFFFFFFF;
+	cper_record->record_header.SectionCount = 1;
+	cper_record->record_header.ErrorSeverity = asic_event_data->severity;
+	cper_record->record_header.ValidationBits = 0x02;
+	cper_record->record_header.RecordLength = sizeof(struct mtia_oem_cper_event);
+	cper_record->record_header.Timestamp = asic_event_data->timestamp;
+	memcpy(cper_record->record_header.CreatorID, guid_mmc, sizeof(guid_mmc));
+	memcpy(cper_record->record_header.NotificationType, guid_mtia_header,
+	       sizeof(guid_mtia_header));
+
+	cper_record->section_descriptor.sectionOffset =
+		sizeof(struct cper_record_header) + sizeof(struct cper_section_descriptor);
+	cper_record->section_descriptor.sectionLength =
+		sizeof(struct mtia_oem_cper_section_header) + sizeof(event_record);
+	cper_record->section_descriptor.revision = 0x0100;
+	memcpy(cper_record->section_descriptor.sectionType, guid_mtia_section,
+	       sizeof(guid_mtia_section));
+	cper_record->section_descriptor.sectionSeverity = asic_event_data->severity;
+
+	cper_record->section_header.version = 0x0100;
+	cper_record->section_header.record_size =
+		sizeof(struct mtia_oem_cper_section_header) + sizeof(event_record);
+	cper_record->section_header.device_id.vendor_id = smb_cmd_id.pcie_vendor_id;
+	memcpy(cper_record->section_header.device_serial_number, smb_cmd_id.asic_serial_number,
+	       sizeof(smb_cmd_id.asic_serial_number));
+	memcpy(&cper_record->section_data, &rec.event_record_data, sizeof(rec.event_record_data));
+
+	pmsg.len = sizeof(event_buf);
+	pmsg.buf = event_buf;
+	LOG_HEXDUMP_DBG(pmsg.buf, pmsg.len, "pmsg");
+
+	if (!get_mctp_info_by_eid(eid, &mctp_inst, &pmsg.ext_params)) {
+		LOG_ERR("Failed to get mctp info by eid 0x%x", eid);
+		return;
+	}
+
+	if (!mctp_pldm_read(mctp_inst, &pmsg, resp_buf, sizeof(resp_buf))) {
+		LOG_ERR("Failed to send Hamsa CPER event to BMC");
 	}
 }
 

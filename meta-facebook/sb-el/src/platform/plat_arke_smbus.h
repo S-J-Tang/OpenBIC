@@ -63,8 +63,11 @@
 
 #define MAX_DATA_PKT_SIZE 24
 #define STATUS_RETRY_CNT 2
-#define ERROR_CODE_LEN 5
+#define FATAL_ERROR_LEN 82
+#define ERROR_CODE_LEN 80
 
+// smbus ASIC ID
+#define SMBUS_ASIC_ID 8
 // smbus error code
 #define SMBUS_ERROR 122
 // asic_error_code
@@ -81,6 +84,114 @@
 #define FW_CTRL_READ 137
 // firmware block write
 #define FW_DATA_WRITE 138
+
+struct smb_cmd_id {
+	uint8_t length;
+	uint16_t pcie_vendor_id;
+	uint8_t asic_device_id;
+	uint8_t asic_revision;
+	uint8_t asic_serial_number[15];
+	uint8_t pec_byte;
+} __attribute__((packed));
+
+struct event_record_common {
+	uint64_t timestamp;
+	uint16_t event_id;
+	uint8_t severity;
+	uint8_t scope;
+	uint8_t device_id;
+	uint8_t platform_id;
+	uint8_t sku_id;
+	uint8_t chiplet_id;
+	uint8_t module_id;
+	uint8_t flags;
+	uint8_t detail_format_id;
+	uint8_t detail_length;
+	uint8_t reserved[12];
+} __attribute__((packed));
+
+typedef struct __attribute__((packed)) _event_record {
+	struct event_record_common common;
+	uint8_t event_detail[48];
+} event_record;
+
+typedef struct __attribute__((packed)) _sb_cmd_fatal_error {
+	uint8_t length;
+	event_record event_record_data;
+	uint8_t pec_byte;
+} sb_cmd_fatal_error;
+
+struct pldm_platform_event_msg {
+	uint8_t format_version;
+	uint8_t tid;
+	uint8_t event_class;
+	uint8_t event_data[];
+} __attribute__((packed));
+
+struct pldm_cper_event_data {
+	uint8_t cper_format_version;
+	uint8_t cper_format_type;
+	uint16_t cper_data_length;
+	uint8_t cper_record[];
+} __attribute__((packed));
+
+struct cper_record_header {
+	uint32_t signatureStart;
+	uint16_t Revision;
+	uint32_t SignatureEnd;
+	uint16_t SectionCount;
+	uint32_t ErrorSeverity;
+	uint32_t ValidationBits;
+	uint32_t RecordLength;
+	uint64_t Timestamp;
+	uint8_t PlatformID[16];
+	uint8_t PartitionID[16];
+	uint8_t CreatorID[16];
+	uint8_t NotificationType[16];
+	uint8_t RecordID[8];
+	uint8_t Flags[4];
+	uint8_t PersistenceInfo[8];
+	uint8_t Reserved[12];
+} __attribute__((packed));
+
+struct cper_section_descriptor {
+	uint32_t sectionOffset;
+	uint32_t sectionLength;
+	uint16_t revision;
+	uint8_t validationBits;
+	uint8_t reserved;
+	uint32_t flags;
+	uint8_t sectionType[16];
+	uint8_t fruID[16];
+	uint32_t sectionSeverity;
+	uint8_t fruText[20];
+} __attribute__((packed));
+
+struct pcie_device_id {
+	uint16_t vendor_id;
+	uint16_t device_id;
+	uint8_t function_number;
+	uint8_t device_number;
+	uint8_t bus_number;
+	uint16_t segment_number;
+	uint8_t reserved[3];
+} __attribute__((packed));
+
+struct mtia_oem_cper_section_header {
+	uint16_t version;
+	uint16_t record_size;
+	uint64_t validation_bits;
+	struct pcie_device_id device_id;
+	uint8_t device_serial_number[15];
+	uint8_t reserved;
+} __attribute__((packed));
+
+struct mtia_oem_cper_event {
+	struct cper_record_header record_header;
+	struct cper_section_descriptor section_descriptor;
+	struct mtia_oem_cper_section_header section_header;
+	event_record section_data;
+} __attribute__((packed));
 
 int ARKE_smbus_fast_boot(uint8_t *image_buff, uint32_t img_dest_addr, uint32_t img_size);
 #endif
