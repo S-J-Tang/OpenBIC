@@ -479,9 +479,10 @@ uint8_t extend_error_code_dump(const struct shell *shell, uint16_t err_code, uin
 	}
 	case VR_OT_WARNING_EVENT_CAUSE: {
 		const char *rail_name = get_vr_ot_warning_rail_name(data[1]);
-		shell_print(shell, "\t%s OT_WARNING", rail_name);
+		shell_print(shell, "\t%s_OT_WARNING", rail_name);
 		shell_print(shell, "read status(0x7D): 0x%02x", data[0]);
 		err_data_len = 1;
+		break;
 	}
 	default:
 		shell_print(shell, "Unknown extend error code: %d", err_code);
