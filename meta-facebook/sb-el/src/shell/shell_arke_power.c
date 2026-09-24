@@ -534,7 +534,7 @@ void cmd_arke_steps_on(const struct shell *shell, size_t argc, char **argv)
 		if (!plat_read_cpld(entry->cpld_offsets, &reg_data, 1))
 			shell_error(shell, "Read CPLD offset 0x%x failed", entry->cpld_offsets);
 		value = (reg_data >> entry->bit_loc) & 0x01;
-		shell_print(shell, "%-20s %d", ubc2->power_rail_name, value);
+		shell_print(shell, "%-20s %d", entry->power_rail_name, value);
 		if (!plat_read_cpld(ubc2->cpld_offsets, &reg_data, 1))
 			shell_error(shell, "Read CPLD offset 0x%x failed", ubc2->cpld_offsets);
 		value = (reg_data >> ubc2->bit_loc) & 0x01;
