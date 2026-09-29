@@ -54,6 +54,7 @@ static double vshunt_conversion_factor(uint8_t adc_range)
 	case SQ52206_ADC_RANGE_PN_81:
 		return ADCRANGE_81_CONVERSION_FACTOR;
 	case SQ52206_ADC_RANGE_PN_40:
+	case SQ52206_ADC_RANGE_PN_40_ALT:
 		return ADCRANGE_40_CONVERSION_FACTOR;
 	case SQ52206_ADC_RANGE_PN_163:
 	default:
@@ -185,6 +186,12 @@ uint8_t sq52206_init(sensor_cfg *cfg)
 	msg.bus = cfg->port;
 	msg.target_addr = cfg->target_addr;
 
+	/* CONFIG[4:3] is 2 bits wide, only 0h~3h are valid */
+	if (init_args->adc_range > SQ52206_ADC_RANGE_PN_40_ALT) {
+		LOG_ERR("Invalid ADC range: %d", init_args->adc_range);
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
+	}
+
 	/* read config reg */
 	uint16_t config_val = 0x0000;
 	msg.tx_len = 1;
@@ -197,18 +204,17 @@ uint8_t sq52206_init(sensor_cfg *cfg)
 
 	config_val = msg.data[0] << 8 | msg.data[1];
 
-	/* Configure the chip using default values */
-	if (init_args->adc_range) {
-		config_val = (config_val & ~ADCRANGE_MASK) |
-			     ((init_args->adc_range << ADCRANGE_SHIFT) & ADCRANGE_MASK);
-		msg.tx_len = 3;
-		msg.data[0] = SQ52206_CFG_OFFSET;
-		msg.data[1] = config_val >> 8;
-		msg.data[2] = config_val & BIT_MASK(8);
-		if (i2c_master_write(&msg, I2C_RETRY)) {
-			LOG_ERR("Failed to init SQ52206 ");
-			return SENSOR_INIT_UNSPECIFIED_ERROR;
-		}
+	/* Always write ADCRANGE so a stale setting left from a previous
+	 * configuration can't mismatch the conversion used in sq52206_read() */
+	config_val = (config_val & ~ADCRANGE_MASK) |
+		     ((init_args->adc_range << ADCRANGE_SHIFT) & ADCRANGE_MASK);
+	msg.tx_len = 3;
+	msg.data[0] = SQ52206_CFG_OFFSET;
+	msg.data[1] = config_val >> 8;
+	msg.data[2] = config_val & BIT_MASK(8);
+	if (i2c_master_write(&msg, I2C_RETRY)) {
+		LOG_ERR("Failed to init SQ52206 ");
+		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
 	/* read alert reg */
 	uint16_t alert_val = 0x0000;
@@ -244,19 +250,24 @@ uint8_t sq52206_init(sensor_cfg *cfg)
 
 	/* Write the calibration value */
 	// SHUNT_CAL = 819.2 x 10^6 x CURRENT_LSB x R_SHUNT
-	uint16_t shunt_cal = INTERNAL_FIXED_VALUE * (init_args->cur_lsb) * (init_args->r_shunt);
+	double shunt_cal_val = INTERNAL_FIXED_VALUE * (init_args->cur_lsb) * (init_args->r_shunt);
 
 	// set conversion factor based on ADCRANGE setting
-	// x1 for ADCRANGE=0, x2 for ADCRANGE=1, x4 for ADCRANGE=2
+	// x1 for ADCRANGE=0, x2 for ADCRANGE=1, x4 for ADCRANGE=2/3
+	// computed in double and range checked before converting, so the
+	// multiplier neither compounds truncation error nor wraps around uint16_t
 	if (init_args->adc_range == SQ52206_ADC_RANGE_PN_81)
-		shunt_cal *= 2;
-	else if (init_args->adc_range == SQ52206_ADC_RANGE_PN_40)
-		shunt_cal *= 4;
+		shunt_cal_val *= 2;
+	else if (init_args->adc_range == SQ52206_ADC_RANGE_PN_40 ||
+		 init_args->adc_range == SQ52206_ADC_RANGE_PN_40_ALT)
+		shunt_cal_val *= 4;
 
-	if (shunt_cal > SHUNT_CAL_MAX_VAL) {
+	if (shunt_cal_val > SHUNT_CAL_MAX_VAL) {
 		LOG_ERR("Shunt calibration value is out of range");
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
+
+	uint16_t shunt_cal = (uint16_t)(shunt_cal_val + 0.5);
 
 	msg.tx_len = 3;
 	msg.data[0] = SQ52206_SHUNT_CAL_OFFSET;
