@@ -161,6 +161,12 @@ static int cmd_perm_config_get(const struct shell *shell, size_t argc, char **ar
 		}
 	}
 
+	uint16_t sensor_poll_ms;
+	if (get_sensor_poll_rate_user_settings(&sensor_poll_ms)) {
+		shell_print(shell, "sensor adjustable poll rate=%u ms", sensor_poll_ms);
+		config_count++;
+	}
+
 	if (!config_count) {
 		shell_print(shell, "no perm parameter exist");
 	}

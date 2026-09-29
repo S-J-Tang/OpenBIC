@@ -34,6 +34,7 @@
 #define DELAY_MODULE_PG_USER_SETTINGS_OFFSET 0x8800
 #define SVS_FLAG_USER_SETTINGS_OFFSET 0x8900
 #define VR_VOFFSET_MMC_USER_SETTINGS_OFFSET 0x8A00
+#define SENSOR_POLL_RATE_USER_SETTINGS_OFFSET 0x8B00
 #define SVS_VOLTAGE_RANGE_USER_SETTINGS_OFFSET 0x8C00
 
 #define CPLD_THROTTLE_SWITCH_ADDR 0x25
@@ -168,6 +169,8 @@ bool get_user_settings_vr_voffset_mmc_from_eeprom(void *user_settings, uint8_t d
 
 // other
 void user_settings_init(void);
+bool set_sensor_poll_rate_user_settings(uint16_t poll_ms, bool is_perm);
+bool get_sensor_poll_rate_user_settings(uint16_t *poll_ms);
 bool perm_config_clear(void);
 void set_uart_power_event_is_enable(bool is_enable);
 

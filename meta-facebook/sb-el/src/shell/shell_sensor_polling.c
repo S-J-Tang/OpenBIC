@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <shell/shell.h>
 #include "plat_pldm_sensor.h"
+#include "plat_user_setting.h"
 #include "plat_cpld.h"
 
 static void print_plat_sensor_polling_status(const struct shell *shell)
@@ -174,3 +175,44 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_plat_sensor_polling_cmd,
 /* Root of command test */
 SHELL_CMD_REGISTER(set_sensor_polling, &sub_plat_sensor_polling_cmd,
 		   "Disable/Enable sensor polling for group of sensors", NULL);
+
+static int cmd_sensor_poll_rate_get(const struct shell *shell, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	uint16_t poll_ms;
+	if (!plat_pldm_sensor_get_load_test_poll_interval(&poll_ms))
+		return -1;
+	shell_print(shell, "Adjustable sensor polling rate: %u ms", poll_ms);
+	return 0;
+}
+
+static int cmd_sensor_poll_rate_set(const struct shell *shell, size_t argc, char **argv)
+{
+	char *end = NULL;
+	unsigned long poll_ms = strtoul(argv[1], &end, 0);
+	if (*argv[1] == '\0' || *end != '\0' || poll_ms < 1 || poll_ms > 1000) {
+		shell_error(shell, "poll_ms must be between 1 and 1000");
+		return -1;
+	}
+	bool is_perm = argc == 3;
+	if (is_perm && strcmp(argv[2], "perm")) {
+		shell_error(shell, "The last argument must be <perm>");
+		return -1;
+	}
+	if (!set_sensor_poll_rate_user_settings((uint16_t)poll_ms, is_perm)) {
+		shell_error(shell, "Failed to set sensor polling rate");
+		return -1;
+	}
+	shell_print(shell, "Set adjustable sensor polling rate=%lu ms%s", poll_ms,
+		    is_perm ? " permanently" : "");
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor_poll_rate_cmds,
+	SHELL_CMD(get, NULL, "get adjustable sensor polling rate", cmd_sensor_poll_rate_get),
+	SHELL_CMD_ARG(set, NULL, "set <poll_ms> [perm]", cmd_sensor_poll_rate_set, 2, 1),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_CMD_REGISTER(sensor_poll_rate, &sub_sensor_poll_rate_cmds,
+		   "Get/set adjustable sensor polling rate", NULL);
