@@ -24,7 +24,7 @@ typedef struct _sq52206_init_arg {
 	bool is_init;
 	// user defined
 	double r_shunt; /* Shunt resistor value. Unit: Ohm. */
-	uint8_t adc_range; /* IN+ and IN-, 0:±163.84 mV, 1:±81.92 mV, 2:±40.96 mV */
+	uint8_t adc_range; /* IN+ and IN-, 0:±163.84 mV, 1:±81.92 mV, 2/3:±40.96 mV */
 	uint8_t alert_latch; /*alert_latch, 0:Disable, 1:Enable */
 	double i_max; /* Expected maximum current */
 	// calculated data don't set
@@ -63,6 +63,7 @@ enum SQ52206_ADC_RANGE {
 	SQ52206_ADC_RANGE_PN_163 = 0x00, // ±163.84 mV, 5uV/LSB
 	SQ52206_ADC_RANGE_PN_81 = 0x01, // ±81.92 mV, 2.5uV/LSB
 	SQ52206_ADC_RANGE_PN_40 = 0x02, // ±40.96 mV, 1.25uV/LSB
+	SQ52206_ADC_RANGE_PN_40_ALT = 0x03, // ±40.96 mV, 1.25uV/LSB (same as 0x02)
 };
 
 enum SQ52206_ALERT_LATCH {
