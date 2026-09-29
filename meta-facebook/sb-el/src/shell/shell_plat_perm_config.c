@@ -115,16 +115,12 @@ static int cmd_perm_config_get(const struct shell *shell, size_t argc, char **ar
 		LOG_ERR("get throttle user settings failed");
 	} else {
 		if (setting_data_for_throttle != 0xFF) {
-			shell_print(shell, "throttle                            %s",
-				    ((setting_data_for_throttle == 0x00) ?
-					     "sense0 disable, sense1 disable" :
-				     (setting_data_for_throttle == 0x40) ?
-					     "sense0 disable, sense1 enable" :
-				     (setting_data_for_throttle == 0x80) ?
-					     "sense0 enable, sense1 disable" :
-				     (setting_data_for_throttle == 0xC0) ?
-					     "sense0 enable, sense1 enable" :
-					     "unknown"));
+			shell_print(
+				shell,
+				"throttle                            mmc_lv1=%s, mmc_lv2=%s, mmc_lv3=%s",
+				(setting_data_for_throttle & BIT(3)) ? "enable" : "disable",
+				(setting_data_for_throttle & BIT(2)) ? "enable" : "disable",
+				(setting_data_for_throttle & BIT(1)) ? "enable" : "disable");
 			config_count++;
 		}
 	}

@@ -143,7 +143,7 @@ int cmd_throttle_status_dis(const struct shell *shell, size_t argc, char **argv)
 		return -1;
 	}
 
-	shell_info(shell, "throttle set %s %s %s finsih", argv[-1], argv[0],
+	shell_info(shell, "throttle set %s %s %s finish", argv[-1], argv[0],
 		   (argc == 2) ? argv[1] : "");
 
 	return 0;
