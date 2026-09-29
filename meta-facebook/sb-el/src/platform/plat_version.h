@@ -20,7 +20,7 @@
 #include "version.h"
 
 #define PLATFORM_NAME "SantaBarbara"
-#define PROJECT_NAME "Electra"
+#define PROJECT_NAME "Electra-case2"
 #define PROJECT_STAGE POC
 
 #define BOARD_ID 0x01
