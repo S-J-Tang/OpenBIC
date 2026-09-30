@@ -21,6 +21,7 @@
 #include "plat_i2c.h"
 #include "plat_hook.h"
 #include "plat_fru.h"
+#include "plat_pldm_sensor.h"
 #include "sensor.h"
 #include "tmp431.h"
 #include "emc1413.h"
@@ -931,9 +932,40 @@ bool vr_voffset_mmc_user_settings_init(void)
 	return true;
 }
 
+static uint16_t sensor_poll_rate_user_setting = UINT16_MAX;
+
+static bool sensor_poll_rate_user_settings_init(void)
+{
+	if (!plat_eeprom_read(SENSOR_POLL_RATE_USER_SETTINGS_OFFSET, (uint8_t *)&sensor_poll_rate_user_setting, sizeof(sensor_poll_rate_user_setting))) return false;
+	if (sensor_poll_rate_user_setting == UINT16_MAX) return true;
+	return plat_pldm_sensor_set_load_test_poll_interval(sensor_poll_rate_user_setting);
+}
+
+bool set_sensor_poll_rate_user_settings(uint16_t poll_ms, bool is_perm)
+{
+	if (!plat_pldm_sensor_set_load_test_poll_interval(poll_ms)) return false;
+	if (!is_perm) return true;
+	sensor_poll_rate_user_setting = poll_ms;
+	if (!plat_eeprom_write(SENSOR_POLL_RATE_USER_SETTINGS_OFFSET, (uint8_t *)&sensor_poll_rate_user_setting, sizeof(sensor_poll_rate_user_setting))) return false;
+	k_msleep(EEPROM_MAX_WRITE_TIME);
+	return true;
+}
+
+bool get_sensor_poll_rate_user_settings(uint16_t *poll_ms)
+{
+	CHECK_NULL_ARG_WITH_RETURN(poll_ms, false);
+	*poll_ms = sensor_poll_rate_user_setting;
+	return *poll_ms != UINT16_MAX;
+}
+
 // other
 bool perm_config_clear(void)
 {
+	/* clear sensor polling-rate perm parameter */
+	sensor_poll_rate_user_setting = UINT16_MAX;
+	if (!plat_eeprom_write(SENSOR_POLL_RATE_USER_SETTINGS_OFFSET, (uint8_t *)&sensor_poll_rate_user_setting, sizeof(sensor_poll_rate_user_setting))) return false;
+	k_msleep(EEPROM_MAX_WRITE_TIME);
+
 	/* clear all temp_threshold perm parameters */
 	memset(temp_threshold_user_settings.temperature_reg_val, 0xFF,
 	       sizeof(temp_threshold_user_settings.temperature_reg_val));
@@ -1031,4 +1063,5 @@ void user_settings_init(void)
 	vr_voffset_mmc_user_settings_init();
 	svs_voltage_range_default_settings_init();
 	svs_voltage_range_user_settings_init();
+	sensor_poll_rate_user_settings_init();
 }

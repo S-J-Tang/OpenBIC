@@ -381,6 +381,8 @@ uint8_t convert_tmp_addr(uint8_t bus, uint8_t addr, uint8_t tmp_change_mode);
 uint8_t convert_vr_addr(uint8_t bus, uint8_t addr, uint8_t vr_change_mode);
 uint32_t plat_get_pdr_size(uint8_t pdr_type);
 void plat_pldm_sensor_set_quick_vr_poll_interval(uint8_t type, uint8_t capping_source);
+bool plat_pldm_sensor_set_load_test_poll_interval(uint16_t poll_ms);
+bool plat_pldm_sensor_get_load_test_poll_interval(uint16_t *poll_ms);
 void quick_sensor_poll_init();
 PDR_numeric_sensor *get_pdr_numeric_sensor_by_sensor_id(uint8_t sensor_id);
 uint8_t get_pwr_capping_polling_rate_type();

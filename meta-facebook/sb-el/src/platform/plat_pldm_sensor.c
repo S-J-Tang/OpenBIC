@@ -11860,91 +11860,50 @@ power_capping_time_setting pwr_capping_setting_table[] = {
 
 void plat_pldm_sensor_set_quick_vr_poll_interval(uint8_t type, uint8_t capping_source)
 {
-	/*
-	0 default = NUWA0/1_VDD power every 10ms
-	1 = NUWA0/1_VDD power every 5ms
-	2 = NUWA0/1_VDD power every 2ms
-	3 = NUWA0/1_VDD power every 1ms
-	4 = NUWA0/1_VDD power every 2ms, VDDC0246/VDDC1357 every 10ms
-	5 = NUWA0/1_VDD power every 5ms, VDDC0246/VDDC1357 every 10ms
-	6 = NUWA0/1_VDD power every 5ms, VDDC0246/VDDC1357 every 5ms
-	7 = NUWA0/1_VDD power every 2ms, VDDC0246/VDDC1357 every 10ms, OWL_E_VDD/OWL_W_VDD/HAMSA_VDD every 100ms
-	*/
-	pldm_sensor_info *vr_table = plat_pldm_sensor_load(QUICK_VR_SENSOR_THREAD_ID);
-	int count = plat_pldm_sensor_get_sensor_count(QUICK_VR_SENSOR_THREAD_ID);
-	// print out polling ms
-	for (uint8_t i = 0; i < count; i++) {
-		LOG_INF("get 0x%x: quick vr poll interval is %d ms", vr_table[i].pldm_sensor_cfg.num,
-			vr_table[i].poll_interval_ms);
-	}
-	if (count < 0) {
-		LOG_ERR("Cannot get vr_table: %d", QUICK_VR_SENSOR_THREAD_ID);
-		return;
-	}
-	// size of pwr_capping_setting_table
-	uint8_t table_size = sizeof(pwr_capping_setting_table) / sizeof(power_capping_time_setting);
-	switch (type) {
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-	case 6:
-	case 7:
-		LOG_INF("%d: set nuwa0/1 poll interval", type);
-		for (uint8_t i = 0; i < count; i++) {
-			for (uint8_t j = 0; j < table_size; j++) {
-				if (vr_table[i].pldm_sensor_cfg.num ==
-				    pwr_capping_setting_table[j].sensor_id) {
-					if (capping_source == CAPPING_SOURCE_VR) {
-						// set vr power polling time
-						if (pwr_capping_setting_table[j].sensor_id ==
-							    SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_VOLT_V ||
-						    pwr_capping_setting_table[j].sensor_id ==
-							    SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_VOLT_V) {
-							vr_table[i].poll_interval_ms =
-								VR_DEFAULT_POLLING_INTERVAL_MS;
-						} else {
-							const uint16_t *time_index =
-								pwr_capping_setting_table[j]
-									.case_time_ms;
-							vr_table[i].poll_interval_ms =
-								time_index[type];
-						}
+	ARG_UNUSED(type);
+	ARG_UNUSED(capping_source);
+}
 
-					} else if (capping_source == CAPPING_SOURCE_ADC) {
-						// set vr voltage polling time
-						if (pwr_capping_setting_table[j].sensor_id ==
-							    SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W ||
-						    pwr_capping_setting_table[j].sensor_id ==
-							    SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W) {
-							vr_table[i].poll_interval_ms =
-								VR_DEFAULT_POLLING_INTERVAL_MS;
-						} else {
-							const uint16_t *time_index =
-								pwr_capping_setting_table[j]
-									.case_time_ms;
-							vr_table[i].poll_interval_ms =
-								time_index[type];
-						}
-					} else {
-						LOG_ERR("set quick vr poll interval error, Wrong source %d",
-							capping_source);
-					}
-				}
-			}
+bool plat_pldm_sensor_set_load_test_poll_interval(uint16_t poll_ms)
+{
+	if (poll_ms < 1 || poll_ms > 1000) return false;
+	pldm_sensor_info *table = plat_pldm_sensor_load(QUICK_VR_SENSOR_THREAD_ID);
+	int count = plat_pldm_sensor_get_sensor_count(QUICK_VR_SENSOR_THREAD_ID);
+	uint8_t updated = 0;
+	for (int i = 0; table != NULL && i < count; i++) {
+		switch (table[i].pldm_sensor_cfg.num) {
+		case SENSOR_NUM_ASIC_P0V9_VDDQ_HBM1357_PWR_W:
+		case SENSOR_NUM_ASIC_P0V9_VDDQ_HBM0246_PWR_W:
+		case SENSOR_NUM_ASIC_P1V05_VDDC_HBM1357_PWR_W:
+		case SENSOR_NUM_ASIC_P1V05_VDDC_HBM0246_PWR_W:
+		case SENSOR_NUM_ASIC_P0V4_VDDQL_HBM1357_PWR_W:
+		case SENSOR_NUM_ASIC_P0V4_VDDQL_HBM0246_PWR_W:
+		case SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM1357_PWR_W:
+		case SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM0246_PWR_W:
+		case SENSOR_NUM_ASIC_P1V8_VPP_HBM1357_PWR_W:
+		case SENSOR_NUM_ASIC_P1V8_VPP_HBM0246_PWR_W:
+		case SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_PWR_W:
+		case SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_PWR_W:
+		case SENSOR_NUM_ASIC_P0V75_MAX_N_VDD_PWR_W:
+		case SENSOR_NUM_ASIC_P0V75_MAX_M_VDD_PWR_W:
+		case SENSOR_NUM_ASIC_P0V75_MAX_S_VDD_PWR_W:
+		case SENSOR_NUM_PDB1_PWR_W:
+			table[i].poll_interval_ms = poll_ms; updated++; break;
+		default: break;
 		}
-		pwr_capping_pollng_rate_type = type;
-		break;
-	default:
-		LOG_ERR("set quick vr poll interval error, Wrong type %d", type);
-		break;
-	};
-	for (uint8_t i = 0; i < count; i++) {
-		LOG_INF("set 0x%x: quick vr poll interval is %d ms", vr_table[i].pldm_sensor_cfg.num,
-			vr_table[i].poll_interval_ms);
 	}
+	uint8_t expected = get_board_rev_id() == REV_ID_EVT1A_FAB1 ? 15 : 16;
+	return updated == expected;
+}
+
+bool plat_pldm_sensor_get_load_test_poll_interval(uint16_t *poll_ms)
+{
+	CHECK_NULL_ARG_WITH_RETURN(poll_ms, false);
+	pldm_sensor_info *table = plat_pldm_sensor_load(QUICK_VR_SENSOR_THREAD_ID);
+	int count = plat_pldm_sensor_get_sensor_count(QUICK_VR_SENSOR_THREAD_ID);
+	for (int i = 0; table != NULL && i < count; i++)
+		if (table[i].pldm_sensor_cfg.num == SENSOR_NUM_ASIC_P0V9_VDDQ_HBM1357_PWR_W) { *poll_ms = table[i].poll_interval_ms; return true; }
+	return false;
 }
 
 uint8_t get_pwr_capping_polling_rate_type()
