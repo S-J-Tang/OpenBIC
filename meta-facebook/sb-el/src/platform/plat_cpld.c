@@ -23,7 +23,6 @@
 #define CHECK_ALL_BITS 0xFF
 #define CHECK_BITS_1 0x01
 #define CHECK_BITS_6 0x40
-#define CHECK_BITS_45678 0xF8
 #define CHECK_BITS_678 0xE0
 #define CHECK_BITS_78 0xC0
 #define CHECK_BITS_8 0x80
@@ -117,7 +116,7 @@ cpld_info cpld_info_table[] = {
 	{ VR_POWER_FAULT_5_REG, 						0x00, 0x00, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
 	{ VR_SMBUS_ALERT_EVENT_LOG_REG, 				0xFF, 0xFF, true, 0x00, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
 	{ LEAK_DETECT_REG, 					0xDF, 0xDF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_6 },
-	{ ASIC_CATTRIP_REG, 					0xFF, 0xFF, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_45678 },
+	{ ASIC_CATTRIP_REG, 					0xFF, 0xFF, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_78 },
 	{ SYSTEM_ALERT_FAULT_REG, 			0xFF, 0xFF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_8 },
 	{ ASIC_TEMP_OVER_REG, 				0xFF, 0xFF, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_8 },
 	{ TEMP_IC_OVER_FAULT_REG, 			0xFF, 0xFF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_678 },
