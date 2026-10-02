@@ -196,6 +196,18 @@ uint8_t ina238_init(sensor_cfg *cfg)
 			return SENSOR_INIT_UNSPECIFIED_ERROR;
 		}
 	}
+	/* ADC_CONFIG (conversion mode, conversion times and averaging) */
+	if (init_args->adc_config) {
+		msg.tx_len = 3;
+		msg.data[0] = INA238_ADC_CFG_OFFSET;
+		msg.data[1] = init_args->adc_config >> 8;
+		msg.data[2] = init_args->adc_config & BIT_MASK(8);
+		if (i2c_master_write(&msg, I2C_RETRY)) {
+			LOG_ERR("Failed to write ADC config in INA238 ");
+			return SENSOR_INIT_UNSPECIFIED_ERROR;
+		}
+	}
+
 	/* read alert reg */
 	uint16_t alert_val = 0x0000;
 	msg.tx_len = 1;
