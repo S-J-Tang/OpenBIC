@@ -107,10 +107,10 @@ static void asic_version_cmd(const struct shell *shell)
 		return;
 	}
 
-	shell_print(shell, "boot1 VER from ASIC: %02d.%02d.%02d", version_data[2], version_data[3],
-		    version_data[4]);
-	shell_print(shell, "boot0 VER from ASIC: %02d.%02d.%02d", version_data[9], version_data[8],
-		    version_data[7]);
+	shell_print(shell, "boot1 VER from ASIC: %02d.%02d.%02d", version_data[1], version_data[2],
+		    version_data[3]);
+	shell_print(shell, "boot0 VER from ASIC: %02d.%02d.%02d", version_data[8], version_data[7],
+		    version_data[6]);
 }
 
 static void max_asic_temp_history_cmd(const struct shell *shell)
