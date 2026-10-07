@@ -124,7 +124,9 @@ vr_device_match_sensor_num vr_error_fault_table[] = {
 	{ PWRGD_P1V5_E_RVDD_FAULT, 0 }, // TODO
 	{ PWRGD_P1V5_W_RVDD_FAULT, 0 }, // TODO
 	//pwr fault reg 5
-	{ P12V_UBC_PWRGD_FAULT, 0 }, // TODO
+	// sensor_num_1 is only used to satisfy the "valid sensor_num" check; the actual
+	// UBC1/UBC2 status data is retrieved via get_ubc_vr_status_data() below.
+	{ P12V_UBC_PWRGD_FAULT, SENSOR_NUM_UBC1_P12V_TEMP_C },
 	{ PWRGD_P5V_R_FAULT, 0 }, // TODO
 	{ PWRGD_P3V3_R_FAULT, 0 }, // TODO
 	{ PWRGD_P1V8_R_FAULT, 0 }, // TODO
@@ -319,6 +321,50 @@ void set_vr_hot_alert(void)
 	set_led_flag(true);
 
 	return;
+}
+
+// UBC1 status first, UBC2 status second (fixed order, no tag byte).
+static const uint8_t ubc_sensor_num_table[UBC_STATUS_NUM] = {
+	SENSOR_NUM_UBC1_P12V_TEMP_C,
+	SENSOR_NUM_UBC2_P12V_TEMP_C,
+};
+
+// data[2 .. 7] register addresses of each UBC entry, in order
+static const uint8_t ubc_single_byte_status_reg[] = {
+	PMBUS_STATUS_VOUT,	  PMBUS_STATUS_IOUT, PMBUS_STATUS_INPUT,
+	PMBUS_STATUS_TEMPERATURE, PMBUS_STATUS_CML,  PMBUS_STATUS_MFR_SPECIFIC,
+};
+
+// Reads PMBus status detail for UBC1 then UBC2 and packs them back-to-back
+// (status word + 6 single byte status each, no tag byte).
+bool get_ubc_vr_status_data(uint8_t *data)
+{
+	CHECK_NULL_ARG_WITH_RETURN(data, false);
+
+	bool ret = true;
+
+	memset(data, 0xFF, UBC_STATUS_DATA_LEN);
+
+	for (int i = 0; i < UBC_STATUS_NUM; i++) {
+		uint8_t offset = i * UBC_STATUS_ENTRY_SIZE;
+		uint8_t sensor_id = ubc_sensor_num_table[i];
+
+		if (!get_raw_data_from_sensor_id(sensor_id, PMBUS_STATUS_WORD, &data[offset], 2)) {
+			LOG_ERR("Failed to read UBC%d status word", i + 1);
+			ret = false;
+		}
+
+		for (int r = 0; r < ARRAY_SIZE(ubc_single_byte_status_reg); r++) {
+			if (!get_raw_data_from_sensor_id(sensor_id, ubc_single_byte_status_reg[r],
+							 &data[offset + 2 + r], 1)) {
+				LOG_ERR("Failed to read UBC%d status reg 0x%02X", i + 1,
+					ubc_single_byte_status_reg[r]);
+				ret = false;
+			}
+		}
+	}
+
+	return ret;
 }
 
 bool get_multi_vr_status(uint8_t alrt_index, uint8_t *data)
@@ -601,6 +647,12 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 			}
 		} else {
 			LOG_ERR("smbus alrt index: 0x%x out of range", smbus_alrt_index);
+			return false;
+		}
+	} else if (device_id == P12V_UBC_PWRGD_FAULT) {
+		// P12V_UBC_PWRGD is a single CPLD bit shared by UBC1 and UBC2: save both
+		if (!get_ubc_vr_status_data(data)) {
+			LOG_ERR("Failed to retrieve UBC1/UBC2 status data");
 			return false;
 		}
 	} else {
