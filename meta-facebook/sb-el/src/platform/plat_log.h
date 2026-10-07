@@ -29,6 +29,13 @@
 #define SMBUS_ALRT_MAX_VR_NUM 4
 #define SMBUS_ALRT_ENTRY_SIZE 3
 
+// UBC1/UBC2 share the single P12V_UBC_PWRGD CPLD bit; data is stored as
+// UBC1's 8 status bytes followed by UBC2's 8 status bytes, in that fixed
+// order (no tag byte).
+#define UBC_STATUS_ENTRY_SIZE 8
+#define UBC_STATUS_NUM 2
+#define UBC_STATUS_DATA_LEN (UBC_STATUS_ENTRY_SIZE * UBC_STATUS_NUM)
+
 #define LOG_ASSERT 1
 #define LOG_DEASSERT 0
 
@@ -133,4 +140,5 @@ enum LOG_ERROR_TRIGGER_CAUSE_EXTEND {
 void packaged_bmc_log(uint8_t event_type, uint8_t event_data_1, uint8_t event_data_2,
 		      uint8_t event_data_3);
 void check_rns_vr_cml_status(void);
+bool get_ubc_vr_status_data(uint8_t *data);
 #endif
