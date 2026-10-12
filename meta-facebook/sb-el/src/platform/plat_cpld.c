@@ -25,6 +25,7 @@
 #define CHECK_BITS_6 0x40
 #define CHECK_BITS_678 0xE0
 #define CHECK_BITS_78 0xC0
+#define CHECK_BITS_45678 0xF8
 #define CHECK_BITS_8 0x80
 #define CHECK_BITS_012356 0x6F
 #define CHECK_BITS_0 0x01
@@ -118,7 +119,7 @@ cpld_info cpld_info_table[] = {
 	{ LEAK_DETECT_REG, 					0xDF, 0xDF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_6 },
 	{ ASIC_CATTRIP_REG, 					0xFF, 0xFF, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_78 },
 	{ SYSTEM_ALERT_FAULT_REG, 			0xFF, 0xFF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_8 },
-	{ ASIC_TEMP_OVER_REG, 				0xFF, 0xFF, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_8 },
+	{ ASIC_TEMP_OVER_REG, 				0xFF, 0xFF, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_45678 },
 	{ TEMP_IC_OVER_FAULT_REG, 			0xFF, 0xFF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_678 },
 	{ MFIO_FOR_ELECTRA, 				0x80, 0x80, true, 0x00, true, 0x00, .status_changed_cb = asic_temp_error_callback, .bit_check_mask = CHECK_BITS_012356 },
 };
