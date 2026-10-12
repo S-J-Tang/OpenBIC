@@ -22,11 +22,22 @@
 #include "plat_hook.h"
 #include "plat_util.h"
 #include "plat_class.h"
+#include "shell_arke_power.h"
 
 static bool cmd_is_dc_on(const struct shell *shell)
 {
 	if (!is_mb_dc_on()) {
 		shell_warn(shell, "please arke power on first");
+		return false;
+	}
+
+	return true;
+}
+
+static bool cmd_is_p3v3_on(const struct shell *shell)
+{
+	if (!check_p3v3_pwrgd()) {
+		shell_warn(shell, "please P3V3 power on first");
 		return false;
 	}
 
@@ -323,7 +334,7 @@ void cmd_vr_test_mode_get_page(const struct shell *shell, size_t argc, char **ar
 
 void cmd_vr_dma_read(const struct shell *shell, size_t argc, char **argv)
 {
-	if (!cmd_is_dc_on(shell))
+	if (!cmd_is_p3v3_on(shell))
 		return;
 	uint8_t vr = get_vr_module();
 	if (vr != VR_MODULE_RNS) {
@@ -350,7 +361,7 @@ void cmd_vr_dma_read(const struct shell *shell, size_t argc, char **argv)
 }
 void cmd_vr_dma_write(const struct shell *shell, size_t argc, char **argv)
 {
-	if (!cmd_is_dc_on(shell))
+	if (!cmd_is_p3v3_on(shell))
 		return;
 	uint8_t vr = get_vr_module();
 	if (vr != VR_MODULE_RNS) {
@@ -378,7 +389,7 @@ void cmd_vr_dma_write(const struct shell *shell, size_t argc, char **argv)
 
 void cmd_vr_pmbus_read(const struct shell *shell, size_t argc, char **argv)
 {
-	if (!cmd_is_dc_on(shell))
+	if (!cmd_is_p3v3_on(shell))
 		return;
 
 	enum VR_RAIL_E rail;
@@ -401,7 +412,7 @@ void cmd_vr_pmbus_read(const struct shell *shell, size_t argc, char **argv)
 }
 void cmd_vr_pmbus_write(const struct shell *shell, size_t argc, char **argv)
 {
-	if (!cmd_is_dc_on(shell))
+	if (!cmd_is_p3v3_on(shell))
 		return;
 
 	enum VR_RAIL_E rail;
