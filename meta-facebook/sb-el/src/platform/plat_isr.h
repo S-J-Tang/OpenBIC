@@ -19,6 +19,29 @@
 
 #include "plat_cpld.h"
 
+#define ASIC_SPI_FLASH_DEV_NAME "spi_fiu0_cs1"
+#define SPI_FIU0_DEV_NAME "SPI_FIU0"
+#define SPI_FIU0_CS1_SLAVE 1
+#define ASIC_ODS_MASK 0x07
+#define HAMSA_ODS_CODE 0x3
+#define NUWA_ODS_CODE 0x6
+
+#define SPI_NOR_CMD_WREN 0x06
+#define SPI_NOR_CMD_RDSR 0x05
+#define SPI_NOR_CMD_WRSR 0x01
+#define SPI_NOR_CMD_RDCR 0x15
+#define SPI_NOR_CMD_RDHCR 0x71
+#define SPI_NOR_CMD_WRHCR 0x72
+
+#define ASIC_HAMSA_POR_BIT 5
+#define ASIC_NUWA0_POR_BIT 4
+#define ASIC_NUWA1_POR_BIT 3
+#define ASIC_HAMSA_SYS_RST_BIT 2
+#define ASIC_NUWA0_SYS_RST_BIT 1
+#define ASIC_NUWA1_SYS_RST_BIT 0
+
+enum asic_spi_chip { ASIC_SPI_HAMSA, ASIC_SPI_NUWA0, ASIC_SPI_NUWA1 };
+
 void ISR_GPIO_ALL_VR_PM_ALERT_R_N();
 void ISR_GPIO_FM_PLD_UBC_EN_R();
 bool ubc_en_changed_callback(cpld_info *info, uint8_t *data);
