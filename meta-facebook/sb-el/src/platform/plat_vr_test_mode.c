@@ -339,9 +339,9 @@ bool get_vr_offset_uvp_ovp(uint8_t rail, uint16_t *uvp, uint16_t *ovp)
 		return false;
 	}
 
+	bool is_raa229140a = is_raa229140a_rail(rail);
 	uint16_t vout_raw = (data[1] << 8) | data[0];
-	uint16_t vout =
-		is_raa229140a_rail(rail) ? linear16u_to_scaled(vout_raw, 1000, 9) : vout_raw;
+	uint16_t vout = is_raa229140a ? linear16u_to_scaled(vout_raw, 1000, 9) : vout_raw;
 	uint8_t page = get_vr_page(rail);
 
 	uint16_t reg = page ? VR_UVP_1_DMA_ADDR : VR_UVP_0_DMA_ADDR;
@@ -349,14 +349,18 @@ bool get_vr_offset_uvp_ovp(uint8_t rail, uint16_t *uvp, uint16_t *ovp)
 		LOG_ERR("VR %x get dma uvp fail", rail);
 		return false;
 	}
-	uint16_t uvp_offset = (data[1] << 8) | data[0];
+	uint16_t uvp_offset_raw = (data[1] << 8) | data[0];
+	uint16_t uvp_offset =
+		is_raa229140a ? linear16u_to_scaled(uvp_offset_raw, 1000, 9) : uvp_offset_raw;
 
 	reg = page ? VR_OVP_1_DMA_ADDR : VR_OVP_0_DMA_ADDR;
 	if (!dma_read_vr(rail, reg, data, 2)) {
 		LOG_ERR("VR %x get dma ovp fail", rail);
 		return false;
 	}
-	uint16_t ovp_offset = (data[1] << 8) | data[0];
+	uint16_t ovp_offset_raw = (data[1] << 8) | data[0];
+	uint16_t ovp_offset =
+		is_raa229140a ? linear16u_to_scaled(ovp_offset_raw, 1000, 9) : ovp_offset_raw;
 
 	*uvp = (vout > uvp_offset) ? (vout - uvp_offset) : 0;
 	*ovp = vout + ovp_offset;
