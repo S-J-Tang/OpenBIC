@@ -212,8 +212,13 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 		for (uint8_t i = 0; i < VR_RAIL_E_P3V3_OSFP_VOLT_V; i++) {
 			uint8_t *rail_name = NULL;
 			if (vr_rail_name_get((uint8_t)i, &rail_name)) {
-				int uvp = get_vr_reg_to_int(i, VR_UVP_REG);
-				int ovp = get_vr_reg_to_int(i, VR_OVP_REG);
+				uint16_t uvp = 0;
+				uint16_t ovp = 0;
+				if (get_vr_fixed_uvp_ovp_enable(i)) {
+					uvp = get_vr_reg_to_int(i, VR_UVP_REG);
+					ovp = get_vr_reg_to_int(i, VR_OVP_REG);
+				} else if (!get_vr_offset_uvp_ovp(i, &uvp, &ovp))
+					shell_error(shell, "get vr %d uvp/ovp fail", i);
 
 				shell_print(
 					shell,
