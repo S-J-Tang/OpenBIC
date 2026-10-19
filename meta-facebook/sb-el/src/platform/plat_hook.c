@@ -612,6 +612,15 @@ bool pre_vr_read(sensor_cfg *cfg, void *args)
 	return true;
 }
 
+static int32_t sensor_reading_to_mv(int reading)
+{
+	sensor_val val;
+	val.integer = (int16_t)(reading & 0xFFFF);
+	val.fraction = (int16_t)((reading >> 16) & 0xFFFF);
+
+	return val.integer * 1000 + val.fraction;
+}
+
 bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
@@ -631,7 +640,10 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 			if (vr_rail_table[i].peak_value == 0xffffffff) {
 				vr_rail_table[i].peak_value = *reading;
 			} else {
-				if (vr_rail_table[i].peak_value < *reading) {
+				// reading is packed sensor_val (integer in low 16 bits, fraction in
+				// high 16 bits), so compare in mV instead of as a raw int
+				if (sensor_reading_to_mv(vr_rail_table[i].peak_value) <
+				    sensor_reading_to_mv(*reading)) {
 					vr_rail_table[i].peak_value = *reading;
 				}
 			}
