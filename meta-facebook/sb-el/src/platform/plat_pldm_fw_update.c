@@ -53,8 +53,8 @@ static bool get_boot0_hamsa_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 static bool get_boot0_nuwa0_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
 static bool get_boot0_nuwa1_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
 
-static uint32_t crc_boot0[3] = { 0 };
-static uint32_t version_boot0[3] = { 0 };
+static uint32_t crc_boot0[BOOT0_MAX] = { 0 };
+static uint32_t version_boot0[BOOT0_MAX] = { 0 };
 const struct device *i2c_dev;
 
 typedef struct {

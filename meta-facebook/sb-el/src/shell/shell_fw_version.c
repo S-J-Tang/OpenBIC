@@ -211,6 +211,11 @@ void cmd_get_fw_version_asic(const struct shell *shell, size_t argc, char **argv
 		shell_print(shell, "update boot0 version read from asic");
 		update_temp_boot0_version(tmp_version, BOOT0_HAMSA);
 	}
+	tmp_version = i2c_msg.data[1] << 16 | i2c_msg.data[2] << 8 | i2c_msg.data[3];
+	if (tmp_version) {
+		shell_print(shell, "update boot1 version read from asic");
+		update_temp_boot0_version(tmp_version, BOOT1_HAMSA);
+	}
 	// get temp version from temp array
 	for (int i = 0; i < BOOT0_MAX; i++) {
 		uint32_t version_tmp = plat_get_image_version(i);
@@ -219,9 +224,24 @@ void cmd_get_fw_version_asic(const struct shell *shell, size_t argc, char **argv
 		tmp_bytes[1] = (version_tmp >> 16) & 0xFF;
 		tmp_bytes[2] = (version_tmp >> 8) & 0xFF;
 		tmp_bytes[3] = version_tmp & 0xFF;
-		shell_print(shell, "%s boot0 VER from temp array: %02d.%02d.%02d.%02d",
-			    asic_list[i].name, tmp_bytes[0], tmp_bytes[1], tmp_bytes[2],
-			    tmp_bytes[3]);
+		if (i == BOOT0_HAMSA) {
+			shell_print(shell, "HAMSA boot0 VER from temp array: %02d.%02d.%02d.%02d",
+				    tmp_bytes[0], tmp_bytes[1], tmp_bytes[2], tmp_bytes[3]);
+		} else if (i == BOOT1_HAMSA) {
+			shell_print(shell, "HAMSA boot1 VER from temp array: %02d.%02d.%02d.%02d",
+				    tmp_bytes[0], tmp_bytes[1], tmp_bytes[2], tmp_bytes[3]);
+		} else if (i == BOOT0_NUWA0) {
+			shell_print(shell, " NUWA0 boot0 VER from temp array: %02d.%02d.%02d.%02d",
+				    tmp_bytes[0], tmp_bytes[1], tmp_bytes[2], tmp_bytes[3]);
+		} else if (i == BOOT0_NUWA1) {
+			shell_print(shell, " NUWA1 boot0 VER from temp array: %02d.%02d.%02d.%02d",
+				    tmp_bytes[0], tmp_bytes[1], tmp_bytes[2], tmp_bytes[3]);
+		} else {
+			shell_print(
+				shell,
+				"Unknown component %d version from temp array: %02d.%02d.%02d.%02d",
+				i, tmp_bytes[0], tmp_bytes[1], tmp_bytes[2], tmp_bytes[3]);
+		}
 	}
 	return;
 }
