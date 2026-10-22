@@ -51,6 +51,17 @@ const static uint8_t volt_sensor_id_list[2] = { SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_
 // only record bit 0-3, lv_switch_en
 static uint8_t lv_switch_en_val = 0;
 
+// CPLD_OFFSET_POWER_CLAMP(0x25) bit definition for LV2/LV3 trigger status
+#define NUWA0_PWR_CAP_LV2_CPLD_BIT 7
+#define NUWA1_PWR_CAP_LV2_CPLD_BIT 6
+#define NUWA0_PWR_CAP_LV3_CPLD_BIT 5
+#define NUWA1_PWR_CAP_LV3_CPLD_BIT 4
+
+static uint32_t pwr_cap_lv2_nuwa0_count = 0;
+static uint32_t pwr_cap_lv2_nuwa1_count = 0;
+static uint32_t pwr_cap_lv3_nuwa0_count = 0;
+static uint32_t pwr_cap_lv3_nuwa1_count = 0;
+
 K_WORK_DELAYABLE_DEFINE(sync_vr_oc_work, power_capping_syn_vr_oc_warn_limit);
 
 static bool mps_get_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t *value)
@@ -90,6 +101,27 @@ static bool mps_get_vout_command(sensor_cfg *cfg, uint16_t *millivolt)
 		LOG_ERR("Unsupported MPS VR type: 0x%x", cfg->type);
 		return false;
 	}
+}
+
+static bool rns_get_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t *value)
+{
+	return (cfg->type == sensor_dev_raa229140a) ?
+		       raa229140a_get_iout_oc_warn_limit(cfg, value) :
+		       raa228249_get_iout_oc_warn_limit(cfg, value);
+}
+
+static bool rns_set_iout_oc_warn_limit(sensor_cfg *cfg, uint16_t value)
+{
+	return (cfg->type == sensor_dev_raa229140a) ?
+		       raa229140a_set_iout_oc_warn_limit(cfg, value) :
+		       raa228249_set_iout_oc_warn_limit(cfg, value);
+}
+
+static bool rns_get_vout_command(sensor_cfg *cfg, uint16_t *millivolt)
+{
+	return (cfg->type == sensor_dev_raa229140a) ?
+		       raa229140a_get_vout_command(cfg, 0, millivolt) :
+		       raa228249_get_vout_command(cfg, 0, millivolt);
 }
 
 void set_power_capping_lv_switch_en_val(uint8_t val)
@@ -136,39 +168,41 @@ void power_capping_syn_vr_oc_warn_limit()
 		uint16_t value = 0;
 		uint16_t voltage_value = 0;
 		float float_value = 0;
+		// set LV1 threshold = 1200A
+		uint16_t set_value = 0x04B0;
 		if (get_vr_module() == VR_MODULE_MPS) {
-			if (mps_get_iout_oc_warn_limit(cfg, &value)) {
-				if (mps_get_vout_command(cfg, &voltage_value)) {
-					float_value = voltage_value / 1000.0;
-					power_capping_info.current_threshold[i] = value;
-					power_capping_info.threshold[i][CAPPING_LV_IDX_LV1] =
-						value * float_value;
+			if (mps_set_iout_oc_warn_limit(cfg, set_value)) {
+				if (mps_get_iout_oc_warn_limit(cfg, &value)) {
+					if (mps_get_vout_command(cfg, &voltage_value)) {
+						float_value = voltage_value / 1000.0;
+						power_capping_info.current_threshold[i] = value;
+						power_capping_info.threshold[i][CAPPING_LV_IDX_LV1] =
+							value * float_value;
+					} else {
+						LOG_ERR("Can't get VOUT_COMMAND: 0x%x", sensor_id);
+					}
 				} else {
-					LOG_ERR("Can't get VOUT_COMMAND: 0x%x", sensor_id);
+					LOG_ERR("Can't get IOUT_OC_WARN: 0x%x", sensor_id);
 				}
 			} else {
-				LOG_ERR("Can't get IOUT_OC_WARN: 0x%x", sensor_id);
+				LOG_ERR("Can't set IOUT_OC_WARN: 0x%x", sensor_id);
 			}
 		} else if (get_vr_module() == VR_MODULE_RNS) {
-			bool get_iout_ok = (cfg->type == sensor_dev_raa229140a) ?
-						   raa229140a_get_iout_oc_warn_limit(cfg, &value) :
-						   raa228249_get_iout_oc_warn_limit(cfg, &value);
-			if (get_iout_ok) {
-				bool get_vout_ok =
-					(cfg->type == sensor_dev_raa229140a) ?
-						raa229140a_get_vout_command(cfg, 0,
-									    &voltage_value) :
-						raa228249_get_vout_command(cfg, 0, &voltage_value);
-				if (get_vout_ok) {
-					float_value = voltage_value / 1000.0;
-					power_capping_info.current_threshold[i] = value;
-					power_capping_info.threshold[i][CAPPING_LV_IDX_LV1] =
-						value * float_value;
+			if (rns_set_iout_oc_warn_limit(cfg, set_value)) {
+				if (rns_get_iout_oc_warn_limit(cfg, &value)) {
+					if (rns_get_vout_command(cfg, &voltage_value)) {
+						float_value = voltage_value / 1000.0;
+						power_capping_info.current_threshold[i] = value;
+						power_capping_info.threshold[i][CAPPING_LV_IDX_LV1] =
+							value * float_value;
+					} else {
+						LOG_ERR("Can't get VOUT_COMMAND: 0x%x", sensor_id);
+					}
 				} else {
-					LOG_ERR("Can't get VOUT_COMMAND: 0x%x", sensor_id);
+					LOG_ERR("Can't get IOUT_OC_WARN: 0x%x", sensor_id);
 				}
 			} else {
-				LOG_ERR("Can't get IOUT_OC_WARN: 0x%x", sensor_id);
+				LOG_ERR("Can't set IOUT_OC_WARN: 0x%x", sensor_id);
 			}
 		} else {
 			LOG_ERR("Unknown VR module: %d", get_vr_module());
@@ -188,7 +222,7 @@ void add_sync_oc_warn_to_work()
 
 bool set_power_capping_vr_oc_warn_limit(uint8_t vr_idx, uint16_t value)
 {
-	/* input value unit: 1W */
+	/* input value unit: 1A */
 
 	if (!is_mb_dc_on()) {
 		LOG_WRN("need to DC on!");
@@ -225,45 +259,44 @@ bool set_power_capping_vr_oc_warn_limit(uint8_t vr_idx, uint16_t value)
 	}
 
 	if (get_vr_module() == VR_MODULE_MPS) {
-		uint16_t voltage_value = 0;
-		float float_value = 0;
-		ret = mps_get_vout_command(cfg, &voltage_value);
+		const uint16_t current_val = value;
+		uint16_t check_cur_val = 0;
+		ret = mps_set_iout_oc_warn_limit(cfg, current_val);
 		if (ret) {
-			float_value = voltage_value / 1000.0;
-			uint16_t current_val = value / float_value;
-			ret = mps_set_iout_oc_warn_limit(cfg, current_val);
-			if (ret) {
-				mps_get_iout_oc_warn_limit(cfg, &current_val);
-				power_capping_info.current_threshold[vr_idx] = current_val;
+			mps_get_iout_oc_warn_limit(cfg, &check_cur_val);
+			power_capping_info.current_threshold[vr_idx] = check_cur_val;
+			// update lv1 threshold
+			uint16_t voltage_value = 0;
+			if (mps_get_vout_command(cfg, &voltage_value)) {
+				float float_voltage_value = voltage_value / 1000.0;
+				power_capping_info.threshold[vr_idx][CAPPING_LV_IDX_LV1] =
+					check_cur_val * float_voltage_value;
 			} else {
-				LOG_ERR("Can't set IOUT_OC_WARN 0x%x", sensor_id);
+				LOG_ERR("Can't get VOUT_COMMAND when setting LV1 threshold: 0x%x",
+					sensor_id);
 			}
 		} else {
-			LOG_ERR("Can't get VOUT_COMMAND: 0x%x", sensor_id);
+			LOG_ERR("Can't set IOUT_OC_WARN 0x%x", sensor_id);
 		}
 	} else if (get_vr_module() == VR_MODULE_RNS) {
-		uint16_t voltage_value = 0;
-		float float_value = 0;
-		ret = (cfg->type == sensor_dev_raa229140a) ?
-			      raa229140a_get_vout_command(cfg, 0, &voltage_value) :
-			      raa228249_get_vout_command(cfg, 0, &voltage_value);
+		const uint16_t current_val = value;
+		uint16_t check_cur_val = 0;
+		ret = rns_set_iout_oc_warn_limit(cfg, current_val);
 		if (ret) {
-			float_value = voltage_value / 1000.0;
-			uint16_t current_val = value / float_value;
-			ret = (cfg->type == sensor_dev_raa229140a) ?
-				      raa229140a_set_iout_oc_warn_limit(cfg, current_val) :
-				      raa228249_set_iout_oc_warn_limit(cfg, current_val);
-			if (ret) {
-				if (cfg->type == sensor_dev_raa229140a)
-					raa229140a_get_iout_oc_warn_limit(cfg, &current_val);
-				else
-					raa228249_get_iout_oc_warn_limit(cfg, &current_val);
-				power_capping_info.current_threshold[vr_idx] = current_val;
+			rns_get_iout_oc_warn_limit(cfg, &check_cur_val);
+			power_capping_info.current_threshold[vr_idx] = check_cur_val;
+			// update lv1 threshold
+			uint16_t voltage_value = 0;
+			if (rns_get_vout_command(cfg, &voltage_value)) {
+				float float_voltage_value = voltage_value / 1000.0;
+				power_capping_info.threshold[vr_idx][CAPPING_LV_IDX_LV1] =
+					check_cur_val * float_voltage_value;
 			} else {
-				LOG_ERR("Can't set IOUT_OC_WARN 0x%x", sensor_id);
+				LOG_ERR("Can't get VOUT_COMMAND when setting LV1 threshold: 0x%x",
+					sensor_id);
 			}
 		} else {
-			LOG_ERR("Can't get VOUT_COMMAND: 0x%x", sensor_id);
+			LOG_ERR("Can't set IOUT_OC_WARN 0x%x", sensor_id);
 		}
 	} else {
 		LOG_ERR("Unknown VR module: %d", get_vr_module());
@@ -486,14 +519,13 @@ void set_power_capping_threshold(uint8_t vr_idx, uint8_t lv, uint16_t value)
 
 	switch (lv) {
 	case CAPPING_LV_IDX_LV1:
+		// LV1 threshold unit is A, the W threshold is updated by set_power_capping_vr_oc_warn_limit
 		if (vr_idx == CAPPING_VR_IDX_NUWA0) {
-			if (!set_power_capping_vr_oc_warn_limit(ADC_IDX_NUWA0_1, value)) {
-				return;
-			}
+			set_power_capping_vr_oc_warn_limit(CAPPING_VR_IDX_NUWA0, value);
+			return;
 		} else if (vr_idx == CAPPING_VR_IDX_NUWA1) {
-			if (!set_power_capping_vr_oc_warn_limit(ADC_IDX_NUWA1_1, value)) {
-				return;
-			}
+			set_power_capping_vr_oc_warn_limit(CAPPING_VR_IDX_NUWA1, value);
+			return;
 		}
 		break;
 	case CAPPING_LV_IDX_LV2:
@@ -517,15 +549,83 @@ void set_power_capping_threshold(uint8_t vr_idx, uint8_t lv, uint16_t value)
 	power_capping_info.threshold[vr_idx][lv] = value;
 }
 
+uint32_t get_pwr_cap_lv2_nuwa0_count()
+{
+	return pwr_cap_lv2_nuwa0_count;
+}
+
+uint32_t get_pwr_cap_lv2_nuwa1_count()
+{
+	return pwr_cap_lv2_nuwa1_count;
+}
+
+uint32_t get_pwr_cap_lv3_nuwa0_count()
+{
+	return pwr_cap_lv3_nuwa0_count;
+}
+
+uint32_t get_pwr_cap_lv3_nuwa1_count()
+{
+	return pwr_cap_lv3_nuwa1_count;
+}
+
+void clear_pwr_cap_lv2_nuwa0_count()
+{
+	pwr_cap_lv2_nuwa0_count = 0;
+}
+
+void clear_pwr_cap_lv2_nuwa1_count()
+{
+	pwr_cap_lv2_nuwa1_count = 0;
+}
+
+void clear_pwr_cap_lv3_nuwa0_count()
+{
+	pwr_cap_lv3_nuwa0_count = 0;
+}
+
+void clear_pwr_cap_lv3_nuwa1_count()
+{
+	pwr_cap_lv3_nuwa1_count = 0;
+}
+
+static bool is_bit_rising_edge(uint8_t prev_val, uint8_t cur_val, uint8_t bit)
+{
+	bool prev_bit = !!(prev_val & (1u << bit));
+	bool cur_bit = !!(cur_val & (1u << bit));
+
+	return (!prev_bit && cur_bit);
+}
+
 void power_capping_handler(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		k_sem_take(&power_capping_sem, K_FOREVER);
-
+		uint8_t final_ucr_status = get_final_ucr_status();
 		if (get_power_capping_method() == CAPPING_M_LOOK_UP_TABLE) {
-			uint8_t final_ucr_status = get_final_ucr_status();
 			if (prev_set_ucr_status != final_ucr_status) {
 				uint8_t data = 0;
+				/* Compare final_ucr_status (bits 7/6/5/4 = NUWA0_LV2/NUWA1_LV2/
+				* NUWA0_LV3/NUWA1_LV3, same layout as CPLD_OFFSET_POWER_CLAMP)
+				* against prev_set_ucr_status and count each 0->1 transition
+				* separately for NUWA0/NUWA1.
+				*/
+				if (is_bit_rising_edge(prev_set_ucr_status, final_ucr_status,
+						       NUWA0_PWR_CAP_LV2_CPLD_BIT)) {
+					pwr_cap_lv2_nuwa0_count++;
+				}
+				if (is_bit_rising_edge(prev_set_ucr_status, final_ucr_status,
+						       NUWA1_PWR_CAP_LV2_CPLD_BIT)) {
+					pwr_cap_lv2_nuwa1_count++;
+				}
+				if (is_bit_rising_edge(prev_set_ucr_status, final_ucr_status,
+						       NUWA0_PWR_CAP_LV3_CPLD_BIT)) {
+					pwr_cap_lv3_nuwa0_count++;
+				}
+				if (is_bit_rising_edge(prev_set_ucr_status, final_ucr_status,
+						       NUWA1_PWR_CAP_LV3_CPLD_BIT)) {
+					pwr_cap_lv3_nuwa1_count++;
+				}
 				data = (lv_switch_en_val & 0x0F) | final_ucr_status;
 				if (plat_write_cpld(CPLD_OFFSET_POWER_CLAMP, &data)) {
 					prev_set_ucr_status = final_ucr_status;
@@ -545,7 +645,12 @@ void plat_power_capping_init()
 	k_sem_init(&power_capping_sem, 0, 1);
 
 	// sync avg_times
-	uint8_t data = 0;
+	uint8_t data = 0x64;
+	LOG_INF("set cpld lv1 time 0x%02x", data);
+	// set LV1 time = 100us
+	if (!plat_write_cpld(CPLD_OFFSET_POWER_CAPPING_LV1_TIME, &data)) {
+		LOG_ERR("can't w cpld offset %d", CPLD_OFFSET_POWER_CAPPING_LV1_TIME);
+	}
 	if (plat_read_cpld(CPLD_OFFSET_POWER_CAPPING_LV1_TIME, &data, 1)) {
 		LOG_INF("read cpld lv1 time 0x%02x", data);
 		if (data >= 10 && data <= 100) {
@@ -592,7 +697,8 @@ void plat_power_capping_init()
 		set_power_capping_lv_switch_en_val(data);
 	}
 
-	set_power_capping_source(CAPPING_SOURCE_VR);
+	set_power_capping_source(CAPPING_SOURCE_ADC);
+	set_power_capping_method(CAPPING_M_CREDIT_BASE);
 
 	k_thread_create(&power_capping_thread, power_capping_thread_stack, POWER_CAPPING_STACK_SIZE,
 			power_capping_handler, NULL, NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0,

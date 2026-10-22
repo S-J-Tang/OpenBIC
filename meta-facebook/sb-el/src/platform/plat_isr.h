@@ -53,5 +53,11 @@ void set_pwr_steps_on_flag(uint8_t flag_value);
 uint8_t get_pwr_steps_on_flag(void);
 bool get_sensor_polling_delay_elapsed(void);
 void set_sensor_polling_delay_elapsed(bool elapsed);
+void ISR_PWR_CAP_LV1_NUWA0();
+void ISR_PWR_CAP_LV1_NUWA1();
+void clear_pwr_cap_lv1_nuwa0_count();
+void clear_pwr_cap_lv1_nuwa1_count();
+uint32_t get_pwr_cap_lv1_nuwa0_count();
+uint32_t get_pwr_cap_lv1_nuwa1_count();
 
 #endif

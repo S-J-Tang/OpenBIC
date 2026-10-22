@@ -43,7 +43,7 @@ static bool plat_sensor_temp_polling_enable_flag = true;
 static bool plat_sensor_vr_polling_enable_flag = true;
 static bool plat_sensor_ina238_polling_enable_flag = true;
 static uint8_t plat_sensor_one_step_power_enable_flag = 0;
-uint8_t pwr_capping_pollng_rate_type = 0;
+uint8_t pwr_capping_pollng_rate_type = 7;
 static uint8_t ina238_polling_rate_type = 0;
 
 static ina238_init_arg ina238_pwr_w_init_args = {
