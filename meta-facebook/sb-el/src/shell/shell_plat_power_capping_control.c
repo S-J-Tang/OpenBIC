@@ -20,6 +20,7 @@
 #include <logging/log.h>
 #include "plat_i2c.h"
 #include "plat_cpld.h"
+#include "plat_gpio.h"
 
 LOG_MODULE_REGISTER(power_capping_control, LOG_LEVEL_DBG);
 
@@ -37,7 +38,6 @@ LOG_MODULE_REGISTER(power_capping_control, LOG_LEVEL_DBG);
 #define NUWA1_PWR_CAP_LV2_BIT 6
 #define NUWA0_PWR_CAP_LV3_BIT 5
 #define NUWA1_PWR_CAP_LV3_BIT 4
-#define VR_HOT_ELECTRA_BIT 0
 
 #define POWER_CAPPING_SET_BIT(orig, bit) ((uint8_t)((orig) | (1u << (bit))))
 #define POWER_CAPPING_CLR_BIT(orig, bit) ((uint8_t)((orig) & ~(1u << (bit))))
@@ -70,17 +70,40 @@ static int cmd_power_capping_get(const struct shell *shell, size_t argc, char **
 		return -1;
 	}
 
+	shell_print(shell, "%s  (status, read only) : %d", gpio_name[NUWA0_PWR_CAP_LV1_LVC33],
+		    gpio_get(NUWA0_PWR_CAP_LV1_LVC33));
+	shell_print(shell, "%s  (status, read only) : %d", gpio_name[NUWA1_PWR_CAP_LV1_LVC33],
+		    gpio_get(NUWA1_PWR_CAP_LV1_LVC33));
+
 	for (int i = 0; i < ARRAY_SIZE(pwr_cap_list); i++) {
 		const cpld_pin_map_t *item = &pwr_cap_list[i];
-		uint8_t reg_val = 0;
+		uint8_t bit_val = 0;
 
-		if (!plat_read_cpld(item->offset, &reg_val, 1)) {
-			return -1;
+		if (!strcmp(item->name, "VR_HOT")) {
+			int vr_hot_val = get_vr_hot();
+
+			if (vr_hot_val < 0) {
+				shell_error(shell, "get VR_HOT failed");
+				return -1;
+			}
+
+			bit_val = vr_hot_val;
+		} else {
+			uint8_t reg_val = 0;
+
+			if (!plat_read_cpld(item->offset, &reg_val, 1)) {
+				shell_error(shell, "read CPLD failed");
+				return -1;
+			}
+
+			bit_val = (reg_val >> item->bit) & 0x1;
 		}
 
-		uint8_t bit_val = (reg_val >> item->bit) & 0x1;
-
-		shell_print(shell, "%s : %d", item->name, bit_val);
+		if (item->offset == POWER_CAPPING_LV1_CPLD_OFFSET) {
+			shell_print(shell, "%s  (set, debug only) : %d", item->name, bit_val);
+		} else {
+			shell_print(shell, "%s : %d", item->name, bit_val);
+		}
 	}
 
 	return 0;
@@ -107,20 +130,31 @@ static int cmd_power_capping_set(const struct shell *shell, size_t argc, char **
 		return -1;
 	}
 
-	uint8_t reg_val = 0;
-
-	if (!plat_read_cpld(item->offset, &reg_val, 1)) {
-		return -1;
-	}
-
-	if (set_val == 1) {
-		reg_val = POWER_CAPPING_SET_BIT(reg_val, item->bit);
+	if (!strcmp(name, "VR_HOT")) {
+		if (!set_vr_hot((bool)set_val)) {
+			shell_error(shell, "set VR_HOT failed");
+			return -1;
+		}
+		shell_print(shell, "set %s to %ld done", name, set_val);
+		return 0;
 	} else {
-		reg_val = POWER_CAPPING_CLR_BIT(reg_val, item->bit);
-	}
+		uint8_t reg_val = 0;
 
-	if (!plat_write_cpld(item->offset, &reg_val)) {
-		return -1;
+		if (!plat_read_cpld(item->offset, &reg_val, 1)) {
+			shell_error(shell, "read CPLD failed");
+			return -1;
+		}
+
+		if (set_val == 1) {
+			reg_val = POWER_CAPPING_SET_BIT(reg_val, item->bit);
+		} else {
+			reg_val = POWER_CAPPING_CLR_BIT(reg_val, item->bit);
+		}
+
+		if (!plat_write_cpld(item->offset, &reg_val)) {
+			shell_error(shell, "write CPLD failed");
+			return -1;
+		}
 	}
 
 	shell_print(shell, "set %s to %ld done", name, set_val);

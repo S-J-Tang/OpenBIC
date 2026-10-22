@@ -537,9 +537,47 @@ bool plat_gpio_immediate_int_cb(uint8_t gpio_num)
 	case ALL_VR_PM_ALERT_R_N:
 		ret = true;
 		break;
+	case NUWA0_PWR_CAP_LV1_LVC33:
+		ret = true;
+		break;
+	case NUWA1_PWR_CAP_LV1_LVC33:
+		ret = true;
+		break;
 	default:
 		break;
 	}
 
 	return ret;
+}
+
+static uint32_t pwr_cap_lv1_nuwa0_count = 0;
+static uint32_t pwr_cap_lv1_nuwa1_count = 0;
+void ISR_PWR_CAP_LV1_NUWA0()
+{
+	pwr_cap_lv1_nuwa0_count++;
+}
+
+void ISR_PWR_CAP_LV1_NUWA1()
+{
+	pwr_cap_lv1_nuwa1_count++;
+}
+
+void clear_pwr_cap_lv1_nuwa0_count()
+{
+	pwr_cap_lv1_nuwa0_count = 0;
+}
+
+void clear_pwr_cap_lv1_nuwa1_count()
+{
+	pwr_cap_lv1_nuwa1_count = 0;
+}
+
+uint32_t get_pwr_cap_lv1_nuwa0_count()
+{
+	return pwr_cap_lv1_nuwa0_count;
+}
+
+uint32_t get_pwr_cap_lv1_nuwa1_count()
+{
+	return pwr_cap_lv1_nuwa1_count;
 }

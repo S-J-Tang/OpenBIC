@@ -23,6 +23,7 @@
 #include "plat_power_capping.h"
 #include "plat_pldm_sensor.h"
 #include "shell_adc.h"
+#include "plat_isr.h"
 
 typedef struct {
 	const char *name;
@@ -57,8 +58,7 @@ static int cmd_power_capping_get_all(const struct shell *shell, size_t argc, cha
 	shell_print(shell, "---------------------NUWA0---------------------");
 	shell_print(shell, "NUWA0 LV1 time window: %4d (us)",
 		    get_power_capping_time_w(CAPPING_VR_IDX_NUWA0, CAPPING_LV_IDX_LV1));
-	shell_print(shell, "NUWA0 LV1 threshold: %6d (W), %4d (A)\n",
-		    get_power_capping_threshold(CAPPING_VR_IDX_NUWA0, CAPPING_LV_IDX_LV1),
+	shell_print(shell, "NUWA0 LV1 threshold: %6d (A)\n",
 		    get_power_capping_current_threshold(CAPPING_VR_IDX_NUWA0));
 	shell_print(shell, "NUWA0 LV2 time window: %4d (ms)",
 		    get_power_capping_time_w(CAPPING_VR_IDX_NUWA0, CAPPING_LV_IDX_LV2));
@@ -75,8 +75,7 @@ static int cmd_power_capping_get_all(const struct shell *shell, size_t argc, cha
 	shell_print(shell, "---------------------NUWA1---------------------");
 	shell_print(shell, "NUWA1 LV1 time window: %4d (us)",
 		    get_power_capping_time_w(CAPPING_VR_IDX_NUWA1, CAPPING_LV_IDX_LV1));
-	shell_print(shell, "NUWA1 LV1 threshold: %6d (W), %4d (A)\n",
-		    get_power_capping_threshold(CAPPING_VR_IDX_NUWA1, CAPPING_LV_IDX_LV1),
+	shell_print(shell, "NUWA1 LV1 threshold: %6d (A)\n",
 		    get_power_capping_current_threshold(CAPPING_VR_IDX_NUWA1));
 	shell_print(shell, "NUWA1 LV2 time window: %4d (ms)",
 		    get_power_capping_time_w(CAPPING_VR_IDX_NUWA1, CAPPING_LV_IDX_LV2));
@@ -282,6 +281,33 @@ static void power_capping_name_get_for_set_cmd(size_t idx, struct shell_static_e
 	}
 }
 
+static int cmd_power_capping_trigger_times_count_get(const struct shell *shell, size_t argc,
+						     char **argv)
+{
+	shell_print(shell, "Level 1 NUWA0 trigger count = %d", get_pwr_cap_lv1_nuwa0_count());
+	shell_print(shell, "Level 2 NUWA0 trigger count = %d", get_pwr_cap_lv2_nuwa0_count());
+	shell_print(shell, "Level 3 NUWA0 trigger count = %d", get_pwr_cap_lv3_nuwa0_count());
+	shell_print(shell, "Level 1 NUWA1 trigger count = %d", get_pwr_cap_lv1_nuwa1_count());
+	shell_print(shell, "Level 2 NUWA1 trigger count = %d", get_pwr_cap_lv2_nuwa1_count());
+	shell_print(shell, "Level 3 NUWA1 trigger count = %d", get_pwr_cap_lv3_nuwa1_count());
+
+	return 0;
+}
+
+static int cmd_power_capping_trigger_times_count_clear(const struct shell *shell, size_t argc,
+						       char **argv)
+{
+	clear_pwr_cap_lv1_nuwa0_count();
+	clear_pwr_cap_lv2_nuwa0_count();
+	clear_pwr_cap_lv3_nuwa0_count();
+	clear_pwr_cap_lv1_nuwa1_count();
+	clear_pwr_cap_lv2_nuwa1_count();
+	clear_pwr_cap_lv3_nuwa1_count();
+
+	shell_print(shell, "power capping trigger times count cleared");
+
+	return 0;
+}
 SHELL_DYNAMIC_CMD_CREATE(power_capping_name, power_capping_name_get_for_set_cmd);
 
 /* level 3 */
@@ -304,6 +330,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(set_source_subcmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(get_subcmds,
 			       SHELL_CMD(all, NULL, "power_capping get all",
 					 cmd_power_capping_get_all),
+			       SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(trigger_times_count_subcmds,
+			       SHELL_CMD(get, NULL, "power_capping trigger get",
+					 cmd_power_capping_trigger_times_count_get),
+			       SHELL_CMD(clear, NULL, "power_capping trigger clear",
+					 cmd_power_capping_trigger_times_count_clear),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -330,6 +363,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  NULL),
 	SHELL_CMD_ARG(debug, &power_capping_name, "power_capping debug <NUWA[X]_LV[Y]>",
 		      cmd_power_capping_debug, 2, 0),
+	SHELL_CMD(trigger_count, &trigger_times_count_subcmds,
+		  "power_capping trigger_times_count <get | clear>", NULL),
 	SHELL_SUBCMD_SET_END);
 /* Root level */
 SHELL_CMD_REGISTER(
