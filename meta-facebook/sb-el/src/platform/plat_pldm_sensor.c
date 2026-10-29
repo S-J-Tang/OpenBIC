@@ -49,23 +49,23 @@ static uint8_t ina238_polling_rate_type = 0;
 static ina238_init_arg ina238_pwr_w_init_args = {
 	.is_init = false,
 	.r_shunt = 0.0005,
-	.adc_range = 0,
+	.adc_range = 1,
 	.alert_latch = 0,
 	/* MODE=Bh (continuous shunt + bus), VBUSCT=VSHCT=540us, VTCT=1052us, AVG=4
 	 * -> update every (540 + 540) x 4 = 4.32ms */
 	.adc_config = 0xB929,
-	.i_max = 55.0,
+	.i_max = 70.0,
 };
 
 static sq52206_init_arg sq52206_pwr_w_init_args = {
 	.is_init = false,
 	.r_shunt = 0.0005,
-	.adc_range = SQ52206_ADC_RANGE_PN_163,
+	.adc_range = SQ52206_ADC_RANGE_PN_40,
 	.alert_latch = 0,
 	/* MODE=Bh (continuous shunt + bus), VBUSCT=VSHCT=566us, VTCT=2090us, AVG=4
 	 * -> update every (566 + 566) x 4 = 4.53ms */
 	.adc_config = 0xB6E9,
-	.i_max = 55.0,
+	.i_max = 70.0,
 };
 
 static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = {
