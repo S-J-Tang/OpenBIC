@@ -21,6 +21,7 @@
 #include "plat_util.h"
 #include "plat_clock.h"
 #include "plat_cpld.h"
+#include "plat_class.h"
 // pending
 #include <shell_plat_power_sequence.h>
 #include <logging/log.h>
@@ -86,6 +87,12 @@ static void clk_apll_check_work_handler(struct k_work *work)
 	if (clk_312_5mhz_get_lock_status_u618() == 0) {
 		LOG_ERR("312.5MHz clock(U618) APLL unlock");
 		uint16_t error_code = CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_312_5MHZ_ERR_IDX;
+		error_log_event(error_code, LOG_ASSERT);
+	}
+	/* DPLL lock detection is supported from DVT1(FAB3) onward */
+	if ((get_board_rev_id() >= REV_ID_DVT) && (clk_312_5mhz_get_dpll_lock_status_u618() == 0)) {
+		LOG_ERR("312.5MHz clock(U618) DPLL unlock");
+		uint16_t error_code = CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_312_5MHZ_DPLL_ERR_IDX;
 		error_log_event(error_code, LOG_ASSERT);
 	}
 	check_clk_buf_loss_status();

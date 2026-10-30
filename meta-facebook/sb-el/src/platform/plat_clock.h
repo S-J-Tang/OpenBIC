@@ -37,6 +37,8 @@
 #define CLK_U86_I2C_BUS I2C_BUS3
 #define CLK_U200045_I2C_BUS I2C_BUS2
 
+#define CLK_GEN_312_5M_DPLL0_STS_OFFSET 0x0580
+
 #define RC210XX_REG_DEVICE_STS 0x1E
 #define RC210XX_DEVICE_READY_BIT 1
 
@@ -62,9 +64,11 @@
 #define CLK_BUF1_100M_LOSB_PLD 0x4
 #define CLK_BUF2_100M_LOSB_PLD 0x5
 #define CLK_312_5MHZ_REINIT_ERR_IDX 0x6
+#define CLK_312_5MHZ_DPLL_ERR_IDX 0x7
 
 #define CLK_312_5MHZ_REINIT_ERR_CODE (CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_312_5MHZ_REINIT_ERR_IDX)
 
+#define CLK_312_5M_DPLL_UNLOCK_EVENT 0x5A
 #define CLOCK_APLL_UNLOCK_EVENT 0x5B
 #define CLK_312_5M_APLL_UNLOCK_EVENT 0x5C
 #define CLK_BUF0_100M_LOSB_PLD_EVENT 0x5D
@@ -74,6 +78,7 @@
 uint8_t clk_100mhz_get_lock_status_u86(void);
 uint8_t clk_100mhz_get_lock_status_u200045(void);
 uint8_t clk_312_5mhz_get_lock_status_u618(void);
+uint8_t clk_312_5mhz_get_dpll_lock_status_u618(void);
 bool check_312_5MHz_init_status(void);
 void check_clk_buf_loss_status(void);
 bool clock_get_error_data(uint16_t error_code, uint8_t *data);

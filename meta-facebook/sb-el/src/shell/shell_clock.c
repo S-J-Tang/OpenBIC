@@ -37,7 +37,6 @@ bool clock_name_get(uint8_t index, uint8_t **name);
 #define CLK_GEN_LOSMON_EVENT_OFFSET 0x5a
 #define CLK_BUF_100M_BYTE_COUNT 0x7
 #define CLK_DEFAULT_BYTE_VALUE 0x00
-#define CLK_GEN_312_5M_DPLL0_STS_OFFSET 0x0580
 
 enum CLOCK_COMPONENT {
 	CLK_BUF_100M_U85,
@@ -228,24 +227,13 @@ void cmd_get_clock(const struct shell *shell, size_t argc, char **argv)
 	return;
 }
 
-static void get_clk_312_5mhz_dpll_status(const struct shell *shell, uint8_t addr, uint8_t bus)
+static void get_clk_312_5mhz_dpll_status(const struct shell *shell)
 {
-	I2C_MSG i2c_msg = { 0 };
-	uint8_t retry = 5;
-
-	i2c_msg.bus = bus;
-	i2c_msg.target_addr = addr;
-	i2c_msg.tx_len = 2;
-	i2c_msg.rx_len = 1;
-	i2c_msg.data[0] = (CLK_GEN_312_5M_DPLL0_STS_OFFSET >> 8) & 0xff;
-	i2c_msg.data[1] = CLK_GEN_312_5M_DPLL0_STS_OFFSET & 0xff;
-
-	if (i2c_master_read(&i2c_msg, retry)) {
+	uint8_t lock_status = clk_312_5mhz_get_dpll_lock_status_u618();
+	if (lock_status == 0xFF) {
 		shell_error(shell, "Failed to get 312.5MHz clock(U618) DPLL lock status");
 		return;
 	}
-
-	uint8_t lock_status = i2c_msg.data[0] & BIT(0); // bit 0 is the DPLL lock status
 
 	shell_print(shell, "DPLL lock status,  value = %d (%s)", lock_status,
 		    lock_status ? "lock" : "unlock");
@@ -288,7 +276,7 @@ void handle_single_clock_status(const struct shell *shell, enum CLOCK_COMPONENT 
 				    lock_status_312);
 		else
 			shell_print(shell, "APLL lock status,  value = %d (lock)", lock_status_312);
-		get_clk_312_5mhz_dpll_status(shell, addr, bus);
+		get_clk_312_5mhz_dpll_status(shell);
 		return;
 	}
 	case CLK_GEN_100M_U200045: {

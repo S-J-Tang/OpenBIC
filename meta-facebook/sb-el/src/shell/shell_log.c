@@ -497,6 +497,11 @@ uint8_t extend_error_code_dump(const struct shell *shell, uint16_t err_code, uin
 				    data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
 			err_data_len = 7;
 			break;
+		case CLK_312_5MHZ_DPLL_ERR_IDX:
+			shell_print(shell, "\t312.5MHz CLOCK_DPLL_UNLOCK");
+			shell_print(shell, "read 312.5MHz clock DPLL lock status: 0x%02x", data[0]);
+			err_data_len = 1;
+			break;
 		default:
 			shell_print(shell, "\tCLOCK_APLL_UNLOCK_EVENT_CAUSE: UNKNOWN");
 			break;
