@@ -428,8 +428,8 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 		uint16_t val = 0;
 		int milivolt = 0;
 		milivolt = get_cached_sensor_reading_by_sensor_number(vr_pwr_sensor_table[i]);
-		/* PLDM power unit modifier is -4, so 10000 counts represent 1 W. */
-		val = (milivolt + 5000) / 10000;
+		/* PLAT_SENSOR_UNIT_SCALE counts represent 1 W */
+		val = (milivolt + PLAT_SENSOR_UNIT_SCALE / 2) / PLAT_SENSOR_UNIT_SCALE;
 
 		switch (vr_pwr_sensor_table[i]) {
 		case SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W: {
@@ -438,7 +438,7 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 				float pwr_w = get_adc_nuwa_inst_pwr_w(ADC_EL_IDX_NUWA0);
 				uint16_t adc_w = (uint16_t)(pwr_w + 0.5f);
 				memcpy(&buffer[6], &adc_w, 2);
-				nuwa0 = (int)(pwr_w * 10000.0f + 0.5f);
+				nuwa0 = (int)(pwr_w * PLAT_SENSOR_UNIT_SCALE + 0.5f);
 			} else {
 				memcpy(&buffer[6], &val, 2);
 				nuwa0 = milivolt;
@@ -452,7 +452,7 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 				uint16_t adc_w = (uint16_t)(pwr_w + 0.5f);
 				memcpy(&buffer[8], &adc_w, 2);
 
-				nuwa1 = (int)(pwr_w * 10000.0f + 0.5f);
+				nuwa1 = (int)(pwr_w * PLAT_SENSOR_UNIT_SCALE + 0.5f);
 			} else {
 				memcpy(&buffer[8], &val, 2);
 				nuwa1 = milivolt;
@@ -545,13 +545,13 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 	} else {
 		/* EVT1B and later PDB1 power comes from INA238 sensor cache */
 		int milivolt = get_cached_sensor_reading_by_sensor_number(SENSOR_NUM_PDB1_PWR_W);
-		uint16_t val = (milivolt + 500) / 1000;
+		uint16_t val = (milivolt + PLAT_SENSOR_UNIT_SCALE / 2) / PLAT_SENSOR_UNIT_SCALE;
 		memcpy(&buffer[36], &val, sizeof(val));
 	}
 
-	chiplet0 = ((nuwa0 + 0.5 * x) + 5000) / 10000;
-	chiplet1 = ((nuwa1 + 0.5 * x) + 5000) / 10000;
-	uint16_t val_x = (uint16_t)((x + 5000) / 10000);
+	chiplet0 = ((nuwa0 + 0.5 * x) + PLAT_SENSOR_UNIT_SCALE / 2) / PLAT_SENSOR_UNIT_SCALE;
+	chiplet1 = ((nuwa1 + 0.5 * x) + PLAT_SENSOR_UNIT_SCALE / 2) / PLAT_SENSOR_UNIT_SCALE;
+	uint16_t val_x = (uint16_t)((x + PLAT_SENSOR_UNIT_SCALE / 2) / PLAT_SENSOR_UNIT_SCALE);
 	uint16_t val_c0 = (uint16_t)chiplet0;
 	uint16_t val_c1 = (uint16_t)chiplet1;
 	memcpy(&buffer[0], &val_x, 2);
@@ -1235,20 +1235,20 @@ static bool command_reply_data_handle(void *arg)
 					memcpy(&data->target_rd_msg.msg[2], &sensor_value,
 					       sizeof(sensor_value));
 				} else {
-					/* PLDM power unit modifier is -4 (0.1 mW/count). */
+					/* PLAT_SENSOR_UNIT_SCALE counts represent 1 W */
 					sensor_value =
 						(get_cached_sensor_reading_by_sensor_number(
 							 SENSOR_NUM_ASIC_P0V75_NUWA0_VDD_PWR_W) +
-						 5000) /
-						10000;
+						 PLAT_SENSOR_UNIT_SCALE / 2) /
+						PLAT_SENSOR_UNIT_SCALE;
 					memcpy(&data->target_rd_msg.msg[0], &sensor_value,
 					       sizeof(sensor_value));
 
 					sensor_value =
 						(get_cached_sensor_reading_by_sensor_number(
 							 SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W) +
-						 5000) /
-						10000;
+						 PLAT_SENSOR_UNIT_SCALE / 2) /
+						PLAT_SENSOR_UNIT_SCALE;
 					memcpy(&data->target_rd_msg.msg[2], &sensor_value,
 					       sizeof(sensor_value));
 				}

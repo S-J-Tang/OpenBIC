@@ -20,13 +20,14 @@
 #include "pdr.h"
 #include "plat_pldm_sensor.h"
 
-#define MINERVA_THRESHOLD_UNIT 0.001
-
 void cmd_set_sensor_threshold(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc != 4) {
-		shell_warn(shell, "Help: set <sensor ID> <UCT/LCT> <value in micro-units>");
-		shell_warn(shell, "Example: sensor_threshold set 0x78 UCT 80000000  // 80");
+		shell_warn(shell, "Help: set <sensor ID> <UCT/LCT> <value>");
+		shell_warn(shell, "  value unit: 10^%d (real value * %d)",
+			   PLAT_SENSOR_UNIT_MODIFIER, PLAT_SENSOR_UNIT_SCALE);
+		shell_warn(shell, "  e.g. 85 C -> %d, 0.75 V -> %d", 85 * PLAT_SENSOR_UNIT_SCALE,
+			   75 * PLAT_SENSOR_UNIT_SCALE / 100);
 		return;
 	}
 
@@ -50,12 +51,11 @@ void cmd_set_sensor_threshold(const struct shell *shell, size_t argc, char **arg
 
 	char threshold_type[4] = { 0 };
 	int value = 0;
-	float threshold_value = 0;
+	uint32_t threshold_value = 0;
 
 	snprintf(threshold_type, sizeof(threshold_type), "%s", argv[2]);
 	value = strtol(argv[3], NULL, 10);
-	threshold_value = (float)value *
-			  MINERVA_THRESHOLD_UNIT; // If user want to send 3.3V, "value" will be 3300
+	threshold_value = (uint32_t)value; // PDR raw value, see PLAT_SENSOR_UNIT_SCALE
 
 	if (strcmp(threshold_type, "UCT") == 0) {
 		result = change_pdr_table_critical_high_with_sensor_id(sensor_id, threshold_value);
@@ -152,12 +152,14 @@ void cmd_get_sensor_threshold(const struct shell *shell, size_t argc, char **arg
 }
 
 /* Sub-command Level 1 of command sensor threshold */
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor_threshold_cmds,
-			       SHELL_CMD(set, NULL, "set_sensor_threshold",
-					 cmd_set_sensor_threshold),
-			       SHELL_CMD(get, NULL, "get_sensor_threshold",
-					 cmd_get_sensor_threshold),
-			       SHELL_SUBCMD_SET_END);
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_sensor_threshold_cmds,
+	SHELL_CMD(set, NULL,
+		  "set <sensor ID> <UCT/LCT> <value>, value = real value * " STRINGIFY(
+			  PLAT_SENSOR_UNIT_SCALE),
+		  cmd_set_sensor_threshold),
+	SHELL_CMD(get, NULL, "get_sensor_threshold", cmd_get_sensor_threshold),
+	SHELL_SUBCMD_SET_END);
 
 /* Root of command sensor threshold */
 SHELL_CMD_REGISTER(sensor_threshold, &sub_sensor_threshold_cmds, "threshold commands for AG", NULL);

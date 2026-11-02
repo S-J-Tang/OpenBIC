@@ -70,10 +70,10 @@ void heartbeat_led_handler(struct k_work *work)
 		}
 
 		uint16_t candidate_interval = 0;
-		if (cache_reading <= 70000) { //70 degree C
+		if (cache_reading <= 70 * PLAT_SENSOR_UNIT_SCALE) { //70 degree C
 			// normal, set the interval to 1 time per sec
 			candidate_interval = 500;
-		} else if (cache_reading <= 100000) { //100 degree C
+		} else if (cache_reading <= 100 * PLAT_SENSOR_UNIT_SCALE) { //100 degree C
 			candidate_interval = 250; // 0.5 time per sec
 		} else {
 			candidate_interval = 50;
