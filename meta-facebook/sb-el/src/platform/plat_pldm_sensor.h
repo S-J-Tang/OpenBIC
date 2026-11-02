@@ -20,6 +20,16 @@
 #include "pdr.h"
 #include "sensor.h"
 
+/*
+ * All sb-el PLDM numeric sensors share one unit modifier.
+ * PDR raw value = real value * PLAT_SENSOR_UNIT_SCALE
+ * (e.g. 85 degC -> 850000, 0.75 V -> 7500).
+ * Keep PLAT_SENSOR_UNIT_SCALE == 10^(-PLAT_SENSOR_UNIT_MODIFIER).
+ * Table thresholds are raw values, so update them when changing these.
+ */
+#define PLAT_SENSOR_UNIT_MODIFIER (-4)
+#define PLAT_SENSOR_UNIT_SCALE 10000
+
 #define QUICK_POLL_INTERVAL 0xFF
 #define VR_DEFAULT_POLLING_INTERVAL_MS 1000
 
