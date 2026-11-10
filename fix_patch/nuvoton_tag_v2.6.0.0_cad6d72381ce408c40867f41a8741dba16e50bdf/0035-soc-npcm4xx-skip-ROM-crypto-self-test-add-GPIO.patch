@@ -1,0 +1,267 @@
+From d7ff5c03dd5fd5ff2179131500272bc9c3d8ddff Mon Sep 17 00:00:00 2001
+From: young <Young.Li@quantatw.com>
+Date: Tue, 10 Nov 2026 14:51:58 +0800
+Subject: [PATCH] soc: npcm4xx: skip ROM crypto self-test, add GPIOB0
+ download hook
+
+The ROM RNG self-test fails by chance (about 1 in 7300 power-ups) and
+the ROM then halts in UART download mode. Add an OTP table with
+oSkipCtyptoSelfTest set, so the ROM skips the self-test without
+programming the OTP.
+
+Add ROM hook 2 from the B0 demo: enter UART download mode when GPIOB0
+is low at boot.
+
+ImageGenerator: fill in the table SHA-256, hOtpImgHdrOffset,
+hDevMode.hOTPRefToTable and the hook pointers, and fail if the table
+is missing.
+---
+ .../common/ImageGenerator/ImageGenerator.py        | 65 +++++++++++----
+ soc/arm/npcm4xx/common/header.c                    | 95 ++++++++++++++++------
+ 2 files changed, 115 insertions(+), 45 deletions(-)
+
+diff --git a/soc/arm/npcm4xx/common/ImageGenerator/ImageGenerator.py b/soc/arm/npcm4xx/common/ImageGenerator/ImageGenerator.py
+index ed4a9f68..cd220e1 100644
+--- a/soc/arm/npcm4xx/common/ImageGenerator/ImageGenerator.py
++++ b/soc/arm/npcm4xx/common/ImageGenerator/ImageGenerator.py
+@@ -7,6 +7,7 @@
+ import os
+ import sys
+ import logging
++import hashlib
+ import Util
+ import xml.etree.ElementTree as ET
+ import FunctionDefine as Fn
+@@ -78,6 +79,13 @@ hSeg3Size = 0
+ hSeg4Size = 0
+ 
+ hHashTotal = []
++
++# ROM OTP table ("%OtPmAp@" + SHA-256 + pfrotp_map_t) in the firmware body
++OtpTableTag = b'%OtPmAp@'
++OtpTableHashOffset = 0x08
++OtpTableDataOffset = 0x40
++OtpTableDataSize = 0x400
++OtpTableOffset = None
+ hAESAdd = []
+ 
+ hSeg1_OEM = []
+@@ -119,8 +127,9 @@ def GenFWHeader():
+         ListFWHeaderCol_Sign.append(
+             (int(Dict_FW_H['hSystemECFWOffset'], 0).to_bytes(4, byteorder='little')))
+ 
+-        # hDevMode
+-        temp = [0, 0, 1, 1, 0, 0, 0, 0]
++        # hDevMode: hNotUpdateOTPRegister | hNotEraseOTPTable, plus
++        # hOTPRefToTable when the image has an OTP table
++        temp = [0, 0, 1, 1, 0, 1 if OtpTableOffset is not None else 0, 0, 0]
+         ListFWHeaderCol_Sign.append(Fn.ConvertBitArray2Byte(temp))
+ 
+         # hFlashLockReg0
+@@ -268,24 +277,17 @@ def GenFWHeader():
+         # hReservedField4
+         ListFWHeaderCol_Sign.append(hReservedField4_InFile)
+ 
+-        # hHook1Ptr
+-        # data = (int(Dict_FW_H['hHook1Ptr'], 0).to_bytes(4, byteorder='little')) if (
+-        #     Dict_FW_H['hHook1Ptr'] is not None) else Fn.getFilePoint(Dict_File['FirmwareImage'], 1200, 4)
+-        ListFWHeaderCol_Sign.append(bytearray([0]*4))
++        # hHook1Ptr (take from f/w header, 0 if unused)
++        ListFWHeaderCol_Sign.append(Fn.getFilePoint(Dict_File['FirmwareImage'], 1200, 4))
+ 
+-        # # hHook2Ptr
+-        data = Fn.getFilePoint(Dict_File['FirmwareImage'], 1204, 4)
+-        ListFWHeaderCol_Sign.append(data)
++        # hHook2Ptr (take from f/w header, 0 if unused)
++        ListFWHeaderCol_Sign.append(Fn.getFilePoint(Dict_File['FirmwareImage'], 1204, 4))
+ 
+-        # hHook3Ptr
+-        # data = (int(Dict_FW_H['hHook3Ptr'], 0).to_bytes(4, byteorder='little')) if (
+-        #     Dict_FW_H['hHook3Ptr'] is not None) else Fn.getFilePoint(Dict_File['FirmwareImage'], 1208, 4)
+-        ListFWHeaderCol_Sign.append(bytearray([0]*4))
++        # hHook3Ptr (take from f/w header, 0 if unused)
++        ListFWHeaderCol_Sign.append(Fn.getFilePoint(Dict_File['FirmwareImage'], 1208, 4))
+ 
+-        # hHook4Ptr
+-        # data = (int(Dict_FW_H['hHook4Ptr'], 0).to_bytes(4, byteorder='little')) if (
+-        #     Dict_FW_H['hHook4Ptr'] is not None) else Fn.getFilePoint(Dict_File['FirmwareImage'], 1212, 4)
+-        ListFWHeaderCol_Sign.append(bytearray([0]*4))
++        # hHook4Ptr (take from f/w header, 0 if unused)
++        ListFWHeaderCol_Sign.append(Fn.getFilePoint(Dict_File['FirmwareImage'], 1212, 4))
+ 
+         # hFwSeg1Offset / hFwSeg1Size (header)
+         hSeg1Offset = Fn.getFilePoint(Dict_File['FirmwareImage'], 1216, 4)
+@@ -463,7 +465,10 @@ def GenFWHeader():
+         #         ListFWHeaderCol.append(
+         #             (FWLength + OtpAlign).to_bytes(4, byteorder='big'))
+         # else:
+-        ListFWHeaderCol.append(Fn.ReservedData(32))
++        if OtpTableOffset is not None:
++            ListFWHeaderCol.append(OtpTableOffset.to_bytes(4, byteorder='big'))
++        else:
++            ListFWHeaderCol.append(Fn.ReservedData(32))
+         ListFWHeaderCol.append(Fn.ReservedData(Util.hReservedField0))
+ 
+         # Gen Header list
+@@ -801,6 +806,29 @@ def GenOTPImage():
+         Fn.ClearTmpFiles()
+ 
+ 
++def PrepareOtpTable(fw_image):
++    # Find the OTP table in the firmware body (seg 2) and fill in its SHA-256,
++    # before the segment hashes are computed.
++    global OtpTableOffset
++
++    OtpTableOffset = None
++    with open(fw_image, 'r+b') as f:
++        img = bytearray(f.read())
++        seg_start = int.from_bytes(img[1232:1236], 'little')
++        seg_end = int.from_bytes(img[1236:1240], 'little')
++        idx = img.find(OtpTableTag, seg_start, seg_end)
++        if idx < 0:
++            raise Util.LengthError('OTP table not found')
++        data_start = idx + OtpTableDataOffset
++        if (idx % 16) or (data_start + OtpTableDataSize > seg_end):
++            raise Util.LengthError('Invalid OTP table at 0x%x' % idx)
++        digest = hashlib.sha256(img[data_start:data_start + OtpTableDataSize]).digest()
++        f.seek(idx + OtpTableHashOffset)
++        f.write(digest)
++    OtpTableOffset = idx
++    print('OTP table at 0x%x' % idx)
++
++
+ def GenHeader():
+     global OtpAlign, FWLength, BBLength, BBEnLength, BBAlign, BBImage_InFile, BBLength_InFile, BBOffset_InFile, BBWorkRAM_InFile, RAMCodeLength
+     global FlashCodeLength, DataCodeLength
+@@ -823,6 +851,7 @@ def GenHeader():
+     List_BootBlock = []
+ 
+     os.chdir(Util.Path_Input)
++    PrepareOtpTable(Dict_File['FirmwareImage'])
+     FWLength = len(Fn.getFileBin(Dict_File['FirmwareImage']))
+ 
+     # print('FWLength', '{:x}'.format(FWLength))
+diff --git a/soc/arm/npcm4xx/common/header.c b/soc/arm/npcm4xx/common/header.c
+index 5a7adb7..92e42ff 100644
+--- a/soc/arm/npcm4xx/common/header.c
++++ b/soc/arm/npcm4xx/common/header.c
+@@ -6,6 +6,7 @@
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <header.h>
++#include <sys/util.h>
+ 
+ extern unsigned long _vector_table;
+ #ifndef CONFIG_XIP
+@@ -13,41 +14,81 @@ extern unsigned long __main_fw_seg_size__;
+ #endif
+ extern unsigned long __main_fw_seg_end__;
+ 
+-void Rom_hook2(void)
++/* pfrotp_map_t.oMiscConfig, bit3 = oSkipCtyptoSelfTest */
++#define ROM_OTP_MISC_CONFIG		0x11
++#define ROM_OTP_SKIP_CRYPTO_SELF_TEST	0x08
++
++/*
++ * OTP table (ROM "%OtPmAp@" format) in the firmware body, used to skip the
++ * ROM crypto self-test without programming the OTP.
++ *
++ * With hDevMode.hOTPRefToTable set, the ROM loads it in Boot_MiscInit(),
++ * before the self-test, and it replaces the OTP configuration the ROM read
++ * from the chip. So data[] must equal the chip OTP (all 0 when blank) except
++ * oMiscConfig.oSkipCtyptoSelfTest.
++ *
++ * ImageGenerator fills in hash[], hOtpImgHdrOffset and hOTPRefToTable;
++ * hDevMode.hNotUpdateOTPRegister stays set so the ROM never programs the OTP.
++ */
++struct rom_otp_table {
++	uint8_t tag[8];
++	uint8_t hash[56];	/* SHA-256 of data[] in the first 32 bytes */
++	uint8_t data[0x400];	/* pfrotp_map_t */
++};
++
++static const struct rom_otp_table rom_otp_table __attribute__((aligned(16))) = {
++	.tag = { '%', 'O', 't', 'P', 'm', 'A', 'p', '@' },
++	.data[ROM_OTP_MISC_CONFIG] = ROM_OTP_SKIP_CRYPTO_SELF_TEST,
++};
++
++/*
++ * ROM hook 2 (from the B0 demo): enter UART download mode when GPIOB0 is
++ * low at boot.
++ *
++ * The ROM calls hook 2 after the active firmware is validated and its RAM
++ * code is loaded. Clearing the auth-pass bit of the active firmware status
++ * makes the ROM treat it as invalid and fall back to UART download mode.
++ */
++static void Rom_hook2(void)
+ {
+-#define adr_FIU_FwInfo_status	0x100c59d4
++#define M8(addr)		(*((volatile uint8_t *)(addr)))
++#define M32(addr)		(*((volatile uint32_t *)(addr)))
++#define adr_FIU_FwInfo_status	0x100c59d4 /* FIU_FwInfo[FW_ACTIVE].status */
+ #define bit_auth_pass		0x02
+-#define M8(addr) (*((volatile uint8_t *) (addr)))
+-#define M32(addr) (*((volatile unsigned long *) (addr)))
+-#define DEVALT5		0x400c3015
+-#define EMC_CTL		0x400c304d
+-#define GPIOB0_DEVALT	6
+-#define RMII_EN		0
+-#define GPIOB_IN	0x40097001
+-#define GPIOB_DIR	0x40097002
+-#define GPIOB_PULL	0x40097003
+-#define GPIOB_PUD	0x40097004
+-#define GPIOB0_BIT	0
+-#define BIT(x)		(1<<(x))
++/* GPIOB0 is muxed with EMAC_CRS_DV (RMII_EN) and DEVALT5.6 */
++#define DEVALT5			0x400c3015
++#define EMC_CTL			0x400c304d
++#define GPIOB0_DEVALT		6
++#define RMII_EN			0
++/* GPIO port B: PDIN, PDIR, PPULL, PPUD */
++#define GPIOB_IN		0x40097001
++#define GPIOB_DIR		0x40097002
++#define GPIOB_PULL		0x40097003
++#define GPIOB_PUD		0x40097004
++#define GPIOB0_BIT		0
+ 
+-    M8(DEVALT5) &= ~BIT(GPIOB0_DEVALT);
+-    M8(EMC_CTL) &= ~BIT(RMII_EN);
+-    M8(GPIOB_DIR) &= ~BIT(GPIOB0_BIT);
+-    M8(GPIOB_PULL) |= BIT(GPIOB0_BIT);
+-    M8(GPIOB_PUD) &= ~BIT(GPIOB0_BIT);
++	M8(DEVALT5) &= ~BIT(GPIOB0_DEVALT);
++	M8(EMC_CTL) &= ~BIT(RMII_EN);
++	M8(GPIOB_DIR) &= ~BIT(GPIOB0_BIT);
++	M8(GPIOB_PULL) |= BIT(GPIOB0_BIT);
++	M8(GPIOB_PUD) &= ~BIT(GPIOB0_BIT);
+ 
+-    if(M32(adr_FIU_FwInfo_status) & bit_auth_pass)
+-    {
+-	if (0 == (M8(GPIOB_IN) & BIT(GPIOB0_BIT)))
+-        {
+-            M32(adr_FIU_FwInfo_status) &= ~bit_auth_pass;
+-        }
+-    }
++	if (M32(adr_FIU_FwInfo_status) & bit_auth_pass) {
++		/* GPIOB0 is pulled up by default, pull it down to enter download mode */
++		if (0 == (M8(GPIOB_IN) & BIT(GPIOB0_BIT))) {
++			M32(adr_FIU_FwInfo_status) &= ~bit_auth_pass;
++		}
++	}
+ 
+-    M8(GPIOB_PULL) &= ~BIT(GPIOB0_BIT);
++	M8(GPIOB_PULL) &= ~BIT(GPIOB0_BIT);
+ }
+ 
+ __attribute__((section(".header"))) struct FIRMWARE_HEDAER_TYPE fw_header = {
++	/*
++	 * Only keeps the table from --gc-sections, ImageGenerator replaces it
++	 * with the table's flash offset.
++	 */
++	.hOtpImgHdrOffset = (uint32_t)(&rom_otp_table),
+ 	.hUserFWEntryPoint = (uint32_t)(&_vector_table),
+ 	.hUserFWRamCodeFlashStart = CONFIG_FLASH_BASE_ADDRESS +
+ 		NPCM4XX_FW_HEADER_SIZE,
+-- 
+2.7.4
+
