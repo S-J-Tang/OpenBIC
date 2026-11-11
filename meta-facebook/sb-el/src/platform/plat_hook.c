@@ -2358,6 +2358,40 @@ bool bootstrap_set_dbb(bool is_perm)
 	return true;
 }
 
+/* DBB+ bootstrap preset: overrides applied on top of the DBB preset. */
+static const struct {
+	uint8_t strap_index;
+	uint8_t value;
+} dbb_plus_bootstrap_settings[] = {
+	{ STRAP_INDEX_HAMSA_LS_STRAP_0, 0x00 },
+	{ STRAP_INDEX_NUWA0_CHIP_STRAP_0, 0x00 },
+	{ STRAP_INDEX_NUWA1_CHIP_STRAP_0, 0x00 },
+};
+
+bool bootstrap_set_dbb_plus(bool is_perm)
+{
+	LOG_INF("Setting DBB+/QCP1 bootstrap config");
+
+	for (int i = 0; i < ARRAY_SIZE(dbb_plus_bootstrap_settings); i++) {
+		uint8_t strap = dbb_plus_bootstrap_settings[i].strap_index;
+		uint8_t change_setting_value = 0;
+
+		if (!set_bootstrap_table_and_user_settings(strap, &change_setting_value,
+							   dbb_plus_bootstrap_settings[i].value,
+							   is_perm, false)) {
+			LOG_ERR("Failed to set DBB+ bootstrap[%d]", strap);
+			return false;
+		}
+
+		if (!set_bootstrap_val_to_device(strap, change_setting_value)) {
+			LOG_ERR("Failed to write DBB+ bootstrap[%d]", strap);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static inline uint8_t get_val_from_strap_index(uint8_t strap_index)
 {
 	return ((bootstrap_table[strap_index].change_setting_value & 0x01)
