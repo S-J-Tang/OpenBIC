@@ -210,7 +210,7 @@ bool check_312_5MHz_init_status(void)
 	bool has_error = false;
 
 	/* U618 workaround is required from EVT2 onward; board ID is intentionally ignored. */
-	if (rev_id < REV_ID_EVT2_FAB2) {
+	if (rev_id < REV_ID_POC_FAB2) {
 		LOG_INF("Board rev %d does not require CLK U618 workaround", rev_id);
 		return true;
 	}

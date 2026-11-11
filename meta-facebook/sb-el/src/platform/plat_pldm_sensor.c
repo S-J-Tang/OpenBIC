@@ -11083,7 +11083,7 @@ uint32_t plat_get_pdr_size(uint8_t pdr_type)
 		break;
 	case PLDM_SENSOR_AUXILIARY_NAMES_PDR:
 		total_size = ARRAY_SIZE(plat_pdr_sensor_aux_names_table);
-		if (get_board_rev_id() >= REV_ID_EVT1B_FAB2)
+		if (get_board_rev_id() >= REV_ID_POC_FAB1_5)
 			total_size += ARRAY_SIZE(plat_ina238_pdr_sensor_aux_names_table);
 		if (get_asic_board_id() == ASIC_BOARD_ID_EVB)
 			total_size += ARRAY_SIZE(plat_evb_pdr_sensor_aux_names_table);
@@ -11132,13 +11132,13 @@ int plat_pldm_sensor_get_sensor_count(int thread_id)
 		break;
 	case VR_SENSOR_THREAD_ID:
 		count = ARRAY_SIZE(plat_pldm_sensor_vr_table);
-		if (get_board_rev_id() == REV_ID_EVT1A_FAB1) {
+		if (get_board_rev_id() == REV_ID_POC_FAB1) {
 			count -= 2;
 		}
 		break;
 	case QUICK_VR_SENSOR_THREAD_ID:
 		count = ARRAY_SIZE(plat_pldm_sensor_quick_vr_table);
-		if (get_board_rev_id() == REV_ID_EVT1A_FAB1)
+		if (get_board_rev_id() == REV_ID_POC_FAB1)
 			count -= 1;
 		break;
 	case UBC_SENSOR_THREAD_ID:
@@ -11223,7 +11223,7 @@ void plat_load_aux_sensor_names_pdr_table(
 
 	offset += ARRAY_SIZE(plat_pdr_sensor_aux_names_table);
 
-	if (get_board_rev_id() >= REV_ID_EVT1B_FAB2) {
+	if (get_board_rev_id() >= REV_ID_POC_FAB1_5) {
 		memcpy(&aux_sensor_name_table[offset], plat_ina238_pdr_sensor_aux_names_table,
 		       sizeof(plat_ina238_pdr_sensor_aux_names_table));
 
@@ -11450,7 +11450,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		tmp_module, vr_module);
 	// Sensor check version
 	if (asic_board_id == ASIC_BOARD_ID_EVB || asic_board_id == ASIC_BOARD_ID_ELECTRA) {
-		if (board_rev_id >= REV_ID_EVT2_FAB2 ||
+		if (board_rev_id >= REV_ID_POC_FAB2 ||
 		    get_vr_vendor_module() == DELTA_UBC_AND_FAB2_MPS_VR)
 			vr_change_mode = FAB2_1ND_MPS;
 		if (tmp_module == TMP_MODULE_EMC1413) {
@@ -11459,7 +11459,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		}
 		if (vr_module == VR_MODULE_RNS) {
 			LOG_WRN("change VR address to RNS");
-			if (board_rev_id >= REV_ID_EVT2_FAB2)
+			if (board_rev_id >= REV_ID_POC_FAB2)
 				vr_change_mode = FAB2_2ND_RNS;
 			else
 				vr_change_mode = FAB1_2ND_RNS;
@@ -11533,7 +11533,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t tmp_module, uint8_t vr_mod
 		if (count < 0)
 			return;
 		// change INA238(EVT1B and later) address regardless of VR vendor
-		if (board_rev_id >= REV_ID_EVT1B_FAB2)
+		if (board_rev_id >= REV_ID_POC_FAB1_5)
 			ina238_addr = get_ina238_addr();
 
 		for (uint8_t j = 0; j < count; j++) {

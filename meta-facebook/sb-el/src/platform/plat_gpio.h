@@ -61,7 +61,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO34) \
 	gpio_name_to_num(Reserve_GPIO35) \
 	gpio_name_to_num(Reserve_GPIO36) \
-	gpio_name_to_num(Reserve_GPIO37)
+	gpio_name_to_num(ASIC_TYPE_ID1)
 #define name_gpio4	\
 	gpio_name_to_num(Reserve_GPIO40) \
 	gpio_name_to_num(Reserve_GPIO41) \
@@ -99,7 +99,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIO76) \
 	gpio_name_to_num(Reserve_GPIO77)
 #define name_gpio8	\
-	gpio_name_to_num(Reserve_GPIO80) \
+	gpio_name_to_num(ASIC_TYPE_ID0) \
 	gpio_name_to_num(I3C_ELECTRA_ALERT_R_N) \
 	gpio_name_to_num(LED_MMC_HEARTBEAT_R) \
 	gpio_name_to_num(FM_INA238_PDB_BUF_R_EN) \

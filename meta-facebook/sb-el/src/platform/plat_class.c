@@ -27,6 +27,8 @@
 #include "plat_mctp.h"
 #include "plat_user_setting.h"
 #include "plat_adc.h"
+#include "hal_gpio.h"
+#include "plat_gpio.h"
 
 #define BOARD_TYPE_MASK (BIT(0) | BIT(1))
 #define REV_ID_MASK (BIT(0) | BIT(1) | BIT(2))
@@ -43,6 +45,7 @@ static uint8_t asic_board_id = ASIC_BOARD_ID_UNKNOWN;
 static uint8_t board_rev_id = REV_ID_UNKNOWN;
 static uint8_t mmc_slot = 0;
 static uint8_t tray_location = 0;
+static uint8_t asic_type = ASIC_TYPE_UNKNOWN;
 
 // clang-format off
 const char *vr_vendor_module_name[] = {
@@ -138,25 +141,29 @@ void init_board_stage(void)
 
 	//print board stage word
 	switch (board_stage_data) {
-	case REV_ID_EVT1A_FAB1:
-		board_rev_id = REV_ID_EVT1A_FAB1;
-		LOG_INF("BOARD_STAGE(0x%02X) = EVT1A", board_rev_id);
+	case REV_ID_POC_FAB1:
+		board_rev_id = REV_ID_POC_FAB1;
+		LOG_INF("BOARD_STAGE(0x%02X) = POC(FAB1)", board_rev_id);
 		break;
-	case REV_ID_EVT1B_FAB2:
-		board_rev_id = REV_ID_EVT1B_FAB2;
-		LOG_INF("BOARD_STAGE(0x%02X) = EVT1B", board_rev_id);
+	case REV_ID_POC_FAB1_5:
+		board_rev_id = REV_ID_POC_FAB1_5;
+		LOG_INF("BOARD_STAGE(0x%02X) = POC(FAB1.5)", board_rev_id);
 		break;
-	case REV_ID_EVT2_FAB2:
-		board_rev_id = REV_ID_EVT2_FAB2;
-		LOG_INF("BOARD_STAGE(0x%02X) = EVT2", board_rev_id);
+	case REV_ID_POC_FAB2:
+		board_rev_id = REV_ID_POC_FAB2;
+		LOG_INF("BOARD_STAGE(0x%02X) = POC(FAB2)", board_rev_id);
 		break;
-	case REV_ID_DVT:
-		board_rev_id = REV_ID_DVT;
-		LOG_INF("BOARD_STAGE(0x%02X) = DVT", board_rev_id);
+	case REV_ID_DVT1_FAB3:
+		board_rev_id = REV_ID_DVT1_FAB3;
+		LOG_INF("BOARD_STAGE(0x%02X) = DVT1(FAB3)", board_rev_id);
 		break;
-	case REV_ID_PVT:
-		board_rev_id = REV_ID_PVT;
-		LOG_INF("BOARD_STAGE(0x%02X) = PVT", board_rev_id);
+	case REV_ID_DVT2_FAB4:
+		board_rev_id = REV_ID_DVT2_FAB4;
+		LOG_INF("BOARD_STAGE(0x%02X) = DVT2(FAB4)", board_rev_id);
+		break;
+	case REV_ID_PVT_FAB5:
+		board_rev_id = REV_ID_PVT_FAB5;
+		LOG_INF("BOARD_STAGE(0x%02X) = PVT(FAB5)", board_rev_id);
 		break;
 	case REV_ID_MP:
 		board_rev_id = REV_ID_MP;
@@ -210,7 +217,7 @@ void init_vr_vendor_type(void)
 	}
 
 	bool is_evt1a_luxshare_quirk =
-		(vr_vendor_module == 0x08 && board_rev_id == REV_ID_EVT1A_FAB1);
+		(vr_vendor_module == 0x08 && board_rev_id == REV_ID_POC_FAB1);
 
 	if (is_evt1a_luxshare_quirk) {
 		vr_module = 0x01;
@@ -223,12 +230,35 @@ void init_vr_vendor_type(void)
 		ubc_module_name[ubc_module], vr_module_name[vr_module]);
 }
 
+void init_asic_type()
+{
+	// ASIC_TYPE_ID1/ASIC_TYPE_ID0 are only available from DVT1(FAB3)
+	if (board_rev_id < REV_ID_DVT1_FAB3 || board_rev_id >= REV_ID_UNKNOWN) {
+		asic_type = ASIC_TYPE_UNKNOWN;
+		return;
+	}
+
+	// ASIC_TYPE_ID1/ASIC_TYPE_ID0: 00: DBB, 01: QCP1, 10: QCP2, 11: QCP3
+	int id0 = gpio_get(ASIC_TYPE_ID0);
+	int id1 = gpio_get(ASIC_TYPE_ID1);
+
+	if (id0 < 0 || id1 < 0) {
+		LOG_ERR("Failed to get ASIC type, id1: %d, id0: %d", id1, id0);
+		asic_type = ASIC_TYPE_UNKNOWN;
+		return;
+	}
+
+	asic_type = (uint8_t)(((id1 & 0x1) << 1) | (id0 & 0x1));
+	LOG_INF("ASIC type: 0x%x", asic_type);
+}
+
 void init_plat_config()
 {
 	init_board_type();
 	init_board_stage();
 	init_tmp_vendor_type();
 	init_vr_vendor_type();
+	init_asic_type();
 	// cpld fru offset 0: slot
 	plat_cpld_eerprom_read(&mmc_slot, MMC_SLOT_USER_SETTING_OFFSET, 1);
 	change_sensor_cfg(asic_board_id, tmp_module, vr_module, ubc_module, board_rev_id);
@@ -280,6 +310,11 @@ uint8_t get_tray_location()
 	return tray_location;
 }
 
+uint8_t get_asic_type()
+{
+	return asic_type;
+}
+
 // clang-format off
 void pal_show_board_types(const struct shell *shell)
 {
@@ -293,20 +328,22 @@ void pal_show_board_types(const struct shell *shell)
 
 	if (asic_board_id == ASIC_BOARD_ID_EVB) {
 		shell_print(shell, "* BOARD_STAGE:   (0x%02X)%s", board_rev_id,
-			    (board_rev_id == REV_ID_EVT1A_FAB1) ? "REV_ID_EVT1A_FAB1" :
-			    (board_rev_id == REV_ID_EVT1B_FAB2) ? "REV_ID_EVT1B_FAB2" :
-			    (board_rev_id == REV_ID_EVT2_FAB2)  ? "REV_ID_EVT2_FAB2" :
-			    (board_rev_id == REV_ID_DVT)   ? "REV_ID_DVT" :
-			    (board_rev_id == REV_ID_PVT)   ? "REV_ID_PVT" :
+			    (board_rev_id == REV_ID_POC_FAB1) ? "REV_ID_POC_FAB1" :
+			    (board_rev_id == REV_ID_POC_FAB1_5) ? "REV_ID_POC_FAB1_5" :
+			    (board_rev_id == REV_ID_POC_FAB2)  ? "REV_ID_POC_FAB2" :
+			    (board_rev_id == REV_ID_DVT1_FAB3)   ? "REV_ID_DVT1_FAB3" :
+			    (board_rev_id == REV_ID_DVT2_FAB4)   ? "REV_ID_DVT2_FAB4" :
+			    (board_rev_id == REV_ID_PVT_FAB5)	   ? "REV_ID_PVT_FAB5" :
 			    (board_rev_id == REV_ID_MP)	   ? "REV_ID_MP" :
 							     "not supported");
 	} else if (asic_board_id == ASIC_BOARD_ID_ELECTRA) {
 		shell_print(shell, "* BOARD_STAGE:   (0x%02X)%s", board_rev_id,
-			    (board_rev_id == REV_ID_EVT1A_FAB1) ? "REV_ID_EVT1A_FAB1" :
-			    (board_rev_id == REV_ID_EVT1B_FAB2) ? "REV_ID_EVT1B_FAB2" :
-			    (board_rev_id == REV_ID_EVT2_FAB2)  ? "REV_ID_EVT2_FAB2" :
-			    (board_rev_id == REV_ID_DVT)   ? "REV_ID_DVT" :
-			    (board_rev_id == REV_ID_PVT)   ? "REV_ID_PVT" :
+			    (board_rev_id == REV_ID_POC_FAB1) ? "REV_ID_POC_FAB1" :
+			    (board_rev_id == REV_ID_POC_FAB1_5) ? "REV_ID_POC_FAB1_5" :
+			    (board_rev_id == REV_ID_POC_FAB2)  ? "REV_ID_POC_FAB2" :
+			    (board_rev_id == REV_ID_DVT1_FAB3)   ? "REV_ID_DVT1_FAB3" :
+			    (board_rev_id == REV_ID_DVT2_FAB4)   ? "REV_ID_DVT2_FAB4" :
+			    (board_rev_id == REV_ID_PVT_FAB5)	   ? "REV_ID_PVT_FAB5" :
 			    (board_rev_id == REV_ID_MP)	   ? "REV_ID_MP" :
 							     "not supported");
 	}
@@ -321,7 +358,7 @@ void pal_show_board_types(const struct shell *shell)
 		    (vr_vendor_module == LUXSHURE_UBC_AND_MPS_VR) ? "LUXSHURE_UBC_AND_MPS_VR" :
 		    (vr_vendor_module == LUXSHURE_UBC_AND_RNS_VR) ? "LUXSHURE_UBC_AND_RNS_VR" :
 			(vr_vendor_module == CYNTEX_UBC_AND_MPS_VR) ?
-			((board_rev_id == REV_ID_EVT1A_FAB1) ? "LUXSHARE_UBC_AND_RNS_VR" :
+			((board_rev_id == REV_ID_POC_FAB1) ? "LUXSHARE_UBC_AND_RNS_VR" :
 							       "CYNTEX_UBC_AND_MPS_VR") :
 		    (vr_vendor_module == CYNTEX_UBC_AND_RNS_VR) ? "CYNTEX_UBC_AND_RNS_VR" :
 			(vr_vendor_module == DELTA_UBC_AND_FAB2_MPS_VR) ? "DELTA_UBC_AND_FAB2_MPS_VR" :
@@ -347,6 +384,13 @@ void pal_show_board_types(const struct shell *shell)
 	shell_print(shell, "* ADC_TYPE:      (0x%02X)%s", adc_type,
 		    (adc_type == ADI_AD4058) ? "ADI_AD4058" :
 		    (adc_type == TIC_ADS7066) ? "TI_ADS7066" : "not supported");
+
+	shell_print(shell, "* ASIC_TYPE:     (0x%02X)%s", asic_type,
+		    (asic_type == ASIC_TYPE_DBB)  ? "ASIC_TYPE_DBB" :
+		    (asic_type == ASIC_TYPE_QCP1) ? "ASIC_TYPE_QCP1" :
+		    (asic_type == ASIC_TYPE_QCP2) ? "ASIC_TYPE_QCP2" :
+		    (asic_type == ASIC_TYPE_QCP3) ? "ASIC_TYPE_QCP3" :
+						    "not supported");
 	shell_print(shell, "* I2C connection for NUWA0/1 to MMC: Enable");
 	return;
 }
