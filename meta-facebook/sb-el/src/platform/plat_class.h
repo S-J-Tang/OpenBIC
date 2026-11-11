@@ -70,15 +70,24 @@ enum ADC_TYPE {
 };
 
 enum REV_ID {
-	REV_ID_EVT1A_FAB1,
-	REV_ID_EVT1B_FAB2,
-	REV_ID_EVT2_FAB2,
-	REV_ID_DVT,
-	REV_ID_PVT,
+	REV_ID_POC_FAB1,
+	REV_ID_POC_FAB1_5,
+	REV_ID_POC_FAB2,
+	REV_ID_DVT1_FAB3,
+	REV_ID_DVT2_FAB4,
+	REV_ID_PVT_FAB5,
 	REV_ID_MP,
-	REV_ID_RSVD1,
-	REV_ID_RSVD2,
+	REV_ID_TBD,
 	REV_ID_UNKNOWN,
+};
+
+/* ASIC_TYPE_ID1 (GPIO37), ASIC_TYPE_ID0 (GPIO80) */
+enum ASIC_TYPE {
+	ASIC_TYPE_DBB,
+	ASIC_TYPE_QCP1,
+	ASIC_TYPE_QCP2,
+	ASIC_TYPE_QCP3,
+	ASIC_TYPE_UNKNOWN,
 };
 
 void init_plat_config();
@@ -90,5 +99,6 @@ uint8_t get_mmc_slot();
 uint8_t get_asic_board_id();
 uint8_t get_board_rev_id();
 uint8_t get_tray_location();
+uint8_t get_asic_type();
 bool plat_cpld_eerprom_read(uint8_t *data, uint16_t offset, uint8_t len);
 #endif
