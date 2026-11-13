@@ -2307,7 +2307,11 @@ bool bootstrap_default_settings_init(void)
 	}
 
 	/* Applied on every boot, so is_perm = false (not saved to EEPROM) */
-	if (get_asic_type() == ASIC_TYPE_QCP1) {
+	uint8_t board_rev_id = get_board_rev_id();
+
+	/* ASIC type GPIOs are only available from DVT1(FAB3); older boards use DBB */
+	if ((board_rev_id >= REV_ID_DVT1_FAB3) && (board_rev_id < REV_ID_UNKNOWN) &&
+	    (get_asic_type() == ASIC_TYPE_QCP1)) {
 		return bootstrap_set_qcp1(false);
 	}
 
