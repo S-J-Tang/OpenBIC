@@ -259,7 +259,10 @@ typedef struct bootstrap_user_settings_struct {
 	uint16_t user_setting_value[STRAP_INDEX_MAX];
 } bootstrap_user_settings_struct;
 extern bootstrap_user_settings_struct bootstrap_user_settings;
-extern const uint8_t dbb_bootstrap_settings[STRAP_INDEX_EXCEPT_EVB_MAX];
+typedef struct bootstrap_override {
+	uint8_t strap_index;
+	uint8_t value;
+} bootstrap_override;
 
 typedef struct svs_voltage_range_user_settings_struct {
 	uint16_t vout_max[2];
@@ -342,6 +345,7 @@ bool plat_get_alert_level_is_assert(void);
 // Bootstrape
 bool bootstrap_default_settings_init(void);
 bool bootstrap_set_dbb(bool is_perm);
+bool bootstrap_set_qcp1(bool is_perm);
 bool bootstrap_user_settings_init(void);
 bool temp_threshold_user_settings_get(void *temp_threshold_user_settings);
 bool set_bootstrap_table_and_user_settings(uint8_t rail, uint8_t *change_setting_value,
