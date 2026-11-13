@@ -134,6 +134,17 @@ static int bootstrap_set_dbb_cmd(const struct shell *shell, bool is_perm)
 	return 0;
 }
 
+static int bootstrap_set_qcp1_cmd(const struct shell *shell, bool is_perm)
+{
+	if (!bootstrap_set_qcp1(is_perm)) {
+		shell_error(shell, "Failed to set QCP1 bootstrap preset");
+		return -1;
+	}
+
+	shell_print(shell, "Set QCP1 bootstrap preset, %svolatile", is_perm ? "non-" : "");
+	return 0;
+}
+
 static int cmd_bootstrap_set(const struct shell *shell, size_t argc, char **argv)
 {
 	bool is_perm = false;
@@ -147,6 +158,14 @@ static int cmd_bootstrap_set(const struct shell *shell, size_t argc, char **argv
 			return -1;
 		}
 		return bootstrap_set_dbb_cmd(shell, argc == 3);
+	}
+
+	if (!strcmp(argv[1], "QCP1")) {
+		if ((argc > 3) || ((argc == 3) && strcmp(argv[2], "perm"))) {
+			shell_error(shell, "Usage: bootstrap set QCP1 [perm]");
+			return -1;
+		}
+		return bootstrap_set_qcp1_cmd(shell, argc == 3);
 	}
 
 	if (argc < 3) {
@@ -250,6 +269,8 @@ static void strap_rname_get_(size_t idx, struct shell_static_entry *entry)
 		name = (uint8_t *)"all";
 	else if (idx == (get_strap_index_max() + 1))
 		name = (uint8_t *)"DBB";
+	else if (idx == (get_strap_index_max() + 2))
+		name = (uint8_t *)"QCP1";
 
 	entry->syntax = (name) ? (const char *)name : NULL;
 	entry->handler = NULL;
@@ -263,7 +284,7 @@ SHELL_DYNAMIC_CMD_CREATE(strap_name, strap_rname_get_);
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_bootstrap_cmds, SHELL_CMD(get, &strap_name, "get <strap-name>", cmd_bootstrap_get_all),
 	SHELL_CMD_ARG(set, &strap_name,
-		      "set <strap-name>|all <hex-value>|default [perm], or set DBB [perm]",
+		      "set <strap-name>|all <hex-value>|default [perm], or set DBB|QCP1 [perm]",
 		      cmd_bootstrap_set, 2, 2),
 	SHELL_SUBCMD_SET_END);
 
