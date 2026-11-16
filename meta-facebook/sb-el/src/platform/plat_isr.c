@@ -252,6 +252,24 @@ static bool asic_spi_write_ods(enum asic_spi_chip chip)
 		return false;
 	}
 
+	/*
+	 * ODS opcodes below are Macronix-specific. On other vendors they map to
+	 * different registers (e.g. Winbond 01h writes SR2: CMP/LB OTP bits), so
+	 * only proceed when the JEDEC manufacturer ID is Macronix.
+	 */
+	uint8_t rdid = SPI_NOR_CMD_RDID;
+	uint8_t jedec_id[3] = { 0 };
+
+	if (fiu_raw_xfer(fiu, &rdid, 1, jedec_id, sizeof(jedec_id))) {
+		LOG_ERR("ODS: failed to read JEDEC ID for chip %d", chip);
+		return false;
+	}
+	if (jedec_id[0] != SPI_NOR_MFR_ID_MXIC) {
+		LOG_INF("ODS: chip %d flash %02x %02x %02x is not Macronix, skip", chip,
+			jedec_id[0], jedec_id[1], jedec_id[2]);
+		return true;
+	}
+
 	bool is_hamsa = (chip == ASIC_SPI_HAMSA);
 	uint8_t code = is_hamsa ? HAMSA_ODS_CODE : NUWA_ODS_CODE;
 	uint8_t reg = 0, verify = 0;
