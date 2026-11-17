@@ -14139,8 +14139,22 @@ bool is_arke_smbus_access(uint8_t sensor_num)
 		gpio_get(I3C_ELECTRA_ALERT_R_N) == GPIO_LOW);
 }
 
+/* Temporary: NUWA1 VR is under debug, VR team validates NUWA0 first.
+ * Set to 0 to re-enable NUWA1 VR sensor polling. */
+#define DISABLE_NUWA1_VR_SENSOR 1
+
+static bool is_nuwa1_vr_sensor(uint8_t sensor_num)
+{
+	return (sensor_num >= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_TEMP_C &&
+		sensor_num <= SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_PWR_W) ||
+	       sensor_num == SENSOR_NUM_ASIC_P0V75_NUWA1_VDD_INPUT_VOLT_V;
+}
+
 bool is_vr_access(uint8_t sensor_num)
 {
+	if (DISABLE_NUWA1_VR_SENSOR && is_nuwa1_vr_sensor(sensor_num))
+		return false;
+
 	if (get_plat_sensor_one_step_enable_flag() == ONE_STEP_POWER_MAGIC_NUMBER) {
 		return (get_plat_sensor_vr_polling_enable_flag() &&
 			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
