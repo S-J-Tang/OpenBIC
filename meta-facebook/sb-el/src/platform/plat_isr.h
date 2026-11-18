@@ -42,6 +42,15 @@
 
 enum asic_spi_chip { ASIC_SPI_HAMSA, ASIC_SPI_NUWA0, ASIC_SPI_NUWA1 };
 
+/* JEDEC manufacturer ID (first byte of RDID 9Fh) */
+#define ASIC_FLASH_MFR_ID_MXIC 0xC2
+#define ASIC_FLASH_MFR_ID_WINBOND 0xEF
+#define ASIC_FLASH_MFR_ID_MICRON 0x20
+#define ASIC_FLASH_MFR_ID_UNKNOWN 0x00
+
+uint8_t get_asic_flash_mfr_id(void);
+const char *get_asic_flash_vendor_name(uint8_t mfr_id);
+
 void ISR_GPIO_ALL_VR_PM_ALERT_R_N();
 void ISR_GPIO_FM_PLD_UBC_EN_R();
 bool ubc_en_changed_callback(cpld_info *info, uint8_t *data);
