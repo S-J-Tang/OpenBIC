@@ -27,6 +27,8 @@
 #include "plat_mctp.h"
 #include "plat_user_setting.h"
 #include "plat_adc.h"
+#include "plat_isr.h"
+#include "plat_hook.h"
 
 #define BOARD_TYPE_MASK (BIT(0) | BIT(1))
 #define REV_ID_MASK (BIT(0) | BIT(1) | BIT(2))
@@ -347,6 +349,11 @@ void pal_show_board_types(const struct shell *shell)
 	shell_print(shell, "* ADC_TYPE:      (0x%02X)%s", adc_type,
 		    (adc_type == ADI_AD4058) ? "ADI_AD4058" :
 		    (adc_type == TIC_ADS7066) ? "TI_ADS7066" : "not supported");
+	if (is_mb_dc_on()) {
+		uint8_t flash_mfr_id = get_asic_flash_mfr_id();
+		shell_print(shell, "* FLASH_VENDOR:  (0x%02X)%s", flash_mfr_id,
+			    get_asic_flash_vendor_name(flash_mfr_id));
+	}
 	shell_print(shell, "* I2C connection for NUWA0/1 to MMC: Enable");
 	return;
 }

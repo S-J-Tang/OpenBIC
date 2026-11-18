@@ -18,7 +18,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <logging/log.h>
+#include <device.h>
+#include <drivers/spi.h>
+#include <drivers/spi_nor.h>
 
+#include "plat_isr.h"
 #include "plat_gpio.h"
 #include "plat_cpld.h"
 #include "plat_hook.h"
@@ -155,6 +159,246 @@ void plat_switch_pin_a12(bool use_gpio73)
 	}
 }
 
+static int fiu_raw_xfer(const struct device *fiu, uint8_t *tx, size_t tx_len, uint8_t *rx,
+			size_t rx_len)
+{
+	struct spi_config cfg = {
+		.frequency = 1000000,
+		.operation =
+			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+		.slave = SPI_FIU0_CS1_SLAVE,
+	};
+	struct spi_buf tx_buf = { .buf = tx, .len = tx_len };
+	struct spi_buf_set tx_set = { .buffers = &tx_buf, .count = 1 };
+
+	if (rx_len == 0) {
+		return spi_write(fiu, &cfg, &tx_set);
+	}
+
+	struct spi_buf rx_buf = { .buf = rx, .len = rx_len };
+	struct spi_buf_set rx_set = { .buffers = &rx_buf, .count = 1 };
+
+	return spi_transceive(fiu, &cfg, &tx_set, &rx_set);
+}
+
+static int fiu_wren(const struct device *fiu)
+{
+	uint8_t op = SPI_NOR_CMD_WREN;
+
+	return fiu_raw_xfer(fiu, &op, 1, NULL, 0);
+}
+
+static bool asic_spi_select(enum asic_spi_chip chip)
+{
+	uint8_t mux_in1, sel0, sel1, por_bit, sys_bit;
+
+	switch (chip) {
+	case ASIC_SPI_HAMSA:
+		mux_in1 = SPI_HAMSA_MUX_IN1;
+		sel0 = 0;
+		sel1 = 0;
+		por_bit = ASIC_HAMSA_POR_BIT;
+		sys_bit = ASIC_HAMSA_SYS_RST_BIT;
+		break;
+	case ASIC_SPI_NUWA0:
+		mux_in1 = SPI_NUWA0_MUX_IN1;
+		sel0 = 1;
+		sel1 = 0;
+		por_bit = ASIC_NUWA0_POR_BIT;
+		sys_bit = ASIC_NUWA0_SYS_RST_BIT;
+		break;
+	case ASIC_SPI_NUWA1:
+	default:
+		mux_in1 = SPI_NUWA1_MUX_IN1;
+		sel0 = 0;
+		sel1 = 1;
+		por_bit = ASIC_NUWA1_POR_BIT;
+		sys_bit = ASIC_NUWA1_SYS_RST_BIT;
+		break;
+	}
+
+	gpio_set(mux_in1, 1);
+	gpio_set(QSPI_CPLD_SEL_0, sel0);
+	gpio_set(QSPI_CPLD_SEL_1, sel1);
+
+	return set_cpld_bit(CPLD_OFFSET_ASIC_RESET, por_bit, 0) &&
+	       set_cpld_bit(CPLD_OFFSET_ASIC_RESET, sys_bit, 0);
+}
+
+static bool asic_spi_read_ods_reg(const struct device *fiu, bool is_hamsa, uint8_t *reg)
+{
+	if (is_hamsa) {
+		uint8_t op = SPI_NOR_CMD_RDCR;
+
+		return fiu_raw_xfer(fiu, &op, 1, reg, 1) == 0;
+	}
+	uint8_t op[5] = { SPI_NOR_CMD_RDHCR, 0x00, 0x00, 0x06, 0x00 }; /* HCR addr 0x00000600 */
+
+	return fiu_raw_xfer(fiu, op, sizeof(op), reg, 1) == 0;
+}
+
+static bool asic_spi_write_ods(enum asic_spi_chip chip)
+{
+	if (!asic_spi_select(chip)) {
+		LOG_ERR("ODS: failed to select/hold chip %d in reset", chip);
+		return false;
+	}
+
+	const struct device *flash_dev = device_get_binding(ASIC_SPI_FLASH_DEV_NAME);
+	const struct device *fiu = device_get_binding(SPI_FIU0_DEV_NAME);
+
+	if (!flash_dev || !fiu || spi_nor_re_init(flash_dev)) {
+		LOG_ERR("ODS: SPI flash interface not ready for chip %d", chip);
+		return false;
+	}
+
+	bool is_hamsa = (chip == ASIC_SPI_HAMSA);
+	uint8_t code = is_hamsa ? HAMSA_ODS_CODE : NUWA_ODS_CODE;
+	uint8_t reg = 0, verify = 0;
+	int rc = 0;
+
+	if (!asic_spi_read_ods_reg(fiu, is_hamsa, &reg)) {
+		LOG_ERR("ODS: failed to read register for chip %d", chip);
+		return false;
+	}
+
+	uint8_t new_val = (reg & ~ASIC_ODS_MASK) | code;
+
+	if (is_hamsa) {
+		uint8_t sr = 0;
+		uint8_t rdsr = SPI_NOR_CMD_RDSR;
+
+		rc = fiu_raw_xfer(fiu, &rdsr, 1, &sr, 1);
+		if (rc == 0) {
+			rc = fiu_wren(fiu);
+		}
+		if (rc == 0) {
+			uint8_t wrsr[3] = { SPI_NOR_CMD_WRSR, sr, new_val };
+
+			rc = fiu_raw_xfer(fiu, wrsr, sizeof(wrsr), NULL, 0);
+		}
+	} else {
+		rc = fiu_wren(fiu);
+		if (rc == 0) {
+			/* HCR addr 0x00000600 */
+			uint8_t wrhcr[6] = { SPI_NOR_CMD_WRHCR, 0x00, 0x00, 0x06, 0x00, new_val };
+
+			rc = fiu_raw_xfer(fiu, wrhcr, sizeof(wrhcr), NULL, 0);
+		}
+	}
+	if (rc) {
+		LOG_ERR("ODS: failed to write register for chip %d: %d", chip, rc);
+		return false;
+	}
+
+	if (!asic_spi_read_ods_reg(fiu, is_hamsa, &verify) || verify != new_val) {
+		LOG_ERR("ODS: verify failed for chip %d: wrote 0x%02x read 0x%02x", chip, new_val,
+			verify);
+		return false;
+	}
+
+	LOG_INF("ODS: chip %d set to reg 0x%02x", chip, new_val);
+	return true;
+}
+
+/* HAMSA/NUWA0/NUWA1 always use the same flash vendor, so only HAMSA is probed */
+static uint8_t asic_flash_mfr_id = ASIC_FLASH_MFR_ID_UNKNOWN;
+
+uint8_t get_asic_flash_mfr_id(void)
+{
+	return asic_flash_mfr_id;
+}
+
+const char *get_asic_flash_vendor_name(uint8_t mfr_id)
+{
+	switch (mfr_id) {
+	case ASIC_FLASH_MFR_ID_MXIC:
+		return "Macronix(MXIC)";
+	case ASIC_FLASH_MFR_ID_WINBOND:
+		return "Winbond";
+	case ASIC_FLASH_MFR_ID_MICRON:
+		return "Micron";
+	case ASIC_FLASH_MFR_ID_UNKNOWN:
+		return "not detected";
+	default:
+		return "unknown";
+	}
+}
+
+static void plat_read_flash_vendor(void)
+{
+	/* flash vendor does not change, read it only once */
+	if (asic_flash_mfr_id != ASIC_FLASH_MFR_ID_UNKNOWN) {
+		return;
+	}
+
+	uint8_t saved_reset_reg = 0;
+
+	if (!plat_read_cpld(CPLD_OFFSET_ASIC_RESET, &saved_reset_reg, 1)) {
+		LOG_ERR("flash vendor: failed to save CPLD reset reg, skip");
+		return;
+	}
+
+	const struct device *flash_dev = device_get_binding(ASIC_SPI_FLASH_DEV_NAME);
+	const struct device *fiu = device_get_binding(SPI_FIU0_DEV_NAME);
+	uint8_t rdid = SPI_NOR_CMD_RDID;
+	uint8_t jedec_id[3] = { 0 };
+
+	if (asic_spi_select(ASIC_SPI_HAMSA) && flash_dev && fiu && !spi_nor_re_init(flash_dev) &&
+	    !fiu_raw_xfer(fiu, &rdid, 1, jedec_id, sizeof(jedec_id))) {
+		asic_flash_mfr_id = jedec_id[0];
+		LOG_INF("flash vendor: JEDEC ID %02x %02x %02x (%s)", jedec_id[0], jedec_id[1],
+			jedec_id[2], get_asic_flash_vendor_name(jedec_id[0]));
+	} else {
+		asic_flash_mfr_id = ASIC_FLASH_MFR_ID_UNKNOWN;
+		LOG_ERR("flash vendor: failed to read HAMSA flash JEDEC ID");
+	}
+
+	gpio_set(SPI_HAMSA_MUX_IN1, 0);
+	gpio_set(QSPI_CPLD_SEL_0, 0);
+	gpio_set(QSPI_CPLD_SEL_1, 0);
+
+	if (!plat_write_cpld(CPLD_OFFSET_ASIC_RESET, &saved_reset_reg)) {
+		LOG_ERR("flash vendor: failed to restore CPLD reset reg");
+	}
+}
+
+static void plat_change_flash_ods(void)
+{
+	if (get_asic_board_id() != ASIC_BOARD_ID_ELECTRA || get_vr_module() != VR_MODULE_RNS) {
+		return;
+	}
+
+	if (asic_flash_mfr_id != ASIC_FLASH_MFR_ID_MXIC) {
+		LOG_INF("ODS: flash vendor 0x%02x (%s) is not Macronix, skip", asic_flash_mfr_id,
+			get_asic_flash_vendor_name(asic_flash_mfr_id));
+		return;
+	}
+
+	uint8_t saved_reset_reg = 0;
+
+	if (!plat_read_cpld(CPLD_OFFSET_ASIC_RESET, &saved_reset_reg, 1)) {
+		LOG_ERR("ODS: failed to save CPLD reset reg, skip ODS defaults");
+		return;
+	}
+
+	bool ok_hamsa = asic_spi_write_ods(ASIC_SPI_HAMSA);
+	bool ok_nuwa0 = asic_spi_write_ods(ASIC_SPI_NUWA0);
+	bool ok_nuwa1 = asic_spi_write_ods(ASIC_SPI_NUWA1);
+
+	gpio_set(SPI_HAMSA_MUX_IN1, 0);
+	gpio_set(SPI_NUWA0_MUX_IN1, 0);
+	gpio_set(SPI_NUWA1_MUX_IN1, 0);
+	gpio_set(QSPI_CPLD_SEL_0, 0);
+	gpio_set(QSPI_CPLD_SEL_1, 0);
+
+	if (!plat_write_cpld(CPLD_OFFSET_ASIC_RESET, &saved_reset_reg)) {
+		LOG_ERR("ODS: failed to restore CPLD reset reg");
+	}
+
+	LOG_INF("ODS defaults applied: hamsa=%d nuwa0=%d nuwa1=%d", ok_hamsa, ok_nuwa0, ok_nuwa1);
+}
+
 void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 {
 	// dc on
@@ -190,8 +434,12 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 		if (!set_all_vout_command())
 			LOG_ERR("set all vout command fail!");
 
-		//check RNS vr CML status
+		// check RNS vr CML status
 		check_rns_vr_cml_status();
+		// read ASIC flash vendor once (HAMSA only, all ASIC flashes are the same vendor)
+		plat_read_flash_vendor();
+		// ODS (output driver strength), Macronix only
+		plat_change_flash_ods();
 		// Allow VR/UBC polling one second after DC power becomes stable.
 		set_sensor_polling_delay_elapsed(false);
 		k_work_reschedule(&sensor_polling_delay_work, K_SECONDS(1));
