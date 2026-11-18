@@ -301,10 +301,82 @@ static bool asic_spi_write_ods(enum asic_spi_chip chip)
 	return true;
 }
 
+/* HAMSA/NUWA0/NUWA1 always use the same flash vendor, so only HAMSA is probed */
+static uint8_t asic_flash_mfr_id = ASIC_FLASH_MFR_ID_UNKNOWN;
+
+uint8_t get_asic_flash_mfr_id(void)
+{
+	return asic_flash_mfr_id;
+}
+
+const char *get_asic_flash_vendor_name(uint8_t mfr_id)
+{
+	switch (mfr_id) {
+	case ASIC_FLASH_MFR_ID_MXIC:
+		return "Macronix(MXIC)";
+	case ASIC_FLASH_MFR_ID_WINBOND:
+		return "Winbond";
+	case ASIC_FLASH_MFR_ID_MICRON:
+		return "Micron";
+	case ASIC_FLASH_MFR_ID_UNKNOWN:
+		return "not detected";
+	default:
+		return "unknown";
+	}
+}
+
+static void plat_read_flash_vendor(void)
+{
+	/* flash vendor does not change, read it only once */
+	if (asic_flash_mfr_id != ASIC_FLASH_MFR_ID_UNKNOWN) {
+		return;
+	}
+
+	uint8_t saved_reset_reg = 0;
+
+	if (!plat_read_cpld(CPLD_OFFSET_ASIC_RESET, &saved_reset_reg, 1)) {
+		LOG_ERR("flash vendor: failed to save CPLD reset reg, skip");
+		return;
+	}
+
+	const struct device *flash_dev = device_get_binding(ASIC_SPI_FLASH_DEV_NAME);
+	const struct device *fiu = device_get_binding(SPI_FIU0_DEV_NAME);
+	uint8_t rdid = SPI_NOR_CMD_RDID;
+	uint8_t jedec_id[3] = { 0 };
+
+	if (asic_spi_select(ASIC_SPI_HAMSA) && flash_dev && fiu && !spi_nor_re_init(flash_dev) &&
+	    !fiu_raw_xfer(fiu, &rdid, 1, jedec_id, sizeof(jedec_id))) {
+		asic_flash_mfr_id = jedec_id[0];
+		LOG_INF("flash vendor: JEDEC ID %02x %02x %02x (%s)", jedec_id[0], jedec_id[1],
+			jedec_id[2], get_asic_flash_vendor_name(jedec_id[0]));
+	} else {
+		asic_flash_mfr_id = ASIC_FLASH_MFR_ID_UNKNOWN;
+		LOG_ERR("flash vendor: failed to read HAMSA flash JEDEC ID");
+	}
+
+	gpio_set(SPI_HAMSA_MUX_IN1, 0);
+	gpio_set(QSPI_CPLD_SEL_0, 0);
+	gpio_set(QSPI_CPLD_SEL_1, 0);
+
+	if (!plat_write_cpld(CPLD_OFFSET_ASIC_RESET, &saved_reset_reg)) {
+		LOG_ERR("flash vendor: failed to restore CPLD reset reg");
+	}
+}
+
 static void plat_change_flash_ods(void)
 {
 	/* fixed ODS defaults are only validated on Electra boards with RNS VRs */
 	if (get_asic_board_id() != ASIC_BOARD_ID_ELECTRA || get_vr_module() != VR_MODULE_RNS) {
+		return;
+	}
+
+	/*
+	 * ODS opcodes are Macronix-specific. On other vendors they map to different
+	 * registers (e.g. Winbond 01h writes SR2: CMP/LB OTP bits), so skip them.
+	 */
+	if (asic_flash_mfr_id != ASIC_FLASH_MFR_ID_MXIC) {
+		LOG_INF("ODS: flash vendor 0x%02x (%s) is not Macronix, skip", asic_flash_mfr_id,
+			get_asic_flash_vendor_name(asic_flash_mfr_id));
 		return;
 	}
 
@@ -369,7 +441,9 @@ void ISR_GPIO_RST_ARKE_PWR_ON_PLD_R1_N()
 
 		// check RNS vr CML status
 		check_rns_vr_cml_status();
-		// ODS (output driver strength)
+		// read ASIC flash vendor once (HAMSA only, all ASIC flashes are the same vendor)
+		plat_read_flash_vendor();
+		// ODS (output driver strength), Macronix only
 		plat_change_flash_ods();
 		// Allow VR/UBC polling one second after DC power becomes stable.
 		set_sensor_polling_delay_elapsed(false);

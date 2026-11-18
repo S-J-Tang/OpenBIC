@@ -29,6 +29,8 @@
 #include "plat_adc.h"
 #include "hal_gpio.h"
 #include "plat_gpio.h"
+#include "plat_isr.h"
+#include "plat_hook.h"
 
 #define BOARD_TYPE_MASK (BIT(0) | BIT(1))
 #define REV_ID_MASK (BIT(0) | BIT(1) | BIT(2))
@@ -391,6 +393,11 @@ void pal_show_board_types(const struct shell *shell)
 		    (asic_type == ASIC_TYPE_QCP2) ? "ASIC_TYPE_QCP2" :
 		    (asic_type == ASIC_TYPE_QCP3) ? "ASIC_TYPE_QCP3" :
 						    "not supported");
+	if (is_mb_dc_on()) {
+		uint8_t flash_mfr_id = get_asic_flash_mfr_id();
+		shell_print(shell, "* FLASH_VENDOR:  (0x%02X)%s", flash_mfr_id,
+			    get_asic_flash_vendor_name(flash_mfr_id));
+	}
 	shell_print(shell, "* I2C connection for NUWA0/1 to MMC: Enable");
 	return;
 }
