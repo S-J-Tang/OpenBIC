@@ -365,10 +365,6 @@ static void plat_read_flash_vendor(void)
 
 static void plat_change_flash_ods(void)
 {
-	if (get_asic_board_id() != ASIC_BOARD_ID_ELECTRA || get_vr_module() != VR_MODULE_RNS) {
-		return;
-	}
-
 	if (asic_flash_mfr_id != ASIC_FLASH_MFR_ID_MXIC) {
 		LOG_INF("ODS: flash vendor 0x%02x (%s) is not Macronix, skip", asic_flash_mfr_id,
 			get_asic_flash_vendor_name(asic_flash_mfr_id));
