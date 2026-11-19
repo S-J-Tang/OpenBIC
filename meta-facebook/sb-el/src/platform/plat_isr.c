@@ -365,11 +365,6 @@ static void plat_read_flash_vendor(void)
 
 static void plat_change_flash_ods(void)
 {
-	/* fixed ODS defaults are only validated on Electra boards with RNS VRs */
-	if (get_asic_board_id() != ASIC_BOARD_ID_ELECTRA || get_vr_module() != VR_MODULE_RNS) {
-		return;
-	}
-
 	/*
 	 * ODS opcodes are Macronix-specific. On other vendors they map to different
 	 * registers (e.g. Winbond 01h writes SR2: CMP/LB OTP bits), so skip them.
