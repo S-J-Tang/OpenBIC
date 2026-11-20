@@ -63,7 +63,9 @@ const char *vr_vendor_module_name[] = {
 	"CYNTEX_UBC_AND_RNS_VR",
 	"RESERVED",
 	"RESERVED",
-	"DELTA_UBC_AND_FAB2_MPS_VR",
+	"DELTA_UBC_AND_MPS_VR", // 0x0C: DELTA UBC + 2nd source MPS VR (MP2971 + MP29526)
+	"RESERVED",
+	"LUXSHURE_UBC_AND_MPS_VR", // 0x0E: LUXSHARE UBC + 2nd source MPS VR (MP2971 + MP29526)
 	"VENDOR_TYPE_UNKNOWN",
 };
 
@@ -208,11 +210,14 @@ void init_vr_vendor_type(void)
 
 	vr_vendor_module &= 0x0F;
 
-	if (vr_vendor_module == DELTA_UBC_AND_FAB2_MPS_VR) {
-		// DELTA_UBC_AND_FAB2_MPS_VR (0x0C) only changes the VR pairing (mp2971 + mp29526);
-		// UBC stays DELTA, so it doesn't fit the generic (value >> 1) & 0x07 UBC decode.
+	if (vr_vendor_module == DELTA_UBC_AND_2ND_MPS_VR) {
+		// 0x0C/0x0E only change the VR pairing (mp2971 + mp29526); they don't fit
+		// the generic (value >> 1) & 0x07 UBC decode.
 		vr_module = VR_MODULE_MPS;
 		ubc_module = UBC_MODULE_DELTA;
+	} else if (vr_vendor_module == LUXSHURE_UBC_AND_2ND_MPS_VR) {
+		vr_module = VR_MODULE_MPS;
+		ubc_module = UBC_MODULE_LUXSHARE;
 	} else {
 		vr_module = (vr_vendor_module & 0x01);
 		ubc_module = (vr_vendor_module >> 1) & 0x07;
@@ -280,6 +285,12 @@ uint8_t get_vr_module()
 uint8_t get_vr_vendor_module()
 {
 	return vr_vendor_module;
+}
+
+bool is_vr_vendor_2nd_mps(void)
+{
+	return (vr_vendor_module == DELTA_UBC_AND_2ND_MPS_VR ||
+		vr_vendor_module == LUXSHURE_UBC_AND_2ND_MPS_VR);
 }
 
 uint8_t get_ubc_module()
@@ -363,7 +374,8 @@ void pal_show_board_types(const struct shell *shell)
 			((board_rev_id == REV_ID_POC_FAB1) ? "LUXSHARE_UBC_AND_RNS_VR" :
 							       "CYNTEX_UBC_AND_MPS_VR") :
 		    (vr_vendor_module == CYNTEX_UBC_AND_RNS_VR) ? "CYNTEX_UBC_AND_RNS_VR" :
-			(vr_vendor_module == DELTA_UBC_AND_FAB2_MPS_VR) ? "DELTA_UBC_AND_FAB2_MPS_VR" :
+			(vr_vendor_module == DELTA_UBC_AND_2ND_MPS_VR) ? "DELTA_UBC_AND_MPS_VR" :
+			(vr_vendor_module == LUXSHURE_UBC_AND_2ND_MPS_VR) ? "LUXSHURE_UBC_AND_MPS_VR" :
 								    "not supported");
 	shell_print(shell, "* UBC_TYPE:      (0x%02X)%s", ubc_module,
 		    (ubc_module == UBC_MODULE_DELTA)	? "UBC_DELTA_S54SS4P1A2" :
@@ -374,7 +386,8 @@ void pal_show_board_types(const struct shell *shell)
 							  "not supported");
 
 	shell_print(shell, "* VR_TYPE:       (0x%02X)%s", vr_module,
-		    (vr_module == VR_MODULE_MPS) ? "VR_MPS_MP2971_MP29816C" :
+		    (vr_module == VR_MODULE_MPS) ?
+			(is_vr_vendor_2nd_mps() ? "VR_MPS_MP2971_MP29526" : "VR_MPS_MP2971_MP29816C") :
 		    (vr_module == VR_MODULE_RNS) ? "VR_RNS_RAA229140_RAA228249" :
 						   "not supported");
 
