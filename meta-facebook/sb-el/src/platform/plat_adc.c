@@ -341,29 +341,36 @@ void read_adc_info()
 {
 	uint8_t adc_idx = 0;
 	plat_read_cpld(CPLD_OFFSET_ADC_IDX, &adc_idx, 1);
-	adc_idx_read = adc_idx;
+	adc_idx_read = adc_idx & 0x01;
 	/* Pull CS1 high to avoid interfering with CS0 SPI communication */
 	k_msleep(1000);
+	LOG_INF("Pull cnv and cs1 to High");
 	gpio_set(NUWA0_CNV, 1);
 	gpio_set(NUWA1_CNV, 1);
 	gpio_set(SPI_ADC_CS1_N, 1);
 	k_msleep(1000);
-	/* read VENDOR_L to determine*/
 	uint8_t value = 0;
-	ad4058_write_reg(0xA8, 0x00, 0);
-	ad4058_read_reg(0x0C, 0, &value);
-	if (value == 0x56) {
-		adc_idx_read = ADC_TYPE_AD4058;
-	} else {
-		// check if is ads7066
-		ads7066_write_reg(0x3, 0x6, 0); // medha0
-		ads7066_read_reg(0x3, 0, &value);
-		if (value == 0x6) {
-			adc_idx_read = ADC_TYPE_ADS7066;
-		} else {
-			adc_idx_read = ADC_TYPE_UNKNOWN;
-			LOG_ERR("Unknown ADC type, read value: 0x%02x", value);
+	if (adc_idx_read == ADI_AD4058) {
+		// enter to config mode
+		ad4058_write_reg(0xA8, 0x00, ADC_EL_IDX_NUWA0);
+		ad4058_write_reg(0xA8, 0x00, ADC_EL_IDX_NUWA1);
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < ADC_EL_IDX_MAX; j++) {
+				LOG_INF("ad4058 read ADC%d REG 0x%02x", j, i);
+				ad4058_read_reg(i, j, &value);
+				k_msleep(100);
+			}
 		}
+	} else if (adc_idx_read == TIC_ADS7066) {
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < ADC_EL_IDX_MAX; j++) {
+				LOG_INF("ads7066 read ADC%d REG 0x%02x", j, i);
+				ads7066_read_reg(i, j, &value);
+				k_msleep(100);
+			}
+		}
+	} else {
+		LOG_ERR("Unknown ADC type, read value: 0x%02x", value);
 	}
 }
 
