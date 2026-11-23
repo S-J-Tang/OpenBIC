@@ -75,8 +75,9 @@ void pal_set_sys_status()
 void pal_post_init()
 {
 	plat_mctp_init();
-	user_settings_init();
+	/* FRU must be parsed before user_settings_init(): bootstrap preset uses board serial */
 	init_fru_info();
+	user_settings_init();
 	plat_adc_electra_init();
 	plat_power_capping_init();
 	init_load_eeprom_log();

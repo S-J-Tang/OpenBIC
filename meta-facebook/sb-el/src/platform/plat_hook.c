@@ -371,6 +371,37 @@ static const bootstrap_override qcp1_bootstrap_overrides[] = {
 	{ STRAP_INDEX_HAMSA_MFIO18, 0x01 },
 };
 
+/* Boards that use the QCP1 bootstrap preset, identified by FRU board serial */
+static const char *const qcp1_board_serials[] = {
+	"TW0395564300001", "TW0505564300001", "TW0515564300001", "TW0395564400001",
+	"TW0505564400001", "TW0515564400001", "TW0345564400001",
+};
+
+static bool is_qcp1_board_serial(void)
+{
+	const FRU_INFO *fru = get_fru_info();
+	if (!fru) {
+		LOG_WRN("FRU info not available, can't check board serial");
+		return false;
+	}
+
+	const char *serial = fru->board.board_serial;
+	/* Ignore trailing spaces / padding in the FRU field */
+	size_t len = strnlen(serial, sizeof(fru->board.board_serial));
+	while ((len > 0) && (serial[len - 1] == ' ')) {
+		len--;
+	}
+	for (size_t i = 0; i < ARRAY_SIZE(qcp1_board_serials); i++) {
+		if ((strlen(qcp1_board_serials[i]) == len) &&
+		    !strncmp(serial, qcp1_board_serials[i], len)) {
+			LOG_INF("Board serial %s uses QCP1 bootstrap preset", qcp1_board_serials[i]);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bootstrap_mapping_register bootstrap_table[] = {
 	{ STRAP_INDEX_HAMSA_TEST_STRAP_R, STRAP_TYPE_CPLD, HAMSA_STRAP, "HAMSA_TEST_STRAP_R", 4, 1, 0x0,
 	  0x0, false },
@@ -2309,6 +2340,11 @@ bool bootstrap_default_settings_init(void)
 
 	/* Applied on every boot, so is_perm = false (not saved to EEPROM) */
 	uint8_t board_rev_id = get_board_rev_id();
+
+	/* Specific DVT1(FAB3) boards are identified as QCP1 by FRU board serial */
+	if ((board_rev_id == REV_ID_DVT1_FAB3) && is_qcp1_board_serial()) {
+		return bootstrap_set_qcp1(false);
+	}
 
 	/* ASIC type GPIOs are only available from DVT1(FAB3); older boards use DBB */
 	if ((board_rev_id >= REV_ID_DVT1_FAB3) && (board_rev_id < REV_ID_UNKNOWN) &&
