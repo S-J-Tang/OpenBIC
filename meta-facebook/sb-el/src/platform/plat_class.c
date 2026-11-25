@@ -34,6 +34,7 @@
 
 #define BOARD_TYPE_MASK (BIT(0) | BIT(1))
 #define REV_ID_MASK (BIT(0) | BIT(1) | BIT(2))
+#define HBM_ID_MASK (BIT(0) | BIT(1))
 
 #define I2C_BUS_TMP I2C_BUS3
 
@@ -48,6 +49,7 @@ static uint8_t board_rev_id = REV_ID_UNKNOWN;
 static uint8_t mmc_slot = 0;
 static uint8_t tray_location = 0;
 static uint8_t asic_type = ASIC_TYPE_UNKNOWN;
+static uint8_t hbm_type = HBM_TYPE_UNKNOWN;
 
 // clang-format off
 const char *vr_vendor_module_name[] = {
@@ -259,6 +261,21 @@ void init_asic_type()
 	LOG_INF("ASIC type: 0x%x", asic_type);
 }
 
+void init_hbm_type(void)
+{
+	uint8_t data = 0;
+
+	if (!plat_read_cpld(CPLD_OFFSET_ASIC_HBM_ID, &data, 1)) {
+		LOG_ERR("Failed to get CPLD ASIC_HBM_ID 0x%02X", CPLD_OFFSET_ASIC_HBM_ID);
+		hbm_type = HBM_TYPE_UNKNOWN;
+		return;
+	}
+
+	// ASIC_HBM_ID1/ASIC_HBM_ID0: 00: Micron, 01: Samsung, 10: SK Hynix, 11: RSVD
+	hbm_type = data & HBM_ID_MASK;
+	LOG_INF("HBM type: 0x%x", hbm_type);
+}
+
 void init_plat_config()
 {
 	init_board_type();
@@ -266,6 +283,7 @@ void init_plat_config()
 	init_tmp_vendor_type();
 	init_vr_vendor_type();
 	init_asic_type();
+	init_hbm_type();
 	// cpld fru offset 0: slot
 	plat_cpld_eerprom_read(&mmc_slot, MMC_SLOT_USER_SETTING_OFFSET, 1);
 	change_sensor_cfg(asic_board_id, tmp_module, vr_module, ubc_module, board_rev_id);
@@ -326,6 +344,11 @@ uint8_t get_tray_location()
 uint8_t get_asic_type()
 {
 	return asic_type;
+}
+
+uint8_t get_hbm_type()
+{
+	return hbm_type;
 }
 
 // clang-format off
@@ -406,6 +429,12 @@ void pal_show_board_types(const struct shell *shell)
 		    (asic_type == ASIC_TYPE_QCP2) ? "ASIC_TYPE_QCP2" :
 		    (asic_type == ASIC_TYPE_QCP3) ? "ASIC_TYPE_QCP3" :
 						    "not supported");
+	shell_print(shell, "* HBM_TYPE:      (0x%02X)%s", hbm_type,
+		    (hbm_type == HBM_TYPE_MICRON)    ? "HBM_TYPE_MICRON" :
+		    (hbm_type == HBM_TYPE_SAMSUNG)   ? "HBM_TYPE_SAMSUNG" :
+		    (hbm_type == HBM_TYPE_SK_HYNIX)  ? "HBM_TYPE_SK_HYNIX" :
+		    (hbm_type == HBM_TYPE_RSVD)      ? "HBM_TYPE_RSVD" :
+						       "not supported");
 	if (is_mb_dc_on()) {
 		uint8_t flash_mfr_id = get_asic_flash_mfr_id();
 		shell_print(shell, "* FLASH_VENDOR:  (0x%02X)%s", flash_mfr_id,

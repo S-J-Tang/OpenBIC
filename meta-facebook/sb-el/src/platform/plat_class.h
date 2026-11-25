@@ -91,6 +91,15 @@ enum ASIC_TYPE {
 	ASIC_TYPE_UNKNOWN,
 };
 
+/* CPLD 0x9F: bit1 ASIC_HBM_ID1, bit0 ASIC_HBM_ID0 */
+enum HBM_TYPE {
+	HBM_TYPE_MICRON,
+	HBM_TYPE_SAMSUNG,
+	HBM_TYPE_SK_HYNIX,
+	HBM_TYPE_RSVD,
+	HBM_TYPE_UNKNOWN,
+};
+
 void init_plat_config();
 uint8_t get_vr_module();
 uint8_t get_vr_vendor_module();
@@ -102,5 +111,6 @@ uint8_t get_asic_board_id();
 uint8_t get_board_rev_id();
 uint8_t get_tray_location();
 uint8_t get_asic_type();
+uint8_t get_hbm_type();
 bool plat_cpld_eerprom_read(uint8_t *data, uint16_t offset, uint8_t len);
 #endif
