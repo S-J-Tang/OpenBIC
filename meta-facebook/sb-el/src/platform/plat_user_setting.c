@@ -1020,6 +1020,7 @@ void user_settings_init(void)
 	bootstrap_default_settings_init();
 	bootstrap_set_dbb(false);
 	bootstrap_set_dbb_plus(false);
+	bootstrap_set_sotp(false);
 	bootstrap_user_settings_init();
 	alert_level_user_settings_init();
 	thermaltrip_user_settings_init();

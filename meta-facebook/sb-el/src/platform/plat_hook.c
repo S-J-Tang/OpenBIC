@@ -2392,6 +2392,41 @@ bool bootstrap_set_dbb_plus(bool is_perm)
 	return true;
 }
 
+static const struct {
+	uint8_t strap_index;
+	uint8_t value;
+} sotp_bootstrap_settings[] = {
+	{ STRAP_INDEX_HAMSA_CRM_STRAP_0, 0x00 }, { STRAP_INDEX_HAMSA_CRM_STRAP_1, 0x00 },
+	{ STRAP_INDEX_HAMSA_MFIO7, 0x00 },	 { STRAP_INDEX_HAMSA_MFIO9, 0x00 },
+	{ STRAP_INDEX_HAMSA_LS_STRAP_1, 0x00 },	 { STRAP_INDEX_HAMSA_LS_STRAP_0, 0x00 },
+	{ STRAP_INDEX_HAMSA_MFIO11, 0x00 },	 { STRAP_INDEX_HAMSA_MFIO17, 0x00 },
+	{ STRAP_INDEX_HAMSA_MFIO18, 0x00 },
+};
+
+bool bootstrap_set_sotp(bool is_perm)
+{
+	LOG_INF("Setting SOTP bootstrap config");
+
+	for (int i = 0; i < ARRAY_SIZE(sotp_bootstrap_settings); i++) {
+		uint8_t strap = sotp_bootstrap_settings[i].strap_index;
+		uint8_t change_setting_value = 0;
+
+		if (!set_bootstrap_table_and_user_settings(strap, &change_setting_value,
+							   sotp_bootstrap_settings[i].value,
+							   is_perm, false)) {
+			LOG_ERR("Failed to set SOTP bootstrap[%d]", strap);
+			return false;
+		}
+
+		if (!set_bootstrap_val_to_device(strap, change_setting_value)) {
+			LOG_ERR("Failed to write SOTP bootstrap[%d]", strap);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static inline uint8_t get_val_from_strap_index(uint8_t strap_index)
 {
 	return ((bootstrap_table[strap_index].change_setting_value & 0x01)
