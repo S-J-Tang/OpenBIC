@@ -368,7 +368,7 @@ static const bootstrap_override dbb_bootstrap_overrides[] = {
 };
 
 static const bootstrap_override qcp1_bootstrap_overrides[] = {
-	{ STRAP_INDEX_HAMSA_MFIO18, 0x01 },
+	{ STRAP_INDEX_HAMSA_MFIO7, 0x00 },
 };
 
 /* Boards that use the QCP1 bootstrap preset, identified by FRU board serial */
